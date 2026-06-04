@@ -1,0 +1,40 @@
+name: Push Service Files to HF
+
+on:
+  push:
+    paths:
+      - '.github/scripts/hf_push_services.py'
+      - '.github/scripts/hf_create_spaces.py'
+      - '.env'
+      - 'Services/**'      
+  workflow_dispatch:
+
+jobs:
+  push_services:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install huggingface_hub python-dotenv
+      
+      - name: Push services to HF
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python .github/scripts/hf_push_services.py --force-push
+          else
+            python .github/scripts/hf_push_services.py
+          fi

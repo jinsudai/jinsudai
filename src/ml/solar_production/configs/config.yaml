@@ -1,0 +1,47 @@
+# Configuration - Modèle de PRODUCTION SOLAIRE (PV)
+# Voir SPECIFICATIONS.md pour les contraintes globales
+
+# Chemins données
+data:
+  raw_path: "data/raw/"
+  processed_path: "data/processed/solar_production/"
+  target_column: "Valeur"  # Production en kWh
+  
+  # Features à utiliser
+  feature_columns:
+    - "temperature_2m_mean"
+    - "relative_humidity_mean"
+    - "solar_radiation"
+    - "cloud_cover"
+    - "is_vacances"
+    - "jour de la semaine"
+    - "jour férié"
+  
+  # Colonnes à supprimer
+  drop_columns: ["Horodate"]
+
+# Paramètres modèle
+model:
+  test_size: 0.2
+  random_state: 42
+  model_type: "auto_gluon"
+  problem_type: "regression"  # Prédiction production (continu)
+  
+# Paramètres entraînement
+training:
+  epochs: 100
+  batch_size: 32
+  learning_rate: 0.001
+  time_limit: 3600  # 1h max (voir SPECIFICATIONS.md)
+
+# MLflow
+mlflow:
+  tracking_uri: "http://localhost:5000"
+  experiment_name: "solar_production"
+  model_name: "solar_production_model"
+  
+# Monitoring
+monitoring:
+  metric_name: "r2_score"  # R² pour régression
+  metric_target: 0.92  # Target 92% (solaire plus prévisible)
+  alert_threshold: 0.88  # Warning si < 88%

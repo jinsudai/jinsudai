@@ -1,0 +1,46 @@
+# Configuration - Modèle de CONSOMMATION ÉLECTRIQUE
+# Voir SPECIFICATIONS.md pour les contraintes globales
+
+# Chemins données
+data:
+  raw_path: "data/raw/"
+  processed_path: "data/processed/consumption/"
+  target_column: "Valeur"  # Consommation en kWh
+  
+  # Features à utiliser
+  feature_columns:
+    - "temperature_2m_mean"
+    - "relative_humidity_mean"
+    - "precipitation_sum"
+    - "is_vacances"
+    - "jour de la semaine"
+    - "jour férié"
+  
+  # Colonnes à supprimer
+  drop_columns: ["Horodate"]
+
+# Paramètres modèle
+model:
+  test_size: 0.2
+  random_state: 42
+  model_type: "auto_gluon"
+  problem_type: "regression"  # Prédiction consommation (continu)
+  
+# Paramètres entraînement
+training:
+  epochs: 100
+  batch_size: 32
+  learning_rate: 0.001
+  time_limit: 3600  # 1h max (voir SPECIFICATIONS.md)
+
+# MLflow
+mlflow:
+  tracking_uri: "http://localhost:5000"
+  experiment_name: "energy_consumption"
+  model_name: "consumption_model"
+  
+# Monitoring
+monitoring:
+  metric_name: "r2_score"  # R² pour régression
+  metric_target: 0.90  # Target 90%
+  alert_threshold: 0.85  # Warning si < 85%
