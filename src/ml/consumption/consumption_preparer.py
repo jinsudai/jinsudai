@@ -102,30 +102,36 @@ class ConsumptionDataPreparer:
         logger.info(f"Données consommation chargées: {len(consumption_df)} enregistrements")
         return consumption_df
     
-    def load_weather_data(self, weather_path: Union[str, Path]) -> pd.DataFrame:
+    def load_weather_data(self, weather_path: Optional[Union[str, Path]] = None) -> pd.DataFrame:
         """
         Charge les données météo depuis le Parquet.
         
         Args:
-            weather_path: Chemin vers le fichier Parquet météo
+            weather_path: Chemin vers le fichier Parquet météo.
+                        Si non fourni, utilise la valeur depuis la config (data.weather_file).
             
         Returns:
             DataFrame avec les données météo
         """
+        if weather_path is None:
+            weather_path = self.config.get("data", {}).get("weather_file", "../data/processed/weather.parquet")
         df = pd.read_parquet(weather_path)
         logger.info(f"Données météo chargées: {len(df)} enregistrements")
         return df
     
-    def load_holidays_data(self, holidays_path: Union[str, Path]) -> pd.DataFrame:
+    def load_holidays_data(self, holidays_path: Optional[Union[str, Path]] = None) -> pd.DataFrame:
         """
         Charge les données vacances/jours fériés depuis le Parquet.
         
         Args:
-            holidays_path: Chemin vers le fichier Parquet calendrier
+            holidays_path: Chemin vers le fichier Parquet calendrier.
+                          Si non fourni, utilise la valeur depuis la config (data.holidays_file).
             
         Returns:
             DataFrame avec les données calendrier
         """
+        if holidays_path is None:
+            holidays_path = self.config.get("data", {}).get("holidays_file", "../data/processed/holidays.parquet")
         df = pd.read_parquet(holidays_path)
         logger.info(f"Données calendrier chargées: {len(df)} enregistrements")
         return df
@@ -285,9 +291,9 @@ class ConsumptionDataPreparer:
         Args:
             raw_path: Chemin vers le fichier brut PRM (raw_template.csv).
                      Si non fourni, utilise la valeur depuis la config (data.raw_path).
-            weather_path: Chemin vers le Parquet météo. Si non fourni, doit être fourni.
-            holidays_path: Chemin vers le Parquet vacances/jours fériés. Si non fourni, doit être fourni.
-            output_path: Chemin pour sauvegarder le résultat (optionnel)
+            weather_path: Chemin vers le Parquet météo. Si non fourni, utilise config (data.weather_file).
+            holidays_path: Chemin vers le Parquet vacances/jours fériés. Si non fourni, utilise config (data.holidays_file).
+            output_path: Chemin pour sauvegarder le résultat. Si non fourni, utilise config (data.train_path).
             
         Returns:
             DataFrame: Données prêtes pour l'entraînement
@@ -308,6 +314,9 @@ class ConsumptionDataPreparer:
         self.validate_against_template(features_df)
         
         # 6. Sauvegarder si demandé
+        if output_path is None:
+            output_path = self.config.get("data", {}).get("train_path", "data/processed/consumption/train.parquet")
+        
         if output_path:
             output_path = Path(output_path)
             output_path.parent.mkdir(parents=True, exist_ok=True)

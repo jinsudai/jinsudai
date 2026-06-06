@@ -7,6 +7,9 @@ data:
   # Fichier brut PRM (override dans les fichiers spécifiques à l'environnement)
   raw_path: "data/templates/raw_template.csv"
   processed_path: "data/processed/consumption/"
+  train_path: "data/processed/consumption/train.parquet"
+  weather_file: "../data/processed/weather.parquet"
+  holidays_file: "../data/processed/holidays.parquet"
 
   target_column: "Valeur"  # Consommation en kWh
   
