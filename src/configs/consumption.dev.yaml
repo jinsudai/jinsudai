@@ -1,0 +1,23 @@
+# Overrides pour l'environnement DEV
+# Merge avec consumption.yaml (base)
+
+data:
+  raw_path: "data/test/test_raw_consumption.csv"
+  processed_path: "data/test/processed/consumption/"
+
+model:
+  test_size: 0.3  # Plus de données test en dev
+  time_limit: 600  # Plus rapide en dev
+
+training:
+  epochs: 10  # Moins d'époques pour les tests rapides
+  time_limit: 300
+
+# MLflow dev (local ou space de test)
+mlflow:
+  experiment_name: "energy_consumption_dev"
+  model_name: "consumption_model_dev"
+
+# Monitoring moins strict en dev
+monitoring:
+  alert_threshold: 0.80  # Warning si < 80%

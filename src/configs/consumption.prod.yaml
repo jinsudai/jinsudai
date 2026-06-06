@@ -1,0 +1,26 @@
+# Overrides pour l'environnement PROD
+# Merge avec consumption.yaml (base)
+
+data:
+  raw_path: "data/raw/consumption_prod.csv"
+  processed_path: "s3://jinsudai-data/processed/consumption/"
+
+model:
+  test_size: 0.2
+  time_limit: 7200  # 2h max en prod
+
+training:
+  epochs: 100
+  batch_size: 32
+  learning_rate: 0.001
+  time_limit: 7200
+
+# MLflow prod
+mlflow:
+  experiment_name: "energy_consumption"
+  model_name: "consumption_model"
+
+# Monitoring plus strict en prod
+monitoring:
+  metric_target: 0.95  # Target 95%
+  alert_threshold: 0.90  # Warning si < 90%

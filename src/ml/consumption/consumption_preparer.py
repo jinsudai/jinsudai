@@ -65,16 +65,21 @@ class ConsumptionDataPreparer:
             logger.warning(f"Fichier de configuration introuvable: {self.config_path}")
             return {}
     
-    def load_raw_consumption(self, raw_path: Union[str, Path]) -> pd.DataFrame:
+    def load_raw_consumption(self, raw_path: Optional[Union[str, Path]] = None) -> pd.DataFrame:
         """
         Charge les données brutes PRM de consommation.
         
         Args:
-            raw_path: Chemin vers le fichier CSV brut (raw_template.csv)
+            raw_path: Chemin vers le fichier CSV brut (raw_template.csv).
+                     Si non fourni, utilise la valeur depuis la config (data.raw_path).
             
         Returns:
             DataFrame avec uniquement Horodate et Valeur
         """
+        # Utiliser la valeur de config si non fournie
+        if raw_path is None:
+            raw_path = self.config.get("data", {}).get("raw_path", "data/templates/raw_template.csv")
+        
         df = pd.read_csv(
             raw_path,
             sep=";",
@@ -269,18 +274,19 @@ class ConsumptionDataPreparer:
     
     def prepare(
         self,
-        raw_path: Union[str, Path],
-        weather_path: Union[str, Path],
-        holidays_path: Union[str, Path],
+        raw_path: Optional[Union[str, Path]] = None,
+        weather_path: Optional[Union[str, Path]] = None,
+        holidays_path: Optional[Union[str, Path]] = None,
         output_path: Optional[Union[str, Path]] = None
     ) -> pd.DataFrame:
         """
         Pipeline complet de préparation des données consommation.
         
         Args:
-            raw_path: Chemin vers le fichier brut PRM (raw_template.csv)
-            weather_path: Chemin vers le Parquet météo
-            holidays_path: Chemin vers le Parquet vacances/jours fériés
+            raw_path: Chemin vers le fichier brut PRM (raw_template.csv).
+                     Si non fourni, utilise la valeur depuis la config (data.raw_path).
+            weather_path: Chemin vers le Parquet météo. Si non fourni, doit être fourni.
+            holidays_path: Chemin vers le Parquet vacances/jours fériés. Si non fourni, doit être fourni.
             output_path: Chemin pour sauvegarder le résultat (optionnel)
             
         Returns:

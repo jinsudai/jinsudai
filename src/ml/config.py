@@ -3,7 +3,11 @@ Gestion de la configuration centralisée.
 
 Spécifications :
 - Source : YAML centralisé + variables d'environnement
-- Priorité : Env vars override config.yaml
+- Priorité : Env vars override config.yaml, env-specific override common
+- Structure :
+  - config.yaml (ou consumption.yaml, etc.) : config base
+  - config.{env}.yaml (ex: config.dev.yaml) : overrides par environnement
+- Variable ENV : dev (défaut), test, prod
 - Utilisé par : tous les modules ML (data, models, monitoring)
 
 Voir SPECIFICATIONS.md pour les variables attendues.
@@ -14,19 +18,62 @@ from pathlib import Path
 import yaml
 
 
-DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[1] / "configs" / "config.yaml"
+DEFAULT_CONFIG_DIR = Path(__file__).resolve().parents[1] / "configs"
 
 
-def load_config(config_path=None):
-    """Charge la configuration YAML depuis le dépôt."""
-    path = Path(config_path or DEFAULT_CONFIG_PATH)
-    if not path.exists():
-        raise FileNotFoundError(f"Fichier de configuration introuvable: {path}")
+def _deep_merge(base: dict, override: dict) -> dict:
+    """Fusionne profondément deux dictionnaires, override écrase base."""
+    result = base.copy()
+    for key, value in override.items():
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+            result[key] = _deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result
 
-    with open(path, "r", encoding="utf-8") as f:
-        config = yaml.safe_load(f)
 
-    return config or {}
+def load_config(config_path: str = None, config_name: str = "config") -> dict:
+    """
+    Charge la configuration YAML avec support des environnements.
+    
+    Args:
+        config_path: Chemin absolu vers un fichier YAML (si spécifié, ignore config_name et ENV)
+        config_name: Nom de la config sans extension (ex: "consumption" → consumption.yaml)
+    
+    Returns:
+        dict: Configuration fusionnée (base + env-specific + env vars override)
+    
+    Priority:
+        1. Variables d'environnement (via get_config_value)
+        2. Fichier env-specific (ex: consumption.prod.yaml)
+        3. Fichier base (ex: consumption.yaml)
+    """
+    # Si chemin absolu fourni, charger directement
+    if config_path:
+        path = Path(config_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Fichier de configuration introuvable: {path}")
+        with open(path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    
+    # Déterminer l'environnement (défaut: dev)
+    env = os.getenv("ENV", "dev").lower()
+    
+    # Charger config base
+    base_path = DEFAULT_CONFIG_DIR / f"{config_name}.yaml"
+    config = {}
+    if base_path.exists():
+        with open(base_path, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f) or {}
+    
+    # Charger overrides par environnement
+    env_path = DEFAULT_CONFIG_DIR / f"{config_name}.{env}.yaml"
+    if env_path.exists():
+        with open(env_path, "r", encoding="utf-8") as f:
+            env_config = yaml.safe_load(f) or {}
+        config = _deep_merge(config, env_config)
+    
+    return config
 
 
 def get_nested(config, key_path, default=None):
