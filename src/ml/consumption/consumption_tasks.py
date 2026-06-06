@@ -37,8 +37,7 @@ def prepare_consumption_features_task(
     raw_path: str,
     weather_path: str,
     holidays_path: str,
-    output_path: str,
-    zone: str = "C"
+    output_path: str
 ) -> str:
     """
     Tâche Prefect : Prépare les données de consommation pour l'entraînement.
@@ -55,8 +54,7 @@ def prepare_consumption_features_task(
         raw_path: Chemin vers le fichier brut PRM (ex: data/templates/raw_template.csv)
         weather_path: Chemin vers le Parquet météo (ex: data/raw/weather.parquet)
         holidays_path: Chemin vers le Parquet vacances (ex: data/raw/holidays.parquet)
-        output_path: Chemin de sortie pour le fichier Parquet final
-        zone: Zone scolaire pour les vacances (A, B ou C)
+        output_path: Chemin de sortie pour le fichier Parquet final (ex: data/processed/consumption_features.parquet)
     
     Returns:
         str: Chemin vers le fichier Parquet généré
@@ -108,15 +106,19 @@ def prepare_consumption_from_parquets_task(
     """
     preparer = ConsumptionDataPreparer()
     
-    features_df = preparer.prepare_from_parquets(
-        consumption_parquet=consumption_parquet,
-        weather_parquet=weather_parquet,
-        holidays_parquet=holidays_parquet,
-        output_path=output_path
-    )
-    
-    logger.info(f"✅ Tâche terminée (depuis Parquets): {len(features_df)} enregistrements")
-    return output_path
+    # Non implémenté, mais pourrait être utile pour ne pas générer les features à partir du CSV brut à chaque fois
+    # Exemple d'implémentation possible (désactivée) :
+    # features_df = preparer.prepare_from_parquets(
+    #     consumption_parquet=consumption_parquet,
+    #     weather_parquet=weather_parquet,
+    #     holidays_parquet=holidays_parquet,
+    #     output_path=output_path
+    # )
+    # logger.info(f"✅ Tâche terminée (depuis Parquets): {len(features_df)} enregistrements")
+    # return output_path
+
+    print("⚠️ prepare_consumption_from_parquets_task n'est pas encore implémentée")
+    return "not_implemented"
 
 
 @task(

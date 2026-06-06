@@ -1,0 +1,18 @@
+# Instructions automatiques pour Mistral Vibe
+# À appliquer dans chaque conversation dans ce projet
+
+## Notifications automatiques
+À chaque tâche terminée dans ce projet (`C:\_sources\Jenedai\jinsudai`), exécuter :
+```bash
+python C:\_sources\Jenedai\jinsudai\scripts\send_notification.py "Nom de la tâche"
+```
+
+## Configuration
+- Fichier de config : `.vibe_settings`
+- Script : `scripts/send_notification.py`
+- Variables : chargées depuis `.env.secrets` (RESEND_API_KEY, RESEND_FROM_EMAIL, RESEND_TO_EMAIL)
+
+## Comportement
+- [x] Envoi email via Resend
+- [x] Écriture dans notifications.log
+- [x] Affichage console [FIN] Nom de la tâche

@@ -160,7 +160,9 @@ AutogluonModels/
 # Raw data files
 data/raw/
 data/processed/
+data/dev/
 data/test/
+data/prod/
 
 # disabled services
 services/_disabled/

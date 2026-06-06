@@ -17,6 +17,8 @@ Exemple d'utilisation :
     )
 """
 
+import os
+
 import pandas as pd
 from pathlib import Path
 from typing import Optional, Union
@@ -27,12 +29,14 @@ import yaml
 from ml.utils.data.data_loader import load_data
 from ml.utils.data.data_preparation import detect_feature_types, create_preprocessor
 from ml.utils.data.data_validator import validate_data_quality
+from ml.config import load_config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Chemin par défaut vers la configuration
-DEFAULT_CONFIG_PATH = Path(__file__).parent.parent.parent / "configs" / "consumption.yaml"
+env = os.getenv('ENV', 'dev')  # Assurer que ENV est défini pour la config
+DEFAULT_CONFIG_PATH = Path(__file__).parent.parent.parent / "configs" / f"consumption.{env}.yaml"
 
 
 class ConsumptionDataPreparer:
@@ -51,20 +55,8 @@ class ConsumptionDataPreparer:
             config_path: Chemin vers le fichier YAML de configuration.
                         Par défaut, utilise src/configs/consumption.yaml
         """
-        self.config_path = Path(config_path) if config_path else DEFAULT_CONFIG_PATH
-        self.config = self._load_config()
+        self.config = load_config(config_name="consumption")
         
-    def _load_config(self) -> dict:
-        """Charge la configuration depuis le fichier YAML."""
-        try:
-            with open(self.config_path, 'r', encoding='utf-8') as f:
-                config = yaml.safe_load(f)
-            logger.info(f"Configuration chargée depuis: {self.config_path}")
-            return config
-        except FileNotFoundError:
-            logger.warning(f"Fichier de configuration introuvable: {self.config_path}")
-            return {}
-    
     def load_raw_consumption(self, raw_path: Optional[Union[str, Path]] = None) -> pd.DataFrame:
         """
         Charge les données brutes PRM de consommation.
@@ -78,7 +70,7 @@ class ConsumptionDataPreparer:
         """
         # Utiliser la valeur de config si non fournie
         if raw_path is None:
-            raw_path = self.config.get("data", {}).get("raw_path", "data/templates/raw_template.csv")
+            raw_path = self.config.get("data", {}).get("raw_path", "./data/templates/raw_template.csv")
         
         df = pd.read_csv(
             raw_path,
@@ -113,6 +105,7 @@ class ConsumptionDataPreparer:
         Returns:
             DataFrame avec les données météo
         """
+        print(f"Loading weather data from: {self.config.get('data', {}).get('weather_file')}")
         if weather_path is None:
             weather_path = self.config.get("data", {}).get("weather_file", "../data/processed/weather.parquet")
         df = pd.read_parquet(weather_path)

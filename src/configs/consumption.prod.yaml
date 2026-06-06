@@ -2,8 +2,9 @@
 # Merge avec consumption.yaml (base)
 
 data:
-  raw_path: "data/raw/consumption_prod.csv"
-  processed_path: "s3://jinsudai-data/processed/consumption/"
+  raw_path: "../data/prod/raw_consumption.csv"
+  train_path: "../data/prod/train_consumption.parquet"
+  processed_path: "../data/prod/"
 
 model:
   test_size: 0.2
