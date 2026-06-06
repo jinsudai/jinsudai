@@ -308,14 +308,16 @@ def split_data(data, test_size=0.2, random_state=42, target_column=None):
     if X.empty or y.empty:
         raise ValueError(f"X ou y vide après split: X.shape={X.shape}, y.shape={y.shape}")
     
-    # Convertir en types numériques si possible
+    # Convertir y en numérique si possible
     try:
-        X = X.astype(np.float32)
         y = pd.to_numeric(y, errors='coerce').dropna()
         # Re-aligner X et y après conversion
         X = X.loc[y.index]
     except Exception as e:
-        logger.info(f"Attention: Conversion numérique partiellement échouée (Normal si AutoGluon): {e}")
+        logger.info(f"Attention: Conversion numérique de y échouée: {e}")
+    
+    # Ne pas convertir X en float32 ici - laisser le preprocessing s'en occuper
+    # (surtout pour AutoGluon qui gère les catégories nativement)
     
     if X.empty:
         raise ValueError("X est vide après conversion")

@@ -12,7 +12,7 @@ Utilisation :
 """
 
 from pathlib import Path
-from weather_api import WeatherAPI
+from analytics.utils.api.weather.weather_api import WeatherAPI
 
 
 def main():

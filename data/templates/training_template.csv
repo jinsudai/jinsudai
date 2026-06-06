@@ -1,0 +1,16 @@
+Identifiant PRM;Horodate;Valeur;temperature_2m_mean;relative_humidity_mean;precipitation_sum;is_vacances;nom_vacances;jour de la semaine;jour férié
+0;2024-02-20 00:30;584;2.5;90.0;0.0;0;Aucune;Mardi;Non
+0;2024-02-20 01:00;394;14.0;73.3;0.0;0;Aucune;Mardi;Non
+0;2024-02-20 02:00;350;12.5;85.0;0.0;0;Aucune;Mardi;Non
+0;2024-02-20 03:00;320;10.0;90.0;0.0;0;Aucune;Mardi;Non
+0;2024-02-20 04:00;300;8.0;92.0;0.0;0;Aucune;Mardi;Non
+0;2024-02-20 05:00;400;9.0;88.0;0.0;0;Aucune;Mardi;Non
+0;2024-02-20 06:00;600;7.5;85.0;0.0;0;Aucune;Mardi;Non
+0;2024-02-20 07:00;800;10.0;80.0;0.0;0;Aucune;Mardi;Non
+0;2024-02-20 08:00;900;12.0;75.0;0.0;0;Aucune;Mardi;Non
+0;2024-02-20 09:00;700;15.0;70.0;0.0;0;Aucune;Mardi;Non
+0;2024-02-20 10:00;500;18.0;65.0;0.0;1;Noel;Mardi;Oui
+0;2024-02-20 11:00;450;20.0;60.0;0.0;1;Noel;Mardi;Oui
+0;2024-02-20 12:00;400;22.0;55.0;0.0;1;Noel;Mardi;Oui
+0;2024-02-20 13:00;420;23.0;50.0;0.0;1;Noel;Mardi;Oui
+0;2024-02-20 14:00;480;22.5;52.0;0.0;1;Noel;Mardi;Oui

@@ -8,3 +8,6 @@ Adapter l'infrastructure de données de l'organisation à travers la constructio
 Concevoir des pipelines d'intégration et déploiement continu pour automatiser le processus de déploiement d'une solution d'IA.
 Développer des scripts de réentrainement des modèles pour automatiser le processus de Machine Learning.
 Piloter la performance de la solution d'IA dans l'infrastructure à travers la mise en place d'outils de monitoring (comme Aporia ou Evidently) pour s'assurer qu'elle respecte les spécifications du cahier des charges dans un environnement de production.
+
+# A faire (non prioritaire)
+Flow pour la generation des parquet.

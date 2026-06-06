@@ -17,7 +17,19 @@ data:
     - "jour férié"
   
   # Colonnes à supprimer
-  drop_columns: ["Horodate"]
+  drop_columns:
+    - "Identifiant PRM"
+    - "Horodate"
+    - "Date de début"
+    - "Date de fin"
+    - "Grandeur physique"
+    - "Grandeur métier"
+    - "Etape métier"
+    - "Unité"
+    - "Nature"
+    - "Pas"
+    - "Indice de vraisemblance"
+    - "Etat complémentaire"
 
 # Paramètres modèle
 model:
@@ -35,7 +47,7 @@ training:
 
 # MLflow
 mlflow:
-  tracking_uri: "http://localhost:5000"
+  tracking_uri: "https://sustcoop-mlflow.hf.space/"
   experiment_name: "energy_consumption"
   model_name: "consumption_model"
   

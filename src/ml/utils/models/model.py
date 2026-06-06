@@ -168,9 +168,14 @@ def evaluate_model(model, X_test, y_test):
 # Voir mlflow_tracker.py pour les détails
 
 
-def get_feature_importance(model, feature_names=None):
+def get_feature_importance(model, feature_names=None, X_train=None):
     """
     Obtient l'importance des features
+    
+    Args:
+        model: Modèle entraîné (sklearn ou AutoGluon TabularPredictor)
+        feature_names: Liste des noms de features (optionnel)
+        X_train: Données d'entraînement (requis pour AutoGluon)
     """
     try:
         # ----------------------
@@ -178,9 +183,14 @@ def get_feature_importance(model, feature_names=None):
         # ----------------------
         if type(model).__name__ == 'TabularPredictor':
             # Autogluon récupère l'importance via feature_importance()
-            importance_dict = model.feature_importance()
-            logger.info("Feature importances calculées (Autogluon)")
-            return importance_dict
+            # Requiert un dataset pour calculer l'importance
+            if X_train is not None:
+                importance_dict = model.feature_importance(X_train)
+                logger.info("Feature importances calculées (Autogluon)")
+                return importance_dict
+            else:
+                logger.warning("X_train requis pour calculer feature_importance avec AutoGluon")
+                return None
         
         # ----------------------
         # SKLEARN

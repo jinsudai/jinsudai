@@ -154,12 +154,17 @@ notebooks/outputs/
 notebooks/models/
 notebooks/AutogluonModels/
 
+#Models
+AutogluonModels/
+
 # Raw data files
 data/raw/
 data/processed/
+data/test/
 
 # disabled services
 services/_disabled/
 
 # Copilot
 .copilotignore
+.vibe_settings

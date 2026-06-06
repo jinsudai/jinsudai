@@ -20,7 +20,8 @@ Classe principale :
 """
 import logging
 from pathlib import Path
-from ml.utils.data.data_loader import load_data, load_config
+# Importer depuis ml.utils
+from ml.utils.data.data_loader import load_data
 from ml.utils.data.data_validator import validate_data_quality, create_data_validation_report
 from ml.utils.data.data_preparation import prepare_data, split_data
 from ml.utils.data.data_transformer import clean_data
@@ -29,6 +30,8 @@ from ml.utils.monitoring.performance_monitor import (
     run_monitoring,
     flatten_monitoring_metrics
 )
+# Utiliser ml.config pour load_config
+from ml.config import load_config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -130,7 +133,7 @@ class MLPipeline:
         random_state = self.config['model']['random_state']
         
         target_column = self.config['data'].get('target_column')
-        print(f"  ℹ Colonne cible (config): {target_column}")
+        logger.info(f"  i Colonne cible (config): {target_column}")
         self.X_train, self.X_test, self.y_train, self.y_test = split_data(
             self.data,
             test_size=test_size,

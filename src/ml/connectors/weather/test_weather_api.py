@@ -19,7 +19,7 @@ import tempfile
 import pandas as pd
 import numpy as np
 
-from weather_api import WeatherAPI
+from analytics.utils.api.weather.weather_api import WeatherAPI
 
 
 class TestWeatherAPI(unittest.TestCase):

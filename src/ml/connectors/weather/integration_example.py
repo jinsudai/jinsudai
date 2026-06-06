@@ -15,7 +15,10 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import pandas as pd
-from ml.utils.api import WeatherAPI
+try:
+    from analytics.utils.api.weather.weather_api import WeatherAPI
+except ImportError:
+    from ml.utils.api import WeatherAPI
 
 
 def integrate_weather_for_consumption():
