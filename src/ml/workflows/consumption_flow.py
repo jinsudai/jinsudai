@@ -80,7 +80,7 @@ def consumption_full_pipeline(
         dict: Résultats complets du pipeline
     """
     # 0. Charger la config
-    config = load_config("src/configs/consumption.yaml")
+    config = load_config(config_name="consumption")
     
     # 1. ===== GÉNÉRATION DES DONNÉES =====
     logger.info("=== ÉTAPE 1: Génération des données ===")

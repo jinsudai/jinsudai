@@ -19,7 +19,9 @@ Classe principale :
 """
 import logging
 from datetime import datetime
-from .inference_model import InferenceModel
+
+from ml.utils.data.data_transformer import clean_data
+from ..models.inference_model import InferenceModel
 from .data_generator import generate_inference_data, prepare_features_for_model, add_predictions_to_data
 from .database_handler import DatabaseHandler
 
@@ -58,18 +60,20 @@ class PredictionPipeline:
         self.inference_model = InferenceModel(self.mlflow_uri, self.experiment_name)
         logger.info("MLflow configuré")
         
-        # Initialiser BD
-        self.db_handler = DatabaseHandler(self.db_uri)
+        # Initialiser BD si l'URI est fournie
+        if self.db_uri:
+            self.db_handler = DatabaseHandler(self.db_uri)
+            if not self.db_handler.verify_connection():
+                logger.error("Impossible de se connecter à la base de données")
+                return False
+            if not self.db_handler.create_tables():
+                logger.error("Impossible de créer les tables")
+                return False
+            logger.info("Base de données configurée")
+        else:
+            logger.warning("Aucune URI de base de données fournie : stockage des prédictions désactivé")
+            self.db_handler = DatabaseHandler(None)
         
-        if not self.db_handler.verify_connection():
-            logger.error("Impossible de se connecter à la base de données")
-            return False
-        
-        if not self.db_handler.create_tables():
-            logger.error("Impossible de créer les tables")
-            return False
-        
-        logger.info("Base de données configurée")
         return True
     
     def load_model(self, model_name, alias_prod="prod"):
@@ -92,6 +96,13 @@ class PredictionPipeline:
         model_info = self.inference_model.get_model_info()
         logger.info(f"Modèle chargé: {model_info}")
         return True
+
+    def get_model_info(self):
+        """Retourne les informations du modèle chargé via le pipeline."""
+        if self.inference_model is None:
+            logger.error("Aucun modèle chargé dans le pipeline")
+            return None
+        return self.inference_model.get_model_info()
     
     def generate_data(self, n_days=3, n_samples_per_day=24, feature_columns=None):
         """
@@ -117,9 +128,33 @@ class PredictionPipeline:
             logger.error("Impossible de générer les données d'inférence")
             return False
         
+        logger.info(f"df_inference généré avec succès: {self.df_inference.head()}")
+
         return True
+
+    def set_inference_data(self, df_inference):
+        """Charge un DataFrame d'inférence existant dans le pipeline."""
+        if df_inference is None or df_inference.empty:
+            logger.error("Le DataFrame d'inférence est vide ou None")
+            return False
+        self.df_inference = df_inference.copy()
+        logger.info(f"DataFrame d'inférence chargé: {self.df_inference.shape}")
+        return True
+
+    def prepare_features(self):
+        """Prépare les features à partir du DataFrame d'inférence."""
+        if self.df_inference is None or self.df_inference.empty:
+            logger.error("Pas de données d'inférence chargées")
+            return None, None
+        self.df_features = clean_data(self.df_inference)
+
+        if self.df_features is None:
+            logger.error("Impossible de préparer les features")
+            return None, None
+
+        return self.df_features
     
-    def run_predictions(self, feature_columns):
+    def run_predictions(self, feature_columns=None):
         """
         Exécute les prédictions
         
@@ -136,14 +171,14 @@ class PredictionPipeline:
             return False
         
         # Préparer les features
-        X_inference, timestamps = prepare_features_for_model(self.df_inference, feature_columns)
+        #X_inference, timestamps = prepare_features_for_model(self.df_inference, feature_columns)
         
-        if X_inference is None:
-            logger.error("Impossible de préparer les features")
-            return False
+        #if self.df_inference is None:
+        #    logger.error("Impossible de préparer les features")
+        #    return False
         
         # Générer les prédictions
-        predictions, confidence_scores = self.inference_model.predict(X_inference)
+        predictions, confidence_scores = self.inference_model.predict(self.df_inference)
         
         if predictions is None:
             logger.error("Impossible de générer les prédictions")
@@ -172,6 +207,16 @@ class PredictionPipeline:
             logger.error("Pas de prédictions à stocker")
             return False
         
+        # S'assurer que la colonne prediction_timestamp est disponible
+        if 'prediction_timestamp' not in self.df_predictions.columns:
+            if 'horodate' in self.df_predictions.columns:
+                self.df_predictions['prediction_timestamp'] = self.df_predictions['horodate']
+            elif 'timestamp' in self.df_predictions.columns:
+                self.df_predictions['prediction_timestamp'] = self.df_predictions['timestamp']
+            else:
+                logger.warning("Aucune colonne de timestamp valide trouvée pour le stockage, utilisation de l'heure actuelle")
+                self.df_predictions['prediction_timestamp'] = datetime.now()
+
         model_info = self.inference_model.get_model_info()
         model_version = model_info['version'] if model_info else 'unknown'
         

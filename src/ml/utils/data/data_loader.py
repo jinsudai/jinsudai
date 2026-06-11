@@ -21,10 +21,20 @@ from ml.config import load_config
 
 
 def load_data(file_path):
-    """Charge les données depuis un fichier CSV"""
+    """Charge les données depuis un fichier CSV ou Parquet"""
     try:
-        # Essayer avec point-virgule d'abord (format PRM français)
-        data = pd.read_csv(file_path, sep=";", encoding="utf-8", encoding_errors="replace")
+        file_path = Path(file_path)
+        
+        # Déterminer le format du fichier
+        if file_path.suffix == '.parquet':
+            data = pd.read_parquet(file_path)
+        elif file_path.suffix == '.csv':
+            # Essayer avec point-virgule d'abord (format PRM français)
+            data = pd.read_csv(file_path, sep=";", encoding="utf-8", encoding_errors="replace")
+        else:
+            # Fallback: essayer CSV avec virgule
+            data = pd.read_csv(file_path, encoding="utf-8", encoding_errors="replace")
+        
         print(f"Données chargées avec succès: {file_path}")
         print(f"Forme des données: {data.shape}")
         print(f"Colonnes: {list(data.columns)}")

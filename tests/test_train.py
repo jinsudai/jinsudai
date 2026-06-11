@@ -9,11 +9,10 @@ load_dotenv(find_dotenv(".env.secrets"), override=True)
 
 from ml.utils.pipelines.training_pipeline import MLPipeline
 
-CONFIG_PATH = "src/configs/consumption.yaml"
 file_path = "data/templates/training_template.csv"
 
 print("\n>>> Initialisation du pipeline...\n")
-pipeline = MLPipeline(config_path=CONFIG_PATH)
+pipeline = MLPipeline(config_name="consumption")
 pipeline2 = pipeline
 
 print("\n1. Chargement des données...")

@@ -164,11 +164,16 @@ def _log_autogluon_model(model, artifact_path):
             def predict(self, context, model_input):
                 return self.predictor.predict(model_input)
 
+        # Convertir le chemin Windows en URI file:// pour MLflow
+        from pathlib import Path
+        predictor_uri = Path(predictor_dir).as_uri()
+        logger.info(f"URI de l'artefact AutoGluon: {predictor_uri}")
+
         # Enregistrer le modèle via mlflow.pyfunc
         mlflow.pyfunc.log_model(
             artifact_path=artifact_path,
             python_model=AutoGluonPyFunc(),
-            artifacts={"ag_model": predictor_dir},
+            artifacts={"ag_model": predictor_uri},
         )
         logger.info("Modèle AutoGluon enregistré comme artefact pyfunc portable")
     except Exception as e:
@@ -248,6 +253,21 @@ def register_model_version(model_name, run_id, artifact_path="model", descriptio
     try:
         client = mlflow.tracking.MlflowClient()
         model_uri = f"runs:/{run_id}/{artifact_path}"
+
+        # Créer le registered model s'il n'existe pas
+        try:
+            client.get_registered_model(model_name)
+            logger.info(f"Registered Model '{model_name}' existe déjà")
+        except Exception as e:
+            if "RESOURCE_DOES_NOT_EXIST" in str(e) or "does not exist" in str(e).lower():
+                logger.info(f"Création du Registered Model '{model_name}'...")
+                client.create_registered_model(
+                    name=model_name,
+                    description=description or f"Modèle {model_name}"
+                )
+                logger.info(f"Registered Model '{model_name}' créé avec succès")
+            else:
+                raise
 
         # Create a new model version in the registry
         model_version = client.create_model_version(

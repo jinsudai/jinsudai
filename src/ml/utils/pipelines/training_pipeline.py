@@ -19,6 +19,8 @@ Classe principale :
 - MLPipeline : Orchestration complète du cycle train
 """
 import logging
+import os
+import shutil
 from pathlib import Path
 # Importer depuis ml.utils
 from ml.utils.data.data_loader import load_data
@@ -30,8 +32,8 @@ from ml.utils.monitoring.performance_monitor import (
     run_monitoring,
     flatten_monitoring_metrics
 )
-# Utiliser ml.config pour load_config
-from ml.config import load_config
+# Utiliser ml.config pour load_config et constantes
+from ml.config import load_config, DEFAULT_CONSUMPTION_CONFIG
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -40,9 +42,16 @@ logger = logging.getLogger(__name__)
 class MLPipeline:
     """Pipeline complet pour le projet MLOps"""
     
-    def __init__(self, config_path="src/ml/consumption/configs/config.yaml", model_name=None):
-        """Initialise le pipeline avec la configuration"""
-        self.config = load_config(config_path)
+    def __init__(self, config_name=DEFAULT_CONSUMPTION_CONFIG, model_name=None):
+        """
+        Initialise le pipeline avec la configuration.
+        
+        Args:
+            config_name: Nom de la config (ex: "consumption", "solar_production")
+                        Charge depuis src/ml/configs/{config_name}.yaml
+            model_name: Nom du modèle (override de la config si fourni)
+        """
+        self.config = load_config(config_name=config_name)
         self.data = None
         self.X_train = None
         self.X_test = None
@@ -60,9 +69,14 @@ class MLPipeline:
         
         logger.info(f"Pipeline MLOps initialisé avec model_name={self.model_name}")
     
-    def step_1_load_data(self, data_path):
+    def step_1_load_data(self, data_path=None):
         """Étape 1: Chargement des données"""
         logger.info("=== ÉTAPE 1: CHARGEMENT DES DONNÉES ===TE")
+        
+        # Utiliser le chemin depuis la config si non fourni
+        if data_path is None:
+            data_path = self.config.get('data', {}).get('train_path')
+        
         self.data = load_data(data_path)
         print(f"Data loaded: {self.data.shape if self.data is not None else 'None'}")
         return self.data is not None
@@ -258,7 +272,35 @@ class MLPipeline:
 
 
     # Step interessante mais non fonctionnel (Refactoring necessaire mais non prioritaire)
-    def step_8_manage_model_stages(self, metric_keys=None, min_improvement=0.0):
+    def step_8_cleanup_model(self):
+        """Étape 8: Nettoyage du modèle local après MLflow logging"""
+        logger.info("=== ÉTAPE 8: NETTOYAGE DU MODÈLE LOCAL ===")
+        
+        if self.model is None:
+            logger.info("Pas de modèle à nettoyer")
+            return True
+        
+        try:
+            # Vérifier si c'est un modèle AutoGluon
+            if type(self.model).__name__ == 'TabularPredictor':
+                model_dir = getattr(self.model, 'path', None)
+                if model_dir and os.path.exists(model_dir):
+                    try:
+                        shutil.rmtree(model_dir, ignore_errors=True)
+                        logger.info(f"Modèle AutoGluon original supprimé: {model_dir}")
+                    except Exception as e:
+                        logger.warning(f"Impossible de supprimer le modèle AutoGluon original: {e}")
+                else:
+                    logger.info(f"Modèle AutoGluon non trouvé ou déjà supprimé: {model_dir}")
+            else:
+                logger.info("Modèle sklearn - pas de nettoyage nécessaire")
+            
+            return True
+        except Exception as e:
+            logger.error(f"Erreur lors du nettoyage: {e}")
+            return False
+
+    def step_9_manage_model_stages(self, metric_keys=None, min_improvement=0.0):
         """
         Étape 8: Gestion des Aliases du modèle (Staging -> Production)
         Fonctionne indépendamment - peut être appelée après fermeture de la run MLflow
@@ -414,7 +456,8 @@ class MLPipeline:
             ("Évaluation", self.step_5_evaluate_model),
             ("Monitoring", self.step_6_monitor_performance),
             ("MLflow Logging", self.step_7_log_with_mlflow),
-            ("Gestion des Stages", self.step_8_manage_model_stages),
+            ("Nettoyage du modèle", self.step_8_cleanup_model),
+            ("Gestion des Stages", self.step_9_manage_model_stages),
         ]
         
         for step_name, step_func in steps:

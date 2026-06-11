@@ -2,13 +2,13 @@
 # 
 # Usage:
 #   .\setup_secrets.ps1 -Token "ghp_xxx"
-#   .\setup_secrets.ps1 -Token "ghp_xxx" -Config "secrets.json"
+#   .\setup_secrets.ps1 -Token "ghp_xxx" -Config ".env.secrets"
 #   .\setup_secrets.ps1 -Token "ghp_xxx" -DryRun
 #   .\setup_secrets.ps1 -List
 
 param(
     [string]$Token,
-    [string]$Config = "secrets.json",
+    [string]$Config = ".env.secrets",
     [string]$Repo = "SustCoop/MLOps",
     [switch]$DryRun,
     [switch]$List,
@@ -35,8 +35,8 @@ OPTIONS:
   -Token <string>       Token GitHub (format: ghp_xxx)
                         Si non fourni, utilise GITHUB_TOKEN
   
-  -Config <string>      Chemin du fichier secrets.json
-                        Défaut: "secrets.json"
+  -Config <string>      Chemin du fichier .env.secrets
+                        Défaut: ".env.secrets"
   
   -Repo <string>        Dépôt GitHub (format: owner/repo)
                         Défaut: "SustCoop/MLOps"
@@ -170,7 +170,7 @@ function Main {
         Write-Host "❌ Erreur: Fichier '$Config' non trouvé" -ForegroundColor $Red
         Write-Host ""
         Write-Host "Créez le fichier de secrets:" -ForegroundColor $Yellow
-        Write-Host "  1. Copiez: Copy-Item 'secrets.example.json' 'secrets.json'" -ForegroundColor $Yellow
+        Write-Host "  1. Copiez: Copy-Item '.env.secrets.example' '.env.secrets'" -ForegroundColor $Yellow
         Write-Host "  2. Éditez et remplissez les valeurs" -ForegroundColor $Yellow
         exit 1
     }

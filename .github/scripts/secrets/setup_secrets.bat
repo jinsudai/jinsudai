@@ -16,7 +16,7 @@ set TOKEN=%1
 set CONFIG=%2
 set REPO=%3
 
-if "%CONFIG%"=="" set CONFIG=secrets.json
+if "%CONFIG%"=="" set CONFIG=..\..\..\.env.secrets
 if "%REPO%"=="" set REPO=jinsudai/jinsudai
 
 REM Afficher l'aide si pas de token
@@ -27,7 +27,7 @@ if "%TOKEN%"=="" (
     echo.
     echo Examples:
     echo   setup_secrets.bat ghp_xxx
-    echo   setup_secrets.bat ghp_xxx "secrets.json" "jinsudai/jinsudai"
+    echo   setup_secrets.bat ghp_xxx ".env.secrets" "jinsudai/jinsudai"
     echo.
     echo Obtenir un token: https://github.com/settings/tokens
     exit /b 1

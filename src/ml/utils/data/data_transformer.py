@@ -52,7 +52,7 @@ def drop_columns(data: pd.DataFrame, columns_to_drop):
     return transformed
 
 
-def clean_data(data: pd.DataFrame, columns_to_drop=None, transform_dates=True, drop_original_dates=True):
+def clean_data(data: pd.DataFrame, columns_to_drop=None, transform_dates=False, drop_original_dates=False):
     """Nettoie les données en supprimant colonnes définies, noms vides et formats de dates.
 
     Args:

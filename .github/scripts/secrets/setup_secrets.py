@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 """
-Script pour configurer les GitHub Secrets à partir d'un fichier JSON local.
+Script pour configurer les GitHub Secrets à partir d'un fichier .env.secrets local.
 
 Usage:
-    python setup_secrets.py --config secrets.json --repo owner/repo --token ghp_***
+    python setup_secrets.py --config .env.secrets --repo owner/repo --token ghp_***
 
-Le fichier secrets.json doit contenir les secrets au format JSON:
-{
-    "HF_TOKEN": "hf_xxx",
-    "AWS_ACCESS_KEY_ID": "AKIA***",
+Le fichier .env.secrets doit contenir les secrets au format DOTENV:
+    HF_TOKEN=hf_xxx
+    AWS_ACCESS_KEY_ID=AKIA***
     ...
-}
 """
 
 import json
@@ -218,13 +216,22 @@ class GitHubSecretsManager:
 
 
 def load_secrets_from_file(config_file: Path) -> Dict[str, str]:
-    """Charge les secrets depuis un fichier JSON."""
+    """Charge les secrets depuis un fichier .env.secrets."""
     try:
+        secrets = {}
         with open(config_file, "r", encoding="utf-8") as f:
-            secrets = json.load(f)
+            for line in f:
+                line = line.strip()
+                # Ignorer les commentaires et les lignes vides
+                if not line or line.startswith("#"):
+                    continue
+                # Parser KEY=VALUE
+                if "=" in line:
+                    key, value = line.split("=", 1)
+                    secrets[key.strip()] = value.strip()
         
-        if not isinstance(secrets, dict):
-            print(f"❌ Erreur: Le fichier doit contenir un objet JSON")
+        if not secrets:
+            print(f"❌ Erreur: Aucun secret trouvé dans le fichier")
             return {}
         
         print(f"✅ {len(secrets)} secret(s) chargé(s) depuis {config_file}")
@@ -232,9 +239,6 @@ def load_secrets_from_file(config_file: Path) -> Dict[str, str]:
     
     except FileNotFoundError:
         print(f"❌ Erreur: Fichier '{config_file}' non trouvé")
-        return {}
-    except json.JSONDecodeError as e:
-        print(f"❌ Erreur de parsing JSON: {e}")
         return {}
     except Exception as e:
         print(f"❌ Erreur lors de la lecture du fichier: {e}")
@@ -249,7 +253,7 @@ def main():
         "--config",
         type=Path,
         required=True,
-        help="Fichier JSON contenant les secrets (ex: secrets.json)"
+        help="Fichier .env.secrets contenant les secrets (ex: .env.secrets)"
     )
     parser.add_argument(
         "--repo",

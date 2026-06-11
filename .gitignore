@@ -147,7 +147,7 @@ venv.bak/
 
 # 🔐 Secrets and Credentials (keep in .github/secrets/)
 # Never commit actual secrets to version control
-.github/scripts/secrets/secrets.json
+.github/scripts/secrets/.env.secrets
 
 # Jupyter Notebook outputs and models
 notebooks/outputs/

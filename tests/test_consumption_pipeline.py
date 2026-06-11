@@ -46,7 +46,7 @@ def test_consumption_pipeline():
     from ml.utils.data.data_preparation import split_data
     from ml.config import load_config
     
-    config = load_config('src/configs/consumption.yaml')
+    config = load_config(config_name="consumption")
     features_df = pd.read_parquet(features_path)
     target_column = config.get('data', {}).get('target_column', 'Valeur')
     

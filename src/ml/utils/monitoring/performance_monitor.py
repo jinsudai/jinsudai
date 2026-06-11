@@ -371,12 +371,17 @@ def monitor_model_performance(
         if metrics_dict is None:
             metrics_dict = {}
         
+        # Auto-détection du type de problème si classification échoue
         if problem_type == "classification":
-            from sklearn.metrics import accuracy_score, balanced_accuracy_score
-            metrics_dict['accuracy'] = accuracy_score(y_actual, y_pred)
-            metrics_dict['balanced_accuracy'] = balanced_accuracy_score(y_actual, y_pred)
-            
-        else:
+            try:
+                from sklearn.metrics import accuracy_score, balanced_accuracy_score
+                metrics_dict['accuracy'] = accuracy_score(y_actual, y_pred)
+                metrics_dict['balanced_accuracy'] = balanced_accuracy_score(y_actual, y_pred)
+            except Exception as e:
+                logger.warning(f"Échec des métriques de classification: {e}, tentative avec régression")
+                problem_type = "regression"
+        
+        if problem_type == "regression":
             from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
             metrics_dict['mae'] = mean_absolute_error(y_actual, y_pred)
             metrics_dict['mse'] = mean_squared_error(y_actual, y_pred)

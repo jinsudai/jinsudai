@@ -243,28 +243,41 @@ class InferenceModel:
             return None, None
         
         try:
-            expected_features = self.model.features()
-            X_data = X_data[expected_features]
+            expected_features = None
+            if hasattr(self.model, 'features') and callable(getattr(self.model, 'features')):
+                expected_features = self.model.features()
+            elif hasattr(self.model, 'feature_names_in_'):
+                expected_features = list(self.model.feature_names_in_)
+            elif hasattr(self.model, 'feature_names'):
+                expected_features = list(self.model.feature_names)
+
+            if expected_features is not None and isinstance(X_data, pd.DataFrame):
+                missing_features = [f for f in expected_features if f not in X_data.columns]
+                if missing_features:
+                    logger.warning(
+                        "Les colonnes attendues par le modèle sont manquantes : %s. "
+                        "La prédiction sera effectuée avec toutes les colonnes disponibles.",
+                        missing_features
+                    )
+                else:
+                    X_data = X_data[expected_features]
+
             predictions = self.model.predict(X_data)
             
-            # Essayer de récupérer les scores de confiance
             confidence_scores = None
             if hasattr(self.model, 'predict_proba'):
                 try:
                     proba = self.model.predict_proba(X_data)
-                    # Gérer différents formats de predict_proba
                     if isinstance(proba, pd.DataFrame):
-                        # AutoGluon retourne un DataFrame avec colonnes 0, 1
-                        confidence_scores = proba[1].values if 1 in proba.columns else proba.iloc[:, 1].values
+                        confidence_scores = (
+                            proba[1].values if 1 in proba.columns else proba.iloc[:, 1].values
+                        )
                     elif isinstance(proba, np.ndarray):
                         if proba.ndim == 2:
-                            # Array 2D: colonne positive pour classification binaire
                             confidence_scores = proba[:, 1]
                         else:
-                            # Array 1D: utiliser directement
                             confidence_scores = proba
                     else:
-                        # Autre format: convertir en array
                         confidence_scores = np.asarray(proba)
                         if confidence_scores.ndim == 2:
                             confidence_scores = confidence_scores[:, 1]

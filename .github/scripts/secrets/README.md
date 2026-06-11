@@ -4,8 +4,8 @@ Ce répertoire contient tous les fichiers et scripts nécessaires pour gérer le
 
 ## 📂 Fichiers
 
-- **`secrets.example.json`** - Template avec tous les secrets disponibles (versionné)
-- **`secrets.json`** - Votre fichier de configurations réelles (⚠️ NE PAS versionner!)
+- **`.env.secrets.example`** - Template avec tous les secrets disponibles (versionné)
+- **`.env.secrets`** - Votre fichier de configurations réelles (⚠️ NE PAS versionner!)
 - **`setup_secrets.py`** - Script Python principal pour configurer les secrets
 - **`setup_secrets.ps1`** - Helper PowerShell pour Windows
 - **`setup_secrets.bat`** - Helper Batch pour Windows
@@ -17,7 +17,7 @@ Ce répertoire contient tous les fichiers et scripts nécessaires pour gérer le
 
 ```powershell
 # Copier le template
-Copy-Item "secrets.example.json" "secrets.json"
+Copy-Item ".env.secrets.example" ".env.secrets"
 
 # Éditer le fichier avec vos vraies valeurs
 # (remplacez les x par les vraies clés)
@@ -34,7 +34,7 @@ pip install -r requirements-secrets.txt
 #### Option A: Python (Recommandé)
 ```powershell
 $env:GITHUB_TOKEN = "ghp_votre_token"
-python setup_secrets.py --config secrets.json --repo SustCoop/MLOps
+python setup_secrets.py --config .env.secrets --repo SustCoop/MLOps
 ```
 
 #### Option B: PowerShell
@@ -48,7 +48,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 .\setup_secrets.bat ghp_votre_token
 ```
 
-## 📚 Variables d'environnement (secrets.json)
+## 📚 Variables d'environnement (.env.secrets)
 
 | Variable | Description | Exemple |
 |----------|------------|---------|
@@ -63,7 +63,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ## ⚠️ Sécurité
 
-- **`secrets.json` est dans `.gitignore`** - Ne versionnez JAMAIS vos vrais secrets!
+- **`.env.secrets` est dans `.gitignore`** - Ne versionnez JAMAIS vos vrais secrets!
 - **GitHub chiffre les secrets** - Personne d'autre que GitHub ne peut les lire
 - **Utilisez des tokens limités** - Limitez les droits de vos GitHub Personal Access Tokens
 - **Token scope recommandé** : `repo` et `workflow`
@@ -82,12 +82,12 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ### Lister les secrets configurés
 ```powershell
-python setup_secrets.py --config secrets.json --repo SustCoop/MLOps --list
+python setup_secrets.py --config .env.secrets --repo SustCoop/MLOps --list
 ```
 
 ### Mode test (sans appliquer les changements)
 ```powershell
-python setup_secrets.py --config secrets.json --repo SustCoop/MLOps --dry-run
+python setup_secrets.py --config .env.secrets --repo SustCoop/MLOps --dry-run
 ```
 
 ## 🐛 Troubleshooting

@@ -15,17 +15,18 @@ data:
   
   # Features à utiliser
   feature_columns:
+    - "Horodate"
     - "temperature_2m_mean"
     - "relative_humidity_mean"
     - "precipitation_sum"
     - "is_vacances"
-    - "jour de la semaine"
-    - "jour férié"
+    - "jour_de_la_semaine"
+    - "jour_férié"
+
   
   # Colonnes à supprimer
   drop_columns:
     - "Identifiant PRM"
-    - "Horodate"
     - "Date de début"
     - "Date de fin"
     - "Grandeur physique"
@@ -53,7 +54,7 @@ training:
 
 # MLflow
 mlflow:
-  tracking_uri: "https://sustcoop-mlflow.hf.space/"
+  tracking_uri: "https://jinsudai-mlflow.hf.space/"
   experiment_name: "energy_consumption"
   model_name: "consumption_model"
   
