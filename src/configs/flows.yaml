@@ -43,6 +43,20 @@ flows:
     tags: ["actual-values", "daily", "production"]
     description: "Pipeline de mise à jour des valeurs réelles quotidien (2h du matin)"
 
+  # Pipeline annuel des vacances/jours fériés
+  holidays:
+    enabled: true
+    name: "holidays-annual"
+    schedule:
+      cron: "0 3 1 1 *"  # 1er janvier à 3h du matin
+      timezone: "Europe/Paris"
+    parameters:
+      year: null  # Sera calculé automatiquement (année courante)
+      output_dir: "data/processed/"
+      zone: "C"
+    tags: ["holidays", "annual", "production"]
+    description: "Pipeline annuel de génération du fichier holidays.parquet (1er janvier)"
+
 # Configuration commune des déploiements
 deployment:
   work_pool_name: "default-pool"

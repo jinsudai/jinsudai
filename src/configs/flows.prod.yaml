@@ -11,3 +11,6 @@ flows:
 
   actual_values:
     enabled: true
+
+  holidays:
+    enabled: true

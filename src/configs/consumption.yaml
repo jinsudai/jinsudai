@@ -11,6 +11,11 @@ data:
   weather_file: "../data/processed/weather.parquet"
   holidays_file: "../data/processed/holidays.parquet"
   holidays_zone: "C"  # Zone scolaire (A, B ou C)
+  
+  # Configuration API météo pour prévisions
+  weather_latitude: 48.8566  # Paris par défaut
+  weather_longitude: 2.3522
+  weather_location: "Paris"
 
   target_column: "Valeur"  # Consommation en kWh
   
@@ -64,3 +69,21 @@ monitoring:
   metric_name: "r2_score"  # R² pour régression
   metric_target: 0.90  # Target 90%
   alert_threshold: 0.85  # Warning si < 85%
+
+# SFTP Configuration pour récupération des valeurs réelles
+sftp:
+  enabled: false  # Activer/désactiver l'intégration SFTP
+  host: "sftp.example.com"
+  port: 22
+  username: "sftp_user"
+  ppk_key_path: "/path/to/key.ppk"
+  passphrase: null  # Passphrase pour la clé PPK (optionnel)
+  timeout: 30
+  
+  # Répertoires
+  remote_directory: "/data/incoming"  # Répertoire contenant les fichiers à traiter
+  archive_directory: "/data/archived"  # Répertoire pour les fichiers traités
+  file_pattern: "*.csv"  # Pattern des fichiers à traiter
+  
+  # Traitement local
+  temp_local_dir: "/tmp/sftp_temp"  # Répertoire temporaire local

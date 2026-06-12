@@ -4,6 +4,7 @@ Script pour déployer les flows avec des schedules automatiques.
 - Training pipeline : toutes les semaines (dimanche à 2h du matin)
 - Prediction pipeline : tous les jours à 1h du matin
 - Actual values pipeline : tous les jours à 2h du matin (pour mettre à jour les valeurs de la veille)
+- Holidays pipeline : tous les ans (1er janvier à 3h du matin)
 
 Usage:
     python scripts/deploy_scheduled_flows.py
@@ -13,6 +14,7 @@ from prefect.schedules import CronSchedule
 from ml.workflows.consumption_flow import consumption_full_pipeline
 from ml.workflows.prediction_flow import prediction_full_pipeline
 from ml.workflows.actual_values_flow import actual_values_full_pipeline
+from ml.workflows.holidays_flow import holidays_annual_pipeline
 
 if __name__ == "__main__":
     print("=== Déploiement des flows avec schedules ===\n")
@@ -75,8 +77,33 @@ if __name__ == "__main__":
     )
     print("✅ actual_values_full_pipeline déployé (quotidien)\n")
     
+    # 4. Déploiement du pipeline holidays (annuel)
+    print("4. Déploiement de holidays_annual_pipeline (annuel)...")
+    
+    # Schedule : tous les ans le 1er janvier à 3h00 du matin
+    annual_schedule = CronSchedule(cron="0 3 1 1 *", timezone="Europe/Paris")
+    
+    # Calculer l'année courante
+    from datetime import datetime
+    current_year = datetime.now().year
+    
+    holidays_annual_pipeline.deploy(
+        name="holidays-annual",
+        work_pool_name="default-pool",
+        schedule=annual_schedule,
+        tags=["holidays", "annual", "production"],
+        description="Pipeline annuel de génération du fichier holidays.parquet (1er janvier 3h)",
+        parameters={
+            "year": current_year,
+            "output_dir": "data/processed/",
+            "zone": "C"
+        }
+    )
+    print("✅ holidays_annual_pipeline déployé (annuel)\n")
+    
     print("=== Tous les flows déployés avec succès ===")
     print("Schedule entraînement : Tous les dimanches à 2h (Europe/Paris)")
     print("Schedule prédiction : Tous les jours à 1h (Europe/Paris)")
     print("Schedule valeurs réelles : Tous les jours à 2h (Europe/Paris)")
+    print("Schedule holidays : Tous les ans le 1er janvier à 3h (Europe/Paris)")
     print("Accédez à l'UI Prefect: http://localhost:4200")

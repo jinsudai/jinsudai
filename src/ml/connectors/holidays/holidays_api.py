@@ -57,14 +57,61 @@ class VacancesAPI:
             response = requests.get(VACANCES_SCOLAIRES_URL, timeout=10)
             response.raise_for_status()
             
-            # Charger CSV depuis l'URL
-            self._raw_data = pd.read_csv(
+            # Charger CSV depuis l'URL avec les colonnes correctes
+            raw_df = pd.read_csv(
                 VACANCES_SCOLAIRES_URL,
                 sep=",",
-                parse_dates=["start_date", "end_date"],
+                parse_dates=["date"],
                 dayfirst=True
             )
-            logger.info(f"Données vacances scolaires chargées: {len(self._raw_data)} entrées")
+            
+            # Transformer le format quotidien en format de périodes (start_date, end_date)
+            # Le CSV original a: date, vacances_zone_a, vacances_zone_b, vacances_zone_c, nom_vacances
+            # Nous devons le convertir en: start_date, end_date, zone, type
+            
+            periods = []
+            
+            for zone in ['A', 'B', 'C']:
+                zone_col = f"vacances_zone_{zone.lower()}"
+                
+                # Trouver les périodes continues de vacances pour cette zone
+                in_vacation = False
+                start_date = None
+                current_nom = ""
+                
+                for _, row in raw_df.iterrows():
+                    is_vacance = row[zone_col]
+                    nom = row.get('nom_vacances', '')
+                    
+                    if is_vacance and not in_vacation:
+                        # Début d'une période de vacances
+                        in_vacation = True
+                        start_date = row['date']
+                        current_nom = nom
+                    elif not is_vacance and in_vacation:
+                        # Fin d'une période de vacances
+                        end_date = row['date']
+                        periods.append({
+                            'start_date': start_date,
+                            'end_date': end_date,
+                            'zone': zone,
+                            'type': current_nom if current_nom else 'Vacances'
+                        })
+                        in_vacation = False
+                        start_date = None
+                        current_nom = ""
+                
+                # Si on est toujours en vacances à la fin du dataset
+                if in_vacation and start_date is not None:
+                    periods.append({
+                        'start_date': start_date,
+                        'end_date': raw_df['date'].max(),
+                        'zone': zone,
+                        'type': current_nom if current_nom else 'Vacances'
+                    })
+            
+            self._raw_data = pd.DataFrame(periods)
+            logger.info(f"Données vacances scolaires chargées: {len(self._raw_data)} périodes")
             return self._raw_data
             
         except requests.RequestException as e:

@@ -6,6 +6,7 @@ import numpy as np
 
 from ml.config import DEFAULT_CONSUMPTION_CONFIG, get_nested, load_config
 from ml.connectors.holidays.holidays_api import HolidaysCombinedAPI
+from ml.connectors.weather.weather_api import WeatherAPI
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -58,9 +59,11 @@ def generate_inference_data(
         for i in range(n_samples_per_day)
     ]
 
+    # Récupérer la configuration
+    config = load_config(config_path=config_path, config_name=config_name)
+    
     # Générer les données de vacances avec l'API
     end_date = start_date + timedelta(days=n_days)
-    config = load_config(config_path=config_path, config_name=config_name)
     holidays_zone = get_nested(config, "data.holidays_zone", "C")  # Défaut: zone C
     holidays_api = HolidaysCombinedAPI(zone=holidays_zone)
     holidays_df = holidays_api.generate_holidays_dataframe(
@@ -79,16 +82,44 @@ def generate_inference_data(
             "jour férié": row["jour férié"]
         }
 
+    # Récupérer les prévisions météo avec l'API
+    weather_latitude = get_nested(config, "data.weather_latitude", 48.8566)  # Défaut: Paris
+    weather_longitude = get_nested(config, "data.weather_longitude", 2.3522)
+    weather_location = get_nested(config, "data.weather_location", "Paris")
+    
+    weather_api = WeatherAPI(
+        latitude=weather_latitude,
+        longitude=weather_longitude,
+        location_name=weather_location
+    )
+    
+    # Déterminer si on utilise des données horaires ou journalières
+    hourly = n_samples_per_day > 1
+    weather_df = weather_api.fetch_forecast(
+        forecast_days=n_days,
+        hourly=hourly
+    )
+    
+    # Créer un mapping Horodate -> données météo
+    weather_mapping = {}
+    for _, row in weather_df.iterrows():
+        ts = row["Horodate"]
+        weather_mapping[ts] = {
+            "temperature_2m_mean": row["temperature_2m_mean"],
+            "relative_humidity_mean": row["relative_humidity_mean"],
+            "precipitation_sum": row["precipitation_sum"]
+        }
+
     data = {}
     for col in feature_columns:
         if col in ("prediction_timestamp", "Horodate", "horodate"): # A revoir pour être plus générique
             data[col] = timestamps
         elif col == "temperature_2m_mean":
-            data[col] = np.random.normal(loc=20.0, scale=5.0, size=total_samples)
+            data[col] = [weather_mapping.get(ts, {}).get("temperature_2m_mean", 20.0) for ts in timestamps]
         elif col == "relative_humidity_mean":
-            data[col] = np.random.uniform(40.0, 85.0, size=total_samples)
+            data[col] = [weather_mapping.get(ts, {}).get("relative_humidity_mean", 50.0) for ts in timestamps]
         elif col == "precipitation_sum":
-            data[col] = np.random.exponential(scale=0.5, size=total_samples)
+            data[col] = [weather_mapping.get(ts, {}).get("precipitation_sum", 0.0) for ts in timestamps]
         elif col == "is_vacances":
             data[col] = [holidays_mapping.get(ts, {}).get("is_vacances", 0) for ts in timestamps]
         elif col == "nom_vacances":

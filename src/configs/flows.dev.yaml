@@ -17,3 +17,6 @@ flows:
     schedule:
       cron: "0 */6 * * *"  # Toutes les 6 heures en dev
       timezone: "Europe/Paris"
+
+  holidays:
+    enabled: false  # Désactivé en dev (génération manuelle si nécessaire)
