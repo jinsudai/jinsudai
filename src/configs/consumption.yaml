@@ -20,8 +20,8 @@ data:
     - "relative_humidity_mean"
     - "precipitation_sum"
     - "is_vacances"
-    - "jour_de_la_semaine"
-    - "jour_férié"
+    - "jour de la semaine"
+    - "jour férié"
 
   
   # Colonnes à supprimer

@@ -51,6 +51,7 @@ class InferenceModel:
         self.default_prod_alias = mlflow_config.get("prod_alias") or "prod"
         self.model = None
         self.model_version = None
+        self.run_id = None
 
         if not self.mlflow_tracking_uri:
             raise ValueError(
@@ -88,8 +89,9 @@ class InferenceModel:
             if not model_version:
                 logger.error(f"Aucune version avec l'alias '{alias_prod}' pour {model_name}")
                 return False
-            
+
             self.model_version = model_version.version
+            self.run_id = model_version.run_id
             logger.info(f"Model registry source: {model_version.source}")
             
             # Charger le modèle via alias
@@ -298,9 +300,10 @@ class InferenceModel:
         """Retourne les informations du modèle chargé"""
         if self.model is None:
             return None
-        
+
         return {
             "model_type": type(self.model).__name__,
             "version": self.model_version,
+            "run_id": self.run_id,
             "n_features": getattr(self.model, 'n_features_in_', 'unknown')
         }

@@ -20,9 +20,11 @@ Classe principale :
 import logging
 from datetime import datetime
 
+import pandas as pd
+
 from ml.utils.data.data_transformer import clean_data
-from ..models.inference_model import InferenceModel
-from .data_generator import generate_inference_data, prepare_features_for_model, add_predictions_to_data
+from ..models.models_inference import InferenceModel
+from ..data.data_prediction import generate_inference_data, add_predictions_to_data
 from .database_handler import DatabaseHandler
 
 logging.basicConfig(level=logging.INFO)
@@ -146,7 +148,7 @@ class PredictionPipeline:
         if self.df_inference is None or self.df_inference.empty:
             logger.error("Pas de données d'inférence chargées")
             return None, None
-        self.df_features = clean_data(self.df_inference)
+        self.df_features = clean_data(self.df_inference)  # Nettoyage et préparation des features
 
         if self.df_features is None:
             logger.error("Impossible de préparer les features")
@@ -209,18 +211,42 @@ class PredictionPipeline:
         
         # S'assurer que la colonne prediction_timestamp est disponible
         if 'prediction_timestamp' not in self.df_predictions.columns:
-            if 'horodate' in self.df_predictions.columns:
-                self.df_predictions['prediction_timestamp'] = self.df_predictions['horodate']
+            if 'Horodate' in self.df_predictions.columns:
+                self.df_predictions['prediction_timestamp'] = pd.to_datetime(self.df_predictions['Horodate'])
+            elif 'horodate' in self.df_predictions.columns:
+                self.df_predictions['prediction_timestamp'] = pd.to_datetime(self.df_predictions['horodate'])
             elif 'timestamp' in self.df_predictions.columns:
-                self.df_predictions['prediction_timestamp'] = self.df_predictions['timestamp']
+                self.df_predictions['prediction_timestamp'] = pd.to_datetime(self.df_predictions['timestamp'])
             else:
                 logger.warning("Aucune colonne de timestamp valide trouvée pour le stockage, utilisation de l'heure actuelle")
                 self.df_predictions['prediction_timestamp'] = datetime.now()
 
+        if 'prediction_date' not in self.df_predictions.columns:
+            self.df_predictions['prediction_date'] = pd.to_datetime(self.df_predictions['prediction_timestamp']).dt.floor('30min')
+        else:
+            self.df_predictions['prediction_date'] = pd.to_datetime(self.df_predictions['prediction_date'])
+
+        if 'prediction_index' not in self.df_predictions.columns:
+            self.df_predictions = self.df_predictions.reset_index(drop=True)
+            self.df_predictions['prediction_index'] = self.df_predictions.index + 1
+
+        # Trier par prediction_timestamp décroissant
+        self.df_predictions = self.df_predictions.sort_values(by='prediction_timestamp', ascending=False)
+
+        # Valider que les prédictions sont bien espacées de 30 minutes
+        if len(self.df_predictions) > 1:
+            time_diffs = self.df_predictions['prediction_timestamp'].diff().abs().dropna()
+            expected_diff = pd.Timedelta(minutes=30)
+            if not (time_diffs == expected_diff).all():
+                logger.warning(f"Les prédictions ne sont pas toutes espacées de 30 minutes. Écarts détectés: {time_diffs.unique()}")
+
         model_info = self.inference_model.get_model_info()
         model_version = model_info['version'] if model_info else 'unknown'
-        
-        if not self.db_handler.store_predictions(self.df_predictions, model_version):
+        run_id = model_info.get('run_id') if model_info else None
+
+        logger.info(f"Stockage des prédictions {self.df_predictions.head(5).to_string()} (run_id: {run_id})")
+
+        if not self.db_handler.store_predictions(self.df_predictions, model_version, run_id):
             logger.error("Impossible de stocker les prédictions")
             return False
         

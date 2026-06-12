@@ -31,7 +31,7 @@ from ml.utils.monitoring.performance_monitor import (
     detect_prediction_drift,
     create_performance_report
 )
-from ml.utils.models.mlflow_tracker import (
+from ml.utils.models.models_mlflow import (
     promote_model_to_production,
     get_model_version_by_alias,
     register_model_version,
@@ -224,7 +224,7 @@ def evaluate_and_log_consumption_model_task(
     Returns:
         dict: Contient metrics, feature_importance, mlflow_info
     """
-    from ml.utils.models.mlflow_tracker import log_metrics, log_params
+    from ml.utils.models.models_mlflow import log_metrics, log_params
     import mlflow
     
     # 1. Charger config
@@ -292,7 +292,7 @@ def train_and_log_consumption_model_task(
     Returns:
         dict: Contient model, metrics, mlflow_run_info
     """
-    from ml.utils.models.mlflow_tracker import log_training_session
+    from ml.utils.models.models_mlflow import log_training_session
     import mlflow
     
     # 1. Charger config
@@ -445,7 +445,7 @@ def monitor_and_log_consumption_model_task(
     Returns:
         dict: Contient monitoring_results + mlflow_info
     """
-    from ml.utils.models.mlflow_tracker import log_metrics, log_params
+    from ml.utils.models.models_mlflow import log_metrics, log_params
     import mlflow
     
     # 1. Charger config
@@ -642,7 +642,7 @@ def stage_and_log_consumption_model_task(
         dict: Contient staging_info + mlflow_info
     """
     import mlflow
-    from ml.utils.models.mlflow_tracker import log_params, log_model
+    from ml.utils.models.models_mlflow import log_params, log_model
     
     # 1. Charger config
     config = load_config(config_path)

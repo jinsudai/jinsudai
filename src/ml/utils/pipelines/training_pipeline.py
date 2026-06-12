@@ -251,7 +251,7 @@ class MLPipeline:
             return False
         
         try:
-            from ml.utils.models.mlflow_tracker import log_training_session
+            from ml.utils.models.models_mlflow import log_training_session
 
             log_metrics = self.metrics.copy() if self.metrics else {}
             if getattr(self, 'monitoring_results', None):
@@ -325,7 +325,7 @@ class MLPipeline:
         
         try:
             import mlflow
-            from ml.utils.models.mlflow_tracker import (
+            from ml.utils.models.models_mlflow import (
                 promote_model_to_production,
                 get_model_version_by_alias,
                 register_model_version,

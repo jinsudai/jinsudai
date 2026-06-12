@@ -68,8 +68,6 @@ def clean_data(data: pd.DataFrame, columns_to_drop=None, transform_dates=False, 
         raise ValueError("Aucune donnée fournie pour le nettoyage")
 
     cleaned = data.copy()
-    cleaned.columns = cleaned.columns.str.strip()
-
     cleaned = drop_columns(cleaned, columns_to_drop)
 
     if transform_dates:

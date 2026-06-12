@@ -2,6 +2,7 @@
 import logging
 import pandas as pd
 import psycopg2
+import uuid
 from psycopg2.extras import execute_batch
 
 logging.basicConfig(level=logging.INFO)
@@ -39,11 +40,15 @@ class DatabaseHandler:
 
         create_query = """
         CREATE TABLE IF NOT EXISTS predictions_pipeline (
-            prediction_id TEXT PRIMARY KEY,
+            prediction_id UUID PRIMARY KEY,
             prediction_timestamp TIMESTAMP NOT NULL,
+            prediction_date TIMESTAMP NOT NULL,
+            prediction_index INTEGER NOT NULL,
             prediction DOUBLE PRECISION NOT NULL,
             confidence DOUBLE PRECISION,
             model_version TEXT NOT NULL,
+            entity_id TEXT NOT NULL,
+            run_id TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         """
@@ -52,6 +57,24 @@ class DatabaseHandler:
             with self._get_connection() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute(create_query)
+                    cursor.execute(
+                        "CREATE INDEX IF NOT EXISTS idx_predictions_pipeline_prediction_date ON predictions_pipeline (prediction_date);"
+                    )
+                    cursor.execute(
+                        "CREATE INDEX IF NOT EXISTS idx_predictions_pipeline_prediction_index ON predictions_pipeline (prediction_index);"
+                    )
+                    cursor.execute(
+                        "CREATE INDEX IF NOT EXISTS idx_predictions_pipeline_entity_id ON predictions_pipeline (entity_id);"
+                    )
+                    cursor.execute(
+                        "CREATE INDEX IF NOT EXISTS idx_predictions_pipeline_run_id ON predictions_pipeline (run_id);"
+                    )
+                    # Créer une vue avec ordre par défaut décroissant sur prediction_timestamp
+                    cursor.execute("""
+                        CREATE OR REPLACE VIEW predictions_pipeline_sorted AS
+                        SELECT * FROM predictions_pipeline
+                        ORDER BY prediction_timestamp DESC;
+                    """)
                     conn.commit()
             logger.info("Table predictions_pipeline créée ou déjà existante")
             return True
@@ -59,7 +82,7 @@ class DatabaseHandler:
             logger.error(f"Erreur lors de la création des tables: {e}")
             return False
 
-    def store_predictions(self, df_predictions, model_version):
+    def store_predictions(self, df_predictions, model_version, run_id=None):
         if not self.db_uri:
             logger.warning("DB URI non fournie, stockage ignoré")
             return True
@@ -68,10 +91,29 @@ class DatabaseHandler:
             logger.warning("Aucune prédiction à stocker")
             return False
 
+        df = df_predictions.copy()
+
+        if 'prediction_timestamp' not in df.columns:
+            if 'horodate' in df.columns:
+                df['prediction_timestamp'] = pd.to_datetime(df['horodate'])
+            elif 'timestamp' in df.columns:
+                df['prediction_timestamp'] = pd.to_datetime(df['timestamp'])
+            else:
+                df['prediction_timestamp'] = pd.Timestamp.now()
+
+        if 'prediction_date' not in df.columns:
+            df['prediction_date'] = pd.to_datetime(df['prediction_timestamp']).dt.floor('30min')
+        else:
+            df['prediction_date'] = pd.to_datetime(df['prediction_date'])
+
+        if 'prediction_index' not in df.columns:
+            df = df.reset_index(drop=True)
+            df['prediction_index'] = df.index + 1
+
         insert_query = """
         INSERT INTO predictions_pipeline (
-            prediction_id, prediction_timestamp, prediction, confidence, model_version
-        ) VALUES (%s, %s, %s, %s, %s)
+            prediction_id, prediction_timestamp, prediction_date, prediction_index, prediction, confidence, model_version, entity_id, run_id
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (prediction_id) DO NOTHING;
         """
 
@@ -80,13 +122,17 @@ class DatabaseHandler:
                 with conn.cursor() as cursor:
                     data = [
                         (
-                            str(row.get("prediction_id", "")),
+                            str(uuid.uuid4()),
                             row.get("prediction_timestamp"),
+                            row.get("prediction_date"),
+                            int(row.get("prediction_index", 0)),
                             float(row.get("prediction")),
                             float(row.get("confidence")) if row.get("confidence") is not None else None,
                             model_version,
+                            "550e8400-e29b-41d4-a716-446655440000",
+                            run_id if run_id else "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
                         )
-                        for _, row in df_predictions.iterrows()
+                        for _, row in df.iterrows()
                     ]
                     execute_batch(cursor, insert_query, data)
                     conn.commit()
@@ -102,7 +148,7 @@ class DatabaseHandler:
             return None
 
         query = """
-        SELECT prediction_id, prediction_timestamp, prediction, confidence, model_version, created_at
+        SELECT prediction_id, prediction_timestamp, prediction, confidence, model_version, entity_id, run_id, created_at
         FROM predictions_pipeline
         ORDER BY prediction_timestamp DESC
         LIMIT %s

@@ -1,3 +1,9 @@
+## openspec
+
+npm install -g openspec
+
+
+
 ## Poetry
 
 # Etapes obligatoires

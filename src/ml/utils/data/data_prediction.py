@@ -5,7 +5,6 @@ import pandas as pd
 import numpy as np
 
 from ml.config import DEFAULT_CONSUMPTION_CONFIG, get_nested, load_config
-from ml.utils.data.data_transformer import transform_date_columns
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -82,7 +81,6 @@ def generate_inference_data(
     df_inference = pd.DataFrame(data)
     logger.info(f"Données d'inférence générées: {df_inference.shape[0]} échantillons")
     return df_inference
-
 
 
 def add_predictions_to_data(df_inference, predictions, confidence_scores=None):
