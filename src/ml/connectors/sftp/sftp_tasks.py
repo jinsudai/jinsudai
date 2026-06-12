@@ -39,9 +39,9 @@ logger = logging.getLogger(__name__)
 def process_sftp_actual_values_task(
     sftp_host: str,
     sftp_username: str,
-    ppk_key_path: str,
-    db_uri: str,
-    remote_directory: str,
+    ssh_private_key_content: str,
+    db_uri: str = None,
+    remote_directory: str = None,
     archive_directory: str = "/archived",
     passphrase: Optional[str] = None,
     sftp_port: int = 22,
@@ -83,7 +83,7 @@ def process_sftp_actual_values_task(
     processor = SFTPDataProcessor(
         sftp_host=sftp_host,
         sftp_username=sftp_username,
-        ppk_key_path=ppk_key_path,
+        ssh_private_key_content=ssh_private_key_content,
         db_uri=db_uri,
         passphrase=passphrase,
         sftp_port=sftp_port,
@@ -120,9 +120,9 @@ def process_sftp_actual_values_task(
 def process_single_sftp_file_task(
     sftp_host: str,
     sftp_username: str,
-    ppk_key_path: str,
-    db_uri: str,
-    remote_file_path: str,
+    ssh_private_key_content: str,
+    db_uri: str = None,
+    remote_file_path: str = None,
     archive_directory: str = "/archived",
     passphrase: Optional[str] = None,
     sftp_port: int = 22,
@@ -153,7 +153,7 @@ def process_single_sftp_file_task(
     processor = SFTPDataProcessor(
         sftp_host=sftp_host,
         sftp_username=sftp_username,
-        ppk_key_path=ppk_key_path,
+        ssh_private_key_content=ssh_private_key_content,
         db_uri=db_uri,
         passphrase=passphrase,
         sftp_port=sftp_port,
@@ -183,8 +183,8 @@ def process_single_sftp_file_task(
 def list_sftp_files_task(
     sftp_host: str,
     sftp_username: str,
-    ppk_key_path: str,
-    remote_directory: str,
+    ssh_private_key_content: str,
+    remote_directory: str = None,
     passphrase: Optional[str] = None,
     sftp_port: int = 22,
     sftp_timeout: int = 30,
@@ -215,7 +215,7 @@ def list_sftp_files_task(
     connector = SFTPConnector(
         host=sftp_host,
         username=sftp_username,
-        ppk_key_path=ppk_key_path,
+        ssh_private_key_content=ssh_private_key_content,
         passphrase=passphrase,
         port=sftp_port,
         timeout=sftp_timeout

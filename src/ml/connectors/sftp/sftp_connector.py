@@ -1,7 +1,7 @@
 """
-Connector SFTP pour récupérer des fichiers depuis un serveur SFTP avec authentification par clé PPK et passphrase.
+Connector SFTP pour récupérer des fichiers depuis un serveur SFTP avec authentification par clé SSH et passphrase.
 
-Ce module permet de se connecter à un serveur SFTP en utilisant une clé privée au format PPK (PuTTY)
+Ce module permet de se connecter à un serveur SFTP en utilisant une clé privée au format OpenSSH
 protégée par une passphrase, et de récupérer des fichiers depuis un répertoire spécifié.
 
 Exemple d'utilisation :
@@ -11,7 +11,7 @@ Exemple d'utilisation :
         host="sftp.example.com",
         port=22,
         username="user",
-        ppk_key_path="/path/to/key.ppk",
+        ssh_private_key_content="-----BEGIN OPENSSH PRIVATE KEY-----\\n...\\n-----END OPENSSH PRIVATE KEY-----",
         passphrase="your_passphrase"
     )
     
@@ -30,6 +30,8 @@ from pathlib import Path
 from typing import List, Optional, Union
 import logging
 from io import BytesIO
+import tempfile
+import os
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -37,14 +39,14 @@ logger = logging.getLogger(__name__)
 
 class SFTPConnector:
     """
-    Classe pour se connecter à un serveur SFTP avec authentification par clé PPK et passphrase.
+    Classe pour se connecter à un serveur SFTP avec authentification par clé SSH et passphrase.
     """
     
     def __init__(
         self,
         host: str,
         username: str,
-        ppk_key_path: Union[str, Path],
+        ssh_private_key_content: str,
         passphrase: Optional[str] = None,
         port: int = 22,
         timeout: int = 30
@@ -55,35 +57,47 @@ class SFTPConnector:
         Args:
             host: Adresse du serveur SFTP
             username: Nom d'utilisateur
-            ppk_key_path: Chemin vers le fichier de clé privée PPK
+            ssh_private_key_content: Contenu de la clé privée SSH (format OpenSSH) depuis secret
             passphrase: Passphrase pour déverrouiller la clé (optionnel)
             port: Port SFTP (défaut: 22)
             timeout: Timeout de connexion en secondes (défaut: 30)
         """
         self.host = host
         self.username = username
-        self.ppk_key_path = Path(ppk_key_path)
         self.passphrase = passphrase
         self.port = port
         self.timeout = timeout
         self.ssh_client = None
         self.sftp_client = None
+        self._temp_key_file = None
         
-        if not self.ppk_key_path.exists():
-            raise FileNotFoundError(f"Fichier de clé PPK introuvable: {self.ppk_key_path}")
+        # Écrire le contenu de la clé dans un fichier temporaire sécurisé
+        self._temp_key_file = tempfile.NamedTemporaryFile(
+            mode='w',
+            suffix='.key',
+            delete=False
+        )
+        self._temp_key_file.write(ssh_private_key_content)
+        self._temp_key_file.close()
+        
+        # Restreindre les permissions du fichier temporaire
+        os.chmod(self._temp_key_file.name, 0o600)
+        
+        self.ssh_key_path = Path(self._temp_key_file.name)
+        logger.info("Clé SSH créée depuis ssh_private_key_content dans un fichier temporaire")
     
     def connect(self) -> None:
         """
-        Établit la connexion SFTP avec authentification par clé PPK.
+        Établit la connexion SFTP avec authentification par clé SSH.
         """
         try:
             # Créer le client SSH
             self.ssh_client = paramiko.SSHClient()
             self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             
-            # Charger la clé privée PPK
+            # Charger la clé privée SSH (supporte RSA, DSA, ECDSA, Ed25519)
             private_key = paramiko.RSAKey.from_private_key_file(
-                str(self.ppk_key_path),
+                str(self.ssh_key_path),
                 password=self.passphrase
             )
             
@@ -115,7 +129,7 @@ class SFTPConnector:
     
     def disconnect(self) -> None:
         """
-        Ferme la connexion SFTP.
+        Ferme la connexion SFTP et nettoie le fichier temporaire si nécessaire.
         """
         if self.sftp_client:
             self.sftp_client.close()
@@ -124,6 +138,16 @@ class SFTPConnector:
         if self.ssh_client:
             self.ssh_client.close()
             self.ssh_client = None
+        
+        # Nettoyer le fichier temporaire de clé SSH
+        if self._temp_key_file and self._temp_key_file.name:
+            try:
+                os.unlink(self._temp_key_file.name)
+                logger.info(f"Fichier temporaire de clé SSH supprimé: {self._temp_key_file.name}")
+            except Exception as e:
+                logger.warning(f"Impossible de supprimer le fichier temporaire: {e}")
+            finally:
+                self._temp_key_file = None
         
         logger.info("Connexion SFTP fermée")
     

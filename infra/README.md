@@ -3,13 +3,13 @@
 npm install -g openspec
 
 
-
 ## Poetry
 
 # Etapes obligatoires
 - poetry add --group dev jupyterlab
 - poetry run pip install autogluon.tabular[lightgbm]==1.5.0
 - poetry add psycopg2
+- poetry add paramiko
 
 #  optionel
 Pour voir les progressbar dans les Notebook

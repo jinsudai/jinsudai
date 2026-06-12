@@ -72,23 +72,23 @@ monitoring:
 
 # SFTP Configuration pour récupération des valeurs réelles
 sftp:
-  enabled: false  # Activer/désactiver l'intégration SFTP
-  host: "sftp.example.com"
+  enabled: true  # Activer/désactiver l'intégration SFTP
+  host: "${SFTP_HOST:sftp.example.com}"
   port: 22
-  username: "sftp_user"
-  ppk_key_path: "/path/to/key.ppk"
-  passphrase: null  # Passphrase pour la clé PPK (optionnel)
+  username: "${SFTP_USERNAME:sftp_user}"
+  ssh_private_key_content: "${SFTP_SSH_PRIVATE_KEY_CONTENT:}"  # Contenu de la clé SSH (format OpenSSH) depuis secret (requis)
+  passphrase: "${SFTP_PASSPHRASE:}"  # Passphrase pour la clé SSH (optionnel)
   timeout: 30
   
   # Répertoires
-  remote_directory: "/data/incoming"  # Répertoire contenant les fichiers à traiter
-  archive_directory: "/data/archived"  # Répertoire pour les fichiers traités
-  file_pattern: "*.csv"  # Pattern des fichiers à traiter
+  remote_directory: "${SFTP_REMOTE_DIRECTORY:/data/incoming}"  # Répertoire contenant les fichiers à traiter
+  archive_directory: "${SFTP_ARCHIVE_DIRECTORY:/data/archived}"  # Répertoire pour les fichiers traités
+  file_pattern: "${SFTP_FILE_PATTERN:*.csv}"  # Pattern des fichiers à traiter
   
   # Traitement local
-  temp_local_dir: "/tmp/sftp_temp"  # Répertoire temporaire local
+  temp_local_dir: "${SFTP_TEMP_LOCAL_DIR:/tmp/sftp_temp}"  # Répertoire temporaire local
 
 # Configuration des notifications par email
 # Note: La configuration détaillée est dans config.yaml (section email)
 email:
-  enabled: false  # Activer/désactiver les notifications email pour ce module
+  enabled: true  # Activer/désactiver les notifications email pour ce module

@@ -50,8 +50,8 @@ class SFTPDataProcessor:
         self,
         sftp_host: str,
         sftp_username: str,
-        ppk_key_path: Union[str, Path],
-        db_uri: str,
+        ssh_private_key_content: str,
+        db_uri: str = None,
         passphrase: Optional[str] = None,
         sftp_port: int = 22,
         sftp_timeout: int = 30,
@@ -63,9 +63,9 @@ class SFTPDataProcessor:
         Args:
             sftp_host: Adresse du serveur SFTP
             sftp_username: Nom d'utilisateur SFTP
-            ppk_key_path: Chemin vers le fichier de clé PPK
+            ssh_private_key_content: Contenu de la clé SSH (format OpenSSH) depuis secret
             db_uri: URI de connexion PostgreSQL
-            passphrase: Passphrase pour la clé PPK (optionnel)
+            passphrase: Passphrase pour la clé SSH (optionnel)
             sftp_port: Port SFTP (défaut: 22)
             sftp_timeout: Timeout SFTP en secondes (défaut: 30)
             email_notifier: Notificateur email (optionnel)
@@ -73,7 +73,7 @@ class SFTPDataProcessor:
         self.sftp_connector = SFTPConnector(
             host=sftp_host,
             username=sftp_username,
-            ppk_key_path=ppk_key_path,
+            ssh_private_key_content=ssh_private_key_content,
             passphrase=passphrase,
             port=sftp_port,
             timeout=sftp_timeout

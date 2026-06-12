@@ -58,8 +58,8 @@ def setup_sftp_config_task() -> Dict[str, Any]:
 def list_files_task(
     sftp_host: str,
     sftp_username: str,
-    ppk_key_path: str,
-    remote_directory: str,
+    ssh_private_key_content: str,
+    remote_directory: str = None,
     passphrase: Optional[str] = None,
     sftp_port: int = 22,
     sftp_timeout: int = 30,
@@ -84,7 +84,7 @@ def list_files_task(
     files = list_sftp_files_task(
         sftp_host=sftp_host,
         sftp_username=sftp_username,
-        ppk_key_path=ppk_key_path,
+        ssh_private_key_content=ssh_private_key_content,
         remote_directory=remote_directory,
         passphrase=passphrase,
         sftp_port=sftp_port,
@@ -102,10 +102,10 @@ def list_files_task(
 def process_files_task(
     sftp_host: str,
     sftp_username: str,
-    ppk_key_path: str,
-    db_uri: str,
-    remote_directory: str,
-    archive_directory: str,
+    ssh_private_key_content: str,
+    db_uri: str = None,
+    remote_directory: str = None,
+    archive_directory: str = None,
     passphrase: Optional[str] = None,
     sftp_port: int = 22,
     sftp_timeout: int = 30,
@@ -134,7 +134,7 @@ def process_files_task(
     result = process_sftp_actual_values_task(
         sftp_host=sftp_host,
         sftp_username=sftp_username,
-        ppk_key_path=ppk_key_path,
+        ssh_private_key_content=ssh_private_key_content,
         db_uri=db_uri,
         remote_directory=remote_directory,
         archive_directory=archive_directory,
@@ -183,7 +183,7 @@ def generate_summary_task(processing_result: Dict[str, Any]) -> Dict[str, Any]:
 def sftp_ingestion_pipeline(
     sftp_host: Optional[str] = None,
     sftp_username: Optional[str] = None,
-    ppk_key_path: Optional[str] = None,
+    ssh_private_key_content: str = None,
     db_uri: Optional[str] = None,
     remote_directory: Optional[str] = None,
     archive_directory: Optional[str] = None,
@@ -233,7 +233,7 @@ def sftp_ingestion_pipeline(
     # Utiliser les paramètres passés ou ceux de la config
     sftp_host = sftp_host or sftp_config.get('host')
     sftp_username = sftp_username or sftp_config.get('username')
-    ppk_key_path = ppk_key_path or sftp_config.get('ppk_key_path')
+    ssh_private_key_content = ssh_private_key_content or sftp_config.get('ssh_private_key_content')
     remote_directory = remote_directory or sftp_config.get('remote_directory')
     archive_directory = archive_directory or sftp_config.get('archive_directory', '/archived')
     
@@ -251,7 +251,7 @@ def sftp_ingestion_pipeline(
     files = list_files_task(
         sftp_host=sftp_host,
         sftp_username=sftp_username,
-        ppk_key_path=ppk_key_path,
+        ssh_private_key_content=ssh_private_key_content,
         remote_directory=remote_directory,
         passphrase=passphrase,
         sftp_port=sftp_port,
@@ -274,7 +274,7 @@ def sftp_ingestion_pipeline(
     processing_result = process_files_task(
         sftp_host=sftp_host,
         sftp_username=sftp_username,
-        ppk_key_path=ppk_key_path,
+        ssh_private_key_content=ssh_private_key_content,
         db_uri=db_uri,
         remote_directory=remote_directory,
         archive_directory=archive_directory,
