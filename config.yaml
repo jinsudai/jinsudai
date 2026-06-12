@@ -1,0 +1,56 @@
+# Configuration globale du projet
+# Ce fichier contient les configurations partagées entre tous les modules
+
+# Configuration des notifications email
+email:
+  # Type de service email: smtp ou resend
+  provider: "resend"  # Options: "smtp", "resend"
+  
+  # Configuration SMTP (utilisé si provider = "smtp")
+  smtp:
+    server: "smtp.gmail.com"
+    port: 587
+    use_tls: true
+  
+  # Configuration Resend (utilisé si provider = "resend")
+  resend:
+    api_key: null  # Clé API Resend (à définir via variable d'environnement RESEND_API_KEY)
+    from_email: "noreply@yourdomain.com"  # Email expéditeur par défaut
+  
+  # Configuration commune
+  sender_email: "sender@example.com"  # Email expéditeur (pour SMTP)
+  sender_password: null  # Mot de passe (pour SMTP, à définir via variable d'environnement)
+  recipient_emails:
+    - "recipient1@example.com"
+    - "recipient2@example.com"
+
+# Configuration de la base de données
+database:
+  uri: null  # URI PostgreSQL (à définir via variable d'environnement DATABASE_URI)
+
+# Configuration MLflow
+mlflow:
+  tracking_uri: "https://jinsudai-mlflow.hf.space/"
+  default_experiment_name: "energy_consumption"
+
+# Configuration SFTP
+sftp:
+  enabled: false
+  host: "sftp.example.com"
+  port: 22
+  username: "sftp_user"
+  ppk_key_path: "/path/to/key.ppk"
+  passphrase: null
+  timeout: 30
+  remote_directory: "/data/incoming"
+  archive_directory: "/data/archived"
+  file_pattern: "*.csv"
+  temp_local_dir: "/tmp/sftp_temp"
+
+# Configuration de l'environnement
+environment: "dev"  # Options: "dev", "test", "prod"
+
+# Logging
+logging:
+  level: "INFO"  # Options: "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

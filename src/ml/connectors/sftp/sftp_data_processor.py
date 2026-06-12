@@ -35,6 +35,7 @@ from datetime import datetime
 
 from .sftp_connector import SFTPConnector
 from ml.utils.pipelines.database_handler import DatabaseHandler
+from ml.utils.notifications.email_notifier import EmailNotifier
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -53,7 +54,8 @@ class SFTPDataProcessor:
         db_uri: str,
         passphrase: Optional[str] = None,
         sftp_port: int = 22,
-        sftp_timeout: int = 30
+        sftp_timeout: int = 30,
+        email_notifier: Optional[EmailNotifier] = None
     ):
         """
         Initialise le processeur de données SFTP.
@@ -66,6 +68,7 @@ class SFTPDataProcessor:
             passphrase: Passphrase pour la clé PPK (optionnel)
             sftp_port: Port SFTP (défaut: 22)
             sftp_timeout: Timeout SFTP en secondes (défaut: 30)
+            email_notifier: Notificateur email (optionnel)
         """
         self.sftp_connector = SFTPConnector(
             host=sftp_host,
@@ -76,6 +79,7 @@ class SFTPDataProcessor:
             timeout=sftp_timeout
         )
         self.db_handler = DatabaseHandler(db_uri)
+        self.email_notifier = email_notifier
         
         logger.info("Processeur de données SFTP initialisé")
     
@@ -246,7 +250,23 @@ class SFTPDataProcessor:
         local_temp_path = temp_local_dir / Path(remote_file_path).name
         
         try:
-            # 1. Télécharger le fichier
+            # 1. Notifier la réception du fichier
+            if self.email_notifier:
+                file_info = None
+                with self.sftp_connector:
+                    try:
+                        file_info = self.sftp_connector.get_file_info(remote_file_path)
+                    except:
+                        pass
+                
+                if file_info:
+                    self.email_notifier.notify_file_received(
+                        filename=Path(remote_file_path).name,
+                        file_size=file_info["size"],
+                        remote_path=remote_file_path
+                    )
+            
+            # 2. Télécharger le fichier
             with self.sftp_connector:
                 self.sftp_connector.download_file(
                     remote_file_path,
@@ -254,23 +274,41 @@ class SFTPDataProcessor:
                     overwrite=True
                 )
             
-            # 2. Parser le fichier
+            # 3. Parser le fichier
             actual_df = self.parse_actual_values_file(local_temp_path)
             
             if actual_df is None or actual_df.empty:
                 result["error"] = "Impossible de parser le fichier ou fichier vide"
+                # Notifier l'échec
+                if self.email_notifier:
+                    self.email_notifier.notify_file_processed(
+                        filename=Path(remote_file_path).name,
+                        records_processed=0,
+                        predictions_updated=0,
+                        success=False,
+                        error_message=result["error"]
+                    )
                 return result
             
             result["records_processed"] = len(actual_df)
             
-            # 3. Matcher avec les prédictions
+            # 4. Matcher avec les prédictions
             match_result = self.match_predictions_with_actuals(actual_df)
             
             if not match_result["prediction_ids"]:
                 result["error"] = "Aucune correspondance trouvée avec les prédictions"
+                # Notifier l'échec
+                if self.email_notifier:
+                    self.email_notifier.notify_file_processed(
+                        filename=Path(remote_file_path).name,
+                        records_processed=result["records_processed"],
+                        predictions_updated=0,
+                        success=False,
+                        error_message=result["error"]
+                    )
                 return result
             
-            # 4. Mettre à jour la base de données
+            # 5. Mettre à jour la base de données
             update_success = self.db_handler.update_actual_values(
                 match_result["prediction_ids"],
                 match_result["actual_values"]
@@ -278,11 +316,20 @@ class SFTPDataProcessor:
             
             if not update_success:
                 result["error"] = "Erreur lors de la mise à jour de la base de données"
+                # Notifier l'échec
+                if self.email_notifier:
+                    self.email_notifier.notify_file_processed(
+                        filename=Path(remote_file_path).name,
+                        records_processed=result["records_processed"],
+                        predictions_updated=0,
+                        success=False,
+                        error_message=result["error"]
+                    )
                 return result
             
             result["predictions_updated"] = len(match_result["prediction_ids"])
             
-            # 5. Archiver le fichier sur SFTP
+            # 6. Archiver le fichier sur SFTP
             with self.sftp_connector:
                 archive_success = self.sftp_connector.archive_file(
                     remote_file_path,
@@ -292,11 +339,29 @@ class SFTPDataProcessor:
             result["archived"] = archive_success
             result["success"] = True
             
+            # Notifier le succès
+            if self.email_notifier:
+                self.email_notifier.notify_file_processed(
+                    filename=Path(remote_file_path).name,
+                    records_processed=result["records_processed"],
+                    predictions_updated=result["predictions_updated"],
+                    success=True
+                )
+            
             logger.info(f"Fichier traité avec succès: {remote_file_path}")
             
         except Exception as e:
             result["error"] = str(e)
             logger.error(f"Erreur lors du traitement de {remote_file_path}: {e}")
+            # Notifier l'erreur
+            if self.email_notifier:
+                self.email_notifier.notify_file_processed(
+                    filename=Path(remote_file_path).name,
+                    records_processed=result.get("records_processed", 0),
+                    predictions_updated=result.get("predictions_updated", 0),
+                    success=False,
+                    error_message=str(e)
+                )
         
         finally:
             # Nettoyer le fichier temporaire
@@ -355,9 +420,21 @@ class SFTPDataProcessor:
             
             # Résumé
             successful = sum(1 for r in results if r["success"])
+            failed = len(results) - successful
             total_updated = sum(r["predictions_updated"] for r in results)
+            total_records = sum(r["records_processed"] for r in results)
             
             logger.info(f"Traitement terminé: {successful}/{len(results)} fichiers réussis, {total_updated} prédictions mises à jour")
+            
+            # Notifier la complétion du traitement par lots
+            if self.email_notifier:
+                self.email_notifier.notify_batch_completed(
+                    total_files=len(results),
+                    successful=successful,
+                    failed=failed,
+                    total_records=total_records,
+                    total_updated=total_updated
+                )
             
         except Exception as e:
             logger.error(f"Erreur lors du traitement du répertoire {remote_directory}: {e}")

@@ -19,6 +19,11 @@ from ml.workflows.prediction_flow import (
     prediction_batch_pipeline
 )
 
+# Export des flows d'ingestion SFTP
+from ml.workflows.sftp_ingestion_flow import (
+    sftp_ingestion_pipeline
+)
+
 __all__ = [
     # Consumption flows
     "consumption_full_pipeline",
@@ -28,4 +33,6 @@ __all__ = [
     "prediction_full_pipeline",
     "prediction_inference_only_pipeline",
     "prediction_batch_pipeline",
+    # SFTP ingestion flows
+    "sftp_ingestion_pipeline",
 ]

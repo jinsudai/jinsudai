@@ -87,3 +87,8 @@ sftp:
   
   # Traitement local
   temp_local_dir: "/tmp/sftp_temp"  # Répertoire temporaire local
+
+# Configuration des notifications par email
+# Note: La configuration détaillée est dans config.yaml (section email)
+email:
+  enabled: false  # Activer/désactiver les notifications email pour ce module
