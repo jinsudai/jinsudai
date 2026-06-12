@@ -199,7 +199,7 @@ class DatabaseHandler:
 
         query = """
         SELECT prediction_id, prediction_timestamp, prediction_date, prediction_index, 
-               prediction, confidence, model_version, entity_id, run_id
+               prediction, confidence, model_version, entity_id, run_id, actual_value
         FROM predictions_pipeline
         WHERE prediction_date >= %s AND prediction_date <= %s
         ORDER BY prediction_timestamp DESC

@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 
 from ml.config import DEFAULT_CONSUMPTION_CONFIG, get_nested, load_config
+from ml.connectors.holidays.holidays_api import HolidaysCombinedAPI
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -57,6 +58,27 @@ def generate_inference_data(
         for i in range(n_samples_per_day)
     ]
 
+    # Générer les données de vacances avec l'API
+    end_date = start_date + timedelta(days=n_days)
+    config = load_config(config_path=config_path, config_name=config_name)
+    holidays_zone = get_nested(config, "data.holidays_zone", "C")  # Défaut: zone C
+    holidays_api = HolidaysCombinedAPI(zone=holidays_zone)
+    holidays_df = holidays_api.generate_holidays_dataframe(
+        start_date.strftime("%Y-%m-%d"),
+        end_date.strftime("%Y-%m-%d")
+    )
+
+    # Créer un mapping Horodate -> données de vacances
+    holidays_mapping = {}
+    for _, row in holidays_df.iterrows():
+        ts = row["Horodate"]
+        holidays_mapping[ts] = {
+            "is_vacances": row["is_vacances"],
+            "nom_vacances": row["nom_vacances"],
+            "jour de la semaine": row["jour de la semaine"],
+            "jour férié": row["jour férié"]
+        }
+
     data = {}
     for col in feature_columns:
         if col in ("prediction_timestamp", "Horodate", "horodate"): # A revoir pour être plus générique
@@ -68,13 +90,13 @@ def generate_inference_data(
         elif col == "precipitation_sum":
             data[col] = np.random.exponential(scale=0.5, size=total_samples)
         elif col == "is_vacances":
-            data[col] = np.random.choice([0, 1], size=total_samples, p=[0.9, 0.1])
+            data[col] = [holidays_mapping.get(ts, {}).get("is_vacances", 0) for ts in timestamps]
         elif col == "nom_vacances":
-            data[col] = ["" if is_vac == 0 else "vacances" for is_vac in data.get("is_vacances", np.zeros(total_samples, dtype=int))]
+            data[col] = [holidays_mapping.get(ts, {}).get("nom_vacances", "") for ts in timestamps]
         elif col == "jour de la semaine":
-            data[col] = [ts.strftime("%A") for ts in timestamps]
+            data[col] = [holidays_mapping.get(ts, {}).get("jour de la semaine", ts.strftime("%A")) for ts in timestamps]
         elif col == "jour férié":
-            data[col] = np.zeros(total_samples, dtype=int)
+            data[col] = [holidays_mapping.get(ts, {}).get("jour férié", 0) for ts in timestamps]
         else:
             data[col] = np.random.standard_normal(total_samples)
 

@@ -10,6 +10,7 @@ Spécifications :
 
 Fonctions principales :
 - WeatherAPI.fetch_historical() : Récupère historique météo pour une période
+- WeatherAPI.fetch_forecast() : Récupère prévisions météo (jusqu'à 16 jours)
 - WeatherAPI.generate_parquet() : Génère fichier parquet réutilisable
 - WeatherAPI.validate_data() : Valide la qualité des données
 """
@@ -53,7 +54,8 @@ class WeatherAPI:
             location_name: Nom descriptif de la localisation
             timeout: Timeout en secondes pour les requêtes HTTP
         """
-        self.base_url = "https://archive-api.open-meteo.com/v1/archive"
+        self.base_url_archive = "https://archive-api.open-meteo.com/v1/archive"
+        self.base_url_forecast = "https://api.open-meteo.com/v1/forecast"
         self.latitude = latitude
         self.longitude = longitude
         self.location_name = location_name
@@ -110,7 +112,7 @@ class WeatherAPI:
         
         try:
             response = requests.get(
-                self.base_url,
+                self.base_url_archive,
                 params=params,
                 timeout=self.timeout
             )
@@ -122,7 +124,68 @@ class WeatherAPI:
             if "hourly" not in data and "daily" not in data:
                 raise ValueError("Aucune donnée météo reçue de l'API")
             
-            print(f"✓ {len(data.get('hourly', {}).get('time', []))} enregistrements récupérés")
+            print(f"OK {len(data.get('hourly', {}).get('time', []))} enregistrements récupérés")
+            
+            return self._parse_weather_data(data, hourly)
+        
+        except requests.RequestException as e:
+            print(f"Erreur API : {e}")
+            raise
+    
+    def fetch_forecast(
+        self,
+        forecast_days: int = 1,
+        hourly: bool = True
+    ) -> pd.DataFrame:
+        """
+        Récupère les prévisions météo de Open-Meteo.
+        
+        Args:
+            forecast_days: Nombre de jours de prévision (défaut: 1 pour le lendemain)
+            hourly: Si True, récupère données horaires; sinon journalières
+        
+        Returns:
+            DataFrame pandas avec colonnes temporelles et météo
+        
+        Raises:
+            requests.RequestException: En cas d'erreur API
+            ValueError: Si paramètres invalides
+        """
+        # Validation des paramètres
+        if forecast_days < 1 or forecast_days > 16:
+            raise ValueError("forecast_days doit être entre 1 et 16")
+        
+        # Construction des paramètres de requête
+        params = {
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "timezone": "Europe/Paris",
+            "forecast_days": forecast_days
+        }
+        
+        # Ajout des variables météo à récupérer
+        if hourly:
+            params["hourly"] = "temperature_2m,relative_humidity_2m,precipitation"
+        else:
+            params["daily"] = "temperature_2m_mean,relative_humidity_2m_mean,precipitation_sum"
+        
+        print(f"[{self.location_name}] Récupération prévisions pour {forecast_days} jour(s)...")
+        
+        try:
+            response = requests.get(
+                self.base_url_forecast,
+                params=params,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            # Vérification présence données
+            if "hourly" not in data and "daily" not in data:
+                raise ValueError("Aucune donnée météo reçue de l'API")
+            
+            print(f"OK {len(data.get('hourly', {}).get('time', []))} enregistrements récupérés")
             
             return self._parse_weather_data(data, hourly)
         
@@ -295,7 +358,7 @@ class WeatherAPI:
         # Sauvegarde en parquet
         try:
             self.data.to_parquet(filepath, index=False, compression="snappy")
-            print(f"✓ Fichier généré : {filepath}")
+            print(f"OK Fichier généré : {filepath}")
             print(f"  - Taille : {len(self.data)} enregistrements")
             print(f"  - Colonnes : {list(self.data.columns)}")
             return str(filepath)
@@ -344,5 +407,5 @@ class WeatherAPI:
             index=False,
             encoding="utf-8"
         )
-        print(f"✓ Fichier CSV généré : {filepath}")
+        print(f"OK Fichier CSV généré : {filepath}")
         return str(filepath)

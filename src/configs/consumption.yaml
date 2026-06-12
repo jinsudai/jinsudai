@@ -10,6 +10,7 @@ data:
   train_path: "../data/dev/train_consumption.parquet"
   weather_file: "../data/processed/weather.parquet"
   holidays_file: "../data/processed/holidays.parquet"
+  holidays_zone: "C"  # Zone scolaire (A, B ou C)
 
   target_column: "Valeur"  # Consommation en kWh
   

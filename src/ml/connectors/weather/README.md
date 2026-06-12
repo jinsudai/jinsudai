@@ -43,6 +43,18 @@ df = weather.fetch_historical(
     hourly=True  # Données horaires
 )
 
+# Récupération prévisions météo (lendemain par défaut)
+df_forecast = weather.fetch_forecast(
+    forecast_days=1,  # 1 jour = lendemain
+    hourly=True
+)
+
+# Récupération prévisions sur plusieurs jours (jusqu'à 16)
+df_forecast_week = weather.fetch_forecast(
+    forecast_days=7,  # 7 jours
+    hourly=True
+)
+
 # Validation
 validation = weather.validate_data()
 print(f"Données valides : {validation['is_valid']}")
