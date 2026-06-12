@@ -1,0 +1,13 @@
+# Overrides pour l'environnement TEST
+# Merge avec flows.yaml (base)
+
+flows:
+  # En test, on désactive généralement les schedules automatiques
+  training:
+    enabled: false
+
+  prediction:
+    enabled: false
+
+  actual_values:
+    enabled: false

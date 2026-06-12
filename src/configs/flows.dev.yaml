@@ -1,0 +1,19 @@
+# Overrides pour l'environnement DEV
+# Merge avec flows.yaml (base)
+
+flows:
+  # En dev, on peut désactiver certains schedules ou les rendre plus fréquents pour les tests
+  training:
+    enabled: false  # Désactivé en dev pour éviter les entraînements automatiques
+
+  prediction:
+    enabled: true
+    schedule:
+      cron: "0 */6 * * *"  # Toutes les 6 heures en dev pour tests plus fréquents
+      timezone: "Europe/Paris"
+
+  actual_values:
+    enabled: true
+    schedule:
+      cron: "0 */6 * * *"  # Toutes les 6 heures en dev
+      timezone: "Europe/Paris"

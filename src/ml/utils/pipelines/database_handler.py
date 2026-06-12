@@ -49,7 +49,8 @@ class DatabaseHandler:
             model_version TEXT NOT NULL,
             entity_id TEXT NOT NULL,
             run_id TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            actual_value DOUBLE PRECISION
         );
         """
 
@@ -180,3 +181,101 @@ class DatabaseHandler:
         except Exception as e:
             logger.error(f"Erreur lors de la récupération des stats: {e}")
             return None
+
+    def get_predictions_by_date(self, start_date, end_date):
+        """
+        Récupère les prédictions pour une plage de dates
+        
+        Args:
+            start_date: Date de début (datetime ou string)
+            end_date: Date de fin (datetime ou string)
+            
+        Returns:
+            DataFrame des prédictions ou None
+        """
+        if not self.db_uri:
+            logger.warning("DB URI non fournie, récupération ignorée")
+            return None
+
+        query = """
+        SELECT prediction_id, prediction_timestamp, prediction_date, prediction_index, 
+               prediction, confidence, model_version, entity_id, run_id
+        FROM predictions_pipeline
+        WHERE prediction_date >= %s AND prediction_date <= %s
+        ORDER BY prediction_timestamp DESC
+        """
+
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(query, (start_date, end_date))
+                    rows = cursor.fetchall()
+                    columns = [desc[0] for desc in cursor.description]
+            return pd.DataFrame(rows, columns=columns)
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération des prédictions par date: {e}")
+            return None
+
+    def update_actual_values(self, prediction_ids, actual_values):
+        """
+        Met à jour les valeurs réelles pour les prédictions données
+        
+        Args:
+            prediction_ids: Liste des IDs de prédictions à mettre à jour
+            actual_values: Liste des valeurs réelles correspondantes
+            
+        Returns:
+            True si succès, False sinon
+        """
+        if not self.db_uri:
+            logger.warning("DB URI non fournie, mise à jour ignorée")
+            return False
+
+        if len(prediction_ids) != len(actual_values):
+            logger.error("Les listes prediction_ids et actual_values doivent avoir la même longueur")
+            return False
+
+        update_query = """
+        UPDATE predictions_pipeline
+        SET actual_value = %s
+        WHERE prediction_id = %s
+        """
+
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cursor:
+                    data = [(actual_value, pred_id) for pred_id, actual_value in zip(prediction_ids, actual_values)]
+                    execute_batch(cursor, update_query, data)
+                    conn.commit()
+            logger.info(f"{len(data)} prédictions mises à jour avec les valeurs réelles")
+            return True
+        except Exception as e:
+            logger.error(f"Erreur lors de la mise à jour des valeurs réelles: {e}")
+            return False
+
+    def add_actual_value_column(self):
+        """
+        Ajoute la colonne actual_value si elle n'existe pas déjà
+        
+        Returns:
+            True si succès ou colonne existe déjà, False sinon
+        """
+        if not self.db_uri:
+            logger.warning("DB URI non fournie, ajout de colonne ignoré")
+            return False
+
+        alter_query = """
+        ALTER TABLE predictions_pipeline
+        ADD COLUMN IF NOT EXISTS actual_value DOUBLE PRECISION
+        """
+
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(alter_query)
+                    conn.commit()
+            logger.info("Colonne actual_value ajoutée ou déjà existante")
+            return True
+        except Exception as e:
+            logger.error(f"Erreur lors de l'ajout de la colonne actual_value: {e}")
+            return False

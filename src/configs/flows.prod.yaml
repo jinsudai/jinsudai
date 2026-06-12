@@ -1,0 +1,13 @@
+# Overrides pour l'environnement PROD
+# Merge avec flows.yaml (base)
+
+flows:
+  # En prod, on garde les schedules de production standards
+  training:
+    enabled: true
+
+  prediction:
+    enabled: true
+
+  actual_values:
+    enabled: true

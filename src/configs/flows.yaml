@@ -1,0 +1,48 @@
+# Configuration des fréquences des flows Prefect
+# Ce fichier définit les schedules pour les différents pipelines
+
+flows:
+  # Pipeline d'entraînement (consumption)
+  training:
+    enabled: true
+    name: "consumption-training-weekly"
+    schedule:
+      cron: "0 2 * * 0"  # Tous les dimanches à 2h du matin
+      timezone: "Europe/Paris"
+    parameters:
+      start_date: "2024-01-01"
+      end_date: "2024-12-31"
+      raw_path: "data/templates/raw_template.csv"
+      output_dir: "data/processed/"
+    tags: ["training", "consumption", "weekly", "production"]
+    description: "Pipeline d'entraînement hebdomadaire (dimanche 2h)"
+
+  # Pipeline de prédiction
+  prediction:
+    enabled: true
+    name: "prediction-daily"
+    schedule:
+      cron: "0 1 * * *"  # Tous les jours à 1h du matin
+      timezone: "Europe/Paris"
+    parameters:
+      model_name: "consumption_model"
+      n_days: 1
+      n_samples_per_day: 48
+      alias_prod: "prod"
+    tags: ["prediction", "consumption", "daily", "production"]
+    description: "Pipeline de prédiction quotidien (1h du matin)"
+
+  # Pipeline des valeurs réelles
+  actual_values:
+    enabled: true
+    name: "actual-values-daily"
+    schedule:
+      cron: "0 2 * * *"  # Tous les jours à 2h du matin
+      timezone: "Europe/Paris"
+    parameters: {}
+    tags: ["actual-values", "daily", "production"]
+    description: "Pipeline de mise à jour des valeurs réelles quotidien (2h du matin)"
+
+# Configuration commune des déploiements
+deployment:
+  work_pool_name: "default-pool"
