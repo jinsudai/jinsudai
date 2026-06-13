@@ -106,7 +106,7 @@ class PredictionPipeline:
             return None
         return self.inference_model.get_model_info()
     
-    def generate_data(self, n_days=3, n_samples_per_day=48, feature_columns=None):
+    def generate_data(self, n_days=1, n_samples_per_day=48, feature_columns=None):
         """
         Génère les données d'inférence
         

@@ -111,6 +111,8 @@ class VacancesAPI:
                     })
             
             self._raw_data = pd.DataFrame(periods)
+            self._raw_data["start_date"] = pd.to_datetime(self._raw_data["start_date"])
+            self._raw_data["end_date"] = pd.to_datetime(self._raw_data["end_date"])
             logger.info(f"Données vacances scolaires chargées: {len(self._raw_data)} périodes")
             return self._raw_data
             
