@@ -272,7 +272,7 @@ class SFTPConnector:
                 for item in self.sftp_client.listdir_attr(path):
                     item_path = f"{path}/{item.filename}" if path != "/" else f"/{item.filename}"
                     
-                    if paramiko.S_ISDIR(item.st_mode):
+                    if stat.S_ISDIR(item.st_mode):
                         if recursive:
                             _list_directory(item_path)
                         if pattern is None:

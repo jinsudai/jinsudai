@@ -445,6 +445,30 @@ def detect_drift_task(
     # Logger les résultats
     if drift_results.get('overall_drift_detected', False):
         logger.warning(f"⚠️ DRIFT DÉTECTÉ: {drift_results}")
+        
+        # Envoyer notification email si activé
+        if config.get('email', {}).get('enabled', False):
+            try:
+                from ml.utils.notifications.email_notifier import EmailNotifier
+                from ml.config import load_config as load_global_config
+                
+                # Charger la configuration email globale
+                global_config = load_global_config()
+                email_config = global_config.get('email', {})
+                
+                # Créer le notificateur
+                notifier = EmailNotifier(config=email_config)
+                
+                # Envoyer la notification
+                model_name = pipeline.model_info.get('model_name', 'unknown') if pipeline.model_info else 'unknown'
+                notifier.notify_drift_detected(
+                    drift_results=drift_results,
+                    model_name=model_name,
+                    run_id=run_id
+                )
+                logger.info("Email de notification de drift envoyé")
+            except Exception as e:
+                logger.error(f"Erreur lors de l'envoi de l'email de notification: {e}")
     else:
         logger.info(f"✅ Pas de drift détecté")
     
