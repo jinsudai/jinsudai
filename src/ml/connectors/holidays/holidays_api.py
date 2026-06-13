@@ -21,6 +21,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Union
 from pathlib import Path
 import logging
+import re
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -29,6 +30,104 @@ logger = logging.getLogger(__name__)
 # Constants
 VACANCES_SCOLAIRES_URL = "https://raw.githubusercontent.com/AntoineAugusti/vacances-scolaires/refs/heads/master/data.csv"
 JOURS_FERIES_BASE_URL = "https://calendrier.api.gouv.fr/jours-feries/metropole/"
+
+
+def calculate_easter(year: int) -> datetime:
+    """
+    Calculate Easter Sunday for a given year using the computus algorithm.
+    
+    Args:
+        year: Year to calculate Easter for
+    
+    Returns:
+        datetime object for Easter Sunday
+    """
+    a = year % 19
+    b = year // 100
+    c = year % 100
+    d = b // 4
+    e = b % 4
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i = c // 4
+    k = c % 4
+    l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * l) // 451
+    month = (h + l - 7 * m + 114) // 31
+    day = ((h + l - 7 * m + 114) % 31) + 1
+    return datetime(year, month, day)
+
+
+def parse_french_date(date_str: str, year: int) -> datetime:
+    """
+    Parse a French date string (e.g., "1er janvier", "25 décembre") into a datetime object.
+    Also handles movable holidays like "Lundi de Pâques" and fixed holidays by name.
+    
+    Args:
+        date_str: French date string or holiday name
+        year: Year to use for the date
+    
+    Returns:
+        datetime object
+    """
+    # Handle movable holidays
+    movable_holidays = {
+        'Lundi de Pâques': lambda y: calculate_easter(y) + timedelta(days=1),
+        'Jeudi de l\'Ascension': lambda y: calculate_easter(y) + timedelta(days=39),
+        'Lundi de Pentecôte': lambda y: calculate_easter(y) + timedelta(days=50),
+        'Ascension': lambda y: calculate_easter(y) + timedelta(days=39),
+        'Pentecôte': lambda y: calculate_easter(y) + timedelta(days=50),
+    }
+    
+    if date_str in movable_holidays:
+        return movable_holidays[date_str](year)
+    
+    # Handle fixed holidays by name
+    fixed_holidays = {
+        'Assomption': (8, 15),
+        'Toussaint': (11, 1),
+        'Armistice': (11, 11),
+        'Noël': (12, 25),
+        'Jour de Noël': (12, 25),
+    }
+    
+    if date_str in fixed_holidays:
+        month, day = fixed_holidays[date_str]
+        return datetime(year, month, day)
+    
+    # Mapping of French month names to month numbers
+    french_months = {
+        'janvier': 1,
+        'février': 2,
+        'mars': 3,
+        'avril': 4,
+        'mai': 5,
+        'juin': 6,
+        'juillet': 7,
+        'août': 8,
+        'septembre': 9,
+        'octobre': 10,
+        'novembre': 11,
+        'décembre': 12
+    }
+    
+    # Handle "1er" format (1st) - convert to "1"
+    date_str = re.sub(r'(\d+)er', r'\1', date_str)
+    
+    # Split into day and month
+    parts = date_str.strip().split()
+    if len(parts) != 2:
+        raise ValueError(f"Invalid French date format: {date_str}")
+    
+    day = int(parts[0])
+    month_name = parts[1].lower()
+    
+    if month_name not in french_months:
+        raise ValueError(f"Unknown French month: {month_name}")
+    
+    month = french_months[month_name]
+    return datetime(year, month, day)
 
 
 class VacancesAPI:
@@ -122,7 +221,7 @@ class VacancesAPI:
     
     def fetch(
         self,
-        year: int,
+        year: Optional[Union[int, List[int]]] = None,
         zone: str = "C",
         types: Optional[List[str]] = None
     ) -> pd.DataFrame:
@@ -130,7 +229,7 @@ class VacancesAPI:
         Récupère les vacances scolaires pour une année et une zone donnée.
         
         Args:
-            year: Année (ex: 2024)
+            year: Année (int) ou liste d'années. Si None, récupère toutes les années.
             zone: Zone scolaire (A, B ou C)
             types: Liste des types de vacances à filtrer (optionnel)
                    Ex: ["hiver", "printemps", "été"]
@@ -141,10 +240,20 @@ class VacancesAPI:
         raw_data = self._fetch_raw_data()
         
         # Filtrer par année
-        year_data = raw_data[
-            (raw_data["start_date"].dt.year == year) |
-            (raw_data["end_date"].dt.year == year)
-        ].copy()
+        if year is None:
+            year_data = raw_data.copy()
+        elif isinstance(year, int):
+            year_data = raw_data[
+                (raw_data["start_date"].dt.year == year) |
+                (raw_data["end_date"].dt.year == year)
+            ].copy()
+        elif isinstance(year, list):
+            year_data = raw_data[
+                raw_data["start_date"].dt.year.isin(year) |
+                raw_data["end_date"].dt.year.isin(year)
+            ].copy()
+        else:
+            year_data = raw_data.copy()
         
         # Filtrer par zone
         if zone:
@@ -214,7 +323,7 @@ class JoursFeriesAPI:
                 
                 for nom, date_str in data.items():
                     all_feries.append({
-                        "date": pd.to_datetime(date_str),
+                        "date": parse_french_date(date_str, y),
                         "nom": nom,
                         "is_ferie": 1
                     })
@@ -345,6 +454,8 @@ class HolidaysCombinedAPI:
                 })
         
         feries_mapping = pd.DataFrame(feries_list)
+        if len(feries_mapping) == 0:
+            feries_mapping = pd.DataFrame(columns=["Horodate", "jour férié"])
         
         # 5. Fusionner vacances
         df = pd.merge(
