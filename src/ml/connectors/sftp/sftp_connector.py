@@ -11,7 +11,7 @@ Exemple d'utilisation :
         host="sftp.example.com",
         port=22,
         username="user",
-        ssh_private_key_content="-----BEGIN OPENSSH PRIVATE KEY-----\\n...\\n-----END OPENSSH PRIVATE KEY-----",
+        ssh_private_key_b64="<BASE64_ENCODED_OPENSSH_KEY>",
         passphrase="your_passphrase"
     )
     
@@ -25,13 +25,13 @@ Exemple d'utilisation :
     connector.download_directory("/remote/directory", "/local/path")
 """
 
+import base64
 import paramiko
+import stat
 from pathlib import Path
 from typing import List, Optional, Union
 import logging
-from io import BytesIO
-import tempfile
-import os
+from io import StringIO, BytesIO
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -46,7 +46,8 @@ class SFTPConnector:
         self,
         host: str,
         username: str,
-        ssh_private_key_content: str,
+        ssh_private_key_b64: Optional[str] = None,
+        ssh_private_key_content: Optional[str] = None,
         passphrase: Optional[str] = None,
         port: int = 22,
         timeout: int = 30
@@ -57,6 +58,7 @@ class SFTPConnector:
         Args:
             host: Adresse du serveur SFTP
             username: Nom d'utilisateur
+            ssh_private_key_b64: Clé privée SSH encodée en base64 depuis le secret
             ssh_private_key_content: Contenu de la clé privée SSH (format OpenSSH) depuis secret
             passphrase: Passphrase pour déverrouiller la clé (optionnel)
             port: Port SFTP (défaut: 22)
@@ -64,27 +66,41 @@ class SFTPConnector:
         """
         self.host = host
         self.username = username
+        self.ssh_private_key_content = self._decode_ssh_private_key(
+            ssh_private_key_b64=ssh_private_key_b64,
+            ssh_private_key_content=ssh_private_key_content
+        )
         self.passphrase = passphrase
         self.port = port
         self.timeout = timeout
         self.ssh_client = None
         self.sftp_client = None
-        self._temp_key_file = None
         
-        # Écrire le contenu de la clé dans un fichier temporaire sécurisé
-        self._temp_key_file = tempfile.NamedTemporaryFile(
-            mode='w',
-            suffix='.key',
-            delete=False
-        )
-        self._temp_key_file.write(ssh_private_key_content)
-        self._temp_key_file.close()
-        
-        # Restreindre les permissions du fichier temporaire
-        os.chmod(self._temp_key_file.name, 0o600)
-        
-        self.ssh_key_path = Path(self._temp_key_file.name)
-        logger.info("Clé SSH créée depuis ssh_private_key_content dans un fichier temporaire")
+        source = "ssh_private_key_b64" if ssh_private_key_b64 else "ssh_private_key_content"
+        logger.info(f"Clé SSH chargée depuis {source}")
+
+    def _decode_ssh_private_key(
+        self,
+        ssh_private_key_b64: Optional[str],
+        ssh_private_key_content: Optional[str]
+    ) -> Optional[str]:
+        if ssh_private_key_b64:
+            key_b64 = ssh_private_key_b64.strip()
+            if not key_b64:
+                return ssh_private_key_content
+
+            try:
+                decoded = base64.b64decode(key_b64, validate=True)
+            except Exception:
+                cleaned = "".join(key_b64.split())
+                decoded = base64.b64decode(cleaned)
+
+            try:
+                return decoded.decode("utf-8")
+            except UnicodeDecodeError as e:
+                raise ValueError("La clé privée SSH encodée en base64 ne contient pas un texte UTF-8 valide") from e
+
+        return ssh_private_key_content
     
     def connect(self) -> None:
         """
@@ -95,11 +111,82 @@ class SFTPConnector:
             self.ssh_client = paramiko.SSHClient()
             self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             
-            # Charger la clé privée SSH (supporte RSA, DSA, ECDSA, Ed25519)
-            private_key = paramiko.RSAKey.from_private_key_file(
-                str(self.ssh_key_path),
-                password=self.passphrase
-            )
+            # Charger la clé privée SSH directement depuis la chaîne de caractères
+            key_content = self.ssh_private_key_content
+            if key_content is None:
+                raise ValueError("ssh_private_key_content est requis")
+
+            # Décode les séquences d'échappement si la clé est fournie avec des \n littéraux
+            if '\\n' in key_content or '\\r' in key_content:
+                try:
+                    key_content = key_content.encode('utf-8').decode('unicode_escape')
+                except Exception:
+                    pass
+
+            key_content = key_content.replace('\r\n', '\n').replace('\r', '\n')
+            key_content = key_content.strip()
+
+            # Supprime l'encapsulation éventuelle avec des guillemets
+            if key_content.startswith('"') and key_content.endswith('"'):
+                key_content = key_content[1:-1].strip()
+            if key_content.startswith("'") and key_content.endswith("'"):
+                key_content = key_content[1:-1].strip()
+
+            # Normalisation des lignes pour éviter les espaces ou indentations indésirables
+            lines = [line.strip() for line in key_content.splitlines() if line.strip()]
+            key_content = '\n'.join(lines) + '\n'
+
+            private_key = None
+
+            password = self.passphrase
+            if isinstance(password, bytes):
+                try:
+                    password = password.decode('utf-8')
+                except Exception:
+                    pass
+
+            try:
+                with StringIO(key_content) as key_file:
+                    private_key = paramiko.PKey.from_private_key(key_file, password=password)
+                logger.info("Clé chargée avec succès via PKey.from_private_key")
+            except Exception as e:
+                logger.info(f"Échec via PKey.from_private_key: {e}")
+                private_key = None
+
+            if private_key is None:
+                temp_path = None
+                try:
+                    import tempfile, os
+                    with tempfile.NamedTemporaryFile(mode='wb', suffix='.key', delete=False) as temp_file:
+                        temp_file.write(key_content.encode('utf-8'))
+                        temp_file.flush()
+                        temp_path = temp_file.name
+
+                    key_types = [
+                        ('RSA', paramiko.RSAKey),
+                        ('ECDSA', paramiko.ECDSAKey),
+                        ('Ed25519', getattr(paramiko, 'Ed25519Key', None)),
+                        ('DSS', getattr(paramiko, 'DSSKey', None))
+                    ]
+                    for key_name, key_cls in key_types:
+                        if key_cls is None:
+                            continue
+                        try:
+                            private_key = key_cls.from_private_key_file(temp_path, password=password)
+                            logger.info(f"Clé chargée avec succès via {key_name}Key.from_private_key_file")
+                            break
+                        except Exception as e:
+                            logger.info(f"Échec via {key_name}Key.from_private_key_file: {e}")
+                finally:
+                    if temp_path:
+                        try:
+                            os.unlink(temp_path)
+                        except Exception:
+                            pass
+
+            if private_key is None:
+                logger.error(f"Contenu de la clé (premiers 100 caractères): {key_content[:100]}")
+                raise ValueError("Impossible de charger la clé SSH avec aucun des formats supportés (RSA, ECDSA, Ed25519, DSS)")
             
             # Se connecter
             self.ssh_client.connect(
@@ -129,7 +216,7 @@ class SFTPConnector:
     
     def disconnect(self) -> None:
         """
-        Ferme la connexion SFTP et nettoie le fichier temporaire si nécessaire.
+        Ferme la connexion SFTP.
         """
         if self.sftp_client:
             self.sftp_client.close()
@@ -138,16 +225,6 @@ class SFTPConnector:
         if self.ssh_client:
             self.ssh_client.close()
             self.ssh_client = None
-        
-        # Nettoyer le fichier temporaire de clé SSH
-        if self._temp_key_file and self._temp_key_file.name:
-            try:
-                os.unlink(self._temp_key_file.name)
-                logger.info(f"Fichier temporaire de clé SSH supprimé: {self._temp_key_file.name}")
-            except Exception as e:
-                logger.warning(f"Impossible de supprimer le fichier temporaire: {e}")
-            finally:
-                self._temp_key_file = None
         
         logger.info("Connexion SFTP fermée")
     
@@ -376,7 +453,7 @@ class SFTPConnector:
             return {
                 "size": stat.st_size,
                 "modified": stat.st_mtime,
-                "is_directory": paramiko.S_ISDIR(stat.st_mode)
+                "is_directory": stat.S_ISDIR(stat.st_mode)
             }
         except IOError as e:
             logger.error(f"Erreur lors de la récupération des infos de {remote_path}: {e}")

@@ -50,7 +50,8 @@ class SFTPDataProcessor:
         self,
         sftp_host: str,
         sftp_username: str,
-        ssh_private_key_content: str,
+        ssh_private_key_b64: Optional[str] = None,
+        ssh_private_key_content: Optional[str] = None,
         db_uri: str = None,
         passphrase: Optional[str] = None,
         sftp_port: int = 22,
@@ -63,6 +64,7 @@ class SFTPDataProcessor:
         Args:
             sftp_host: Adresse du serveur SFTP
             sftp_username: Nom d'utilisateur SFTP
+            ssh_private_key_b64: Clé privée SSH encodée en base64 depuis le secret
             ssh_private_key_content: Contenu de la clé SSH (format OpenSSH) depuis secret
             db_uri: URI de connexion PostgreSQL
             passphrase: Passphrase pour la clé SSH (optionnel)
@@ -73,6 +75,7 @@ class SFTPDataProcessor:
         self.sftp_connector = SFTPConnector(
             host=sftp_host,
             username=sftp_username,
+            ssh_private_key_b64=ssh_private_key_b64,
             ssh_private_key_content=ssh_private_key_content,
             passphrase=passphrase,
             port=sftp_port,

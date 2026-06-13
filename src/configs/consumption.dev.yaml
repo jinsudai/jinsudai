@@ -17,14 +17,7 @@ mlflow:
 monitoring:
   alert_threshold: 0.80  # Warning si < 80%
 
-# SFTP Configuration pour l'environnement DEV
-sftp:
-  enabled: false  # Désactivé par défaut en dev
-  host: "dev-sftp.example.com"
-  remote_directory: "/data/dev/incoming"
-  archive_directory: "/data/dev/archived"
-
 # Configuration des notifications email pour l'environnement DEV
 # Note: La configuration détaillée est dans config.yaml (section email)
 email:
-  enabled: false  # Désactivé par défaut en dev
+  enabled: true  # Désactivé par défaut en dev

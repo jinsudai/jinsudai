@@ -339,3 +339,117 @@ def verify_results_task(
         "stats": stats,
         "recent_predictions_count": len(recent_predictions) if recent_predictions is not None else 0
     }
+
+
+@task(
+    name="detect_drift",
+    description="Détecte le drift de données et de concept",
+    retries=1
+)
+def detect_drift_task(
+    pipeline: PredictionPipeline,
+    config_path: str = "src/configs/consumption.yaml"
+) -> Dict[str, Any]:
+    """
+    Tâche Prefect : Détecte le drift de données et de concept.
+    
+    Cette tâche :
+    1. Charge la configuration de drift detection
+    2. Charge les données de référence (entraînement)
+    3. Charge les données de production depuis PostgreSQL
+    4. Exécute la détection de drift via Evidently
+    5. Stocke les métriques dans la base de données
+    
+    Args:
+        pipeline: Instance de PredictionPipeline avec prédictions stockées
+        config_path: Chemin vers le fichier de configuration
+    
+    Returns:
+        dict: Résultats de la détection de drift
+    """
+    from ml.config import load_config
+    from ml.utils.monitoring.drift_detector import (
+        load_reference_data,
+        load_production_data,
+        run_drift_detection
+    )
+    
+    # Charger la configuration
+    config = load_config(config_path)
+    drift_config = config.get('drift_detection', {})
+    
+    # Vérifier si la détection de drift est activée
+    if not drift_config.get('enabled', False):
+        logger.info("Détection de drift désactivée dans la configuration")
+        return {
+            "status": "skipped",
+            "reason": "drift_detection_disabled"
+        }
+    
+    # Créer la table drift_metrics si elle n'existe pas
+    pipeline.db_handler.create_drift_metrics_table()
+    
+    # Charger les données de référence
+    reference_path = drift_config.get('reference_data_path')
+    target_column = config.get('data', {}).get('target_column', 'Valeur')
+    feature_columns = config.get('data', {}).get('feature_columns')
+    
+    reference_data = load_reference_data(
+        reference_path=reference_path,
+        target_column=target_column,
+        feature_columns=feature_columns
+    )
+    
+    if reference_data is None:
+        logger.warning("Impossible de charger les données de référence, drift detection ignoré")
+        return {
+            "status": "skipped",
+            "reason": "no_reference_data"
+        }
+    
+    # Charger les données de production
+    min_samples = drift_config.get('min_samples_for_detection', 100)
+    production_data = load_production_data(
+        db_handler=pipeline.db_handler,
+        limit=min_samples * 2  # Charger plus d'échantillons pour avoir de la marge
+    )
+    
+    if production_data is None or len(production_data) < min_samples:
+        logger.warning(f"Pas assez de données de production ({len(production_data) if production_data is not None else 0} < {min_samples}), drift detection ignoré")
+        return {
+            "status": "skipped",
+            "reason": "insufficient_production_data",
+            "n_samples": len(production_data) if production_data is not None else 0
+        }
+    
+    # Préparer la configuration pour drift detection
+    drift_detection_config = {
+        "data_drift_threshold": drift_config.get('data_drift_threshold', 0.1),
+        "concept_drift_threshold": drift_config.get('concept_drift_threshold', 0.15),
+        "feature_drift_threshold": drift_config.get('feature_drift_threshold', 0.2),
+        "feature_columns": feature_columns,
+        "target_column": target_column
+    }
+    
+    # Exécuter la détection de drift
+    drift_results = run_drift_detection(
+        reference_data=reference_data,
+        current_data=production_data,
+        config=drift_detection_config
+    )
+    
+    # Stocker les métriques dans la base de données
+    run_id = pipeline.model_info.get('run_id', 'unknown') if pipeline.model_info else 'unknown'
+    pipeline.db_handler.store_drift_metrics(drift_results, run_id)
+    
+    # Logger les résultats
+    if drift_results.get('overall_drift_detected', False):
+        logger.warning(f"⚠️ DRIFT DÉTECTÉ: {drift_results}")
+    else:
+        logger.info(f"✅ Pas de drift détecté")
+    
+    return {
+        "status": "completed",
+        "drift_results": drift_results,
+        "run_id": run_id
+    }

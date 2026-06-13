@@ -39,7 +39,8 @@ logger = logging.getLogger(__name__)
 def process_sftp_actual_values_task(
     sftp_host: str,
     sftp_username: str,
-    ssh_private_key_content: str,
+    ssh_private_key_b64: Optional[str] = None,
+    ssh_private_key_content: Optional[str] = None,
     db_uri: str = None,
     remote_directory: str = None,
     archive_directory: str = "/archived",
@@ -83,6 +84,7 @@ def process_sftp_actual_values_task(
     processor = SFTPDataProcessor(
         sftp_host=sftp_host,
         sftp_username=sftp_username,
+        ssh_private_key_b64=ssh_private_key_b64,
         ssh_private_key_content=ssh_private_key_content,
         db_uri=db_uri,
         passphrase=passphrase,
@@ -120,7 +122,8 @@ def process_sftp_actual_values_task(
 def process_single_sftp_file_task(
     sftp_host: str,
     sftp_username: str,
-    ssh_private_key_content: str,
+    ssh_private_key_b64: Optional[str] = None,
+    ssh_private_key_content: Optional[str] = None,
     db_uri: str = None,
     remote_file_path: str = None,
     archive_directory: str = "/archived",
@@ -153,6 +156,7 @@ def process_single_sftp_file_task(
     processor = SFTPDataProcessor(
         sftp_host=sftp_host,
         sftp_username=sftp_username,
+        ssh_private_key_b64=ssh_private_key_b64,
         ssh_private_key_content=ssh_private_key_content,
         db_uri=db_uri,
         passphrase=passphrase,
@@ -183,7 +187,8 @@ def process_single_sftp_file_task(
 def list_sftp_files_task(
     sftp_host: str,
     sftp_username: str,
-    ssh_private_key_content: str,
+    ssh_private_key_b64: Optional[str] = None,
+    ssh_private_key_content: Optional[str] = None,
     remote_directory: str = None,
     passphrase: Optional[str] = None,
     sftp_port: int = 22,
@@ -215,6 +220,7 @@ def list_sftp_files_task(
     connector = SFTPConnector(
         host=sftp_host,
         username=sftp_username,
+        ssh_private_key_b64=ssh_private_key_b64,
         ssh_private_key_content=ssh_private_key_content,
         passphrase=passphrase,
         port=sftp_port,

@@ -279,3 +279,167 @@ class DatabaseHandler:
         except Exception as e:
             logger.error(f"Erreur lors de l'ajout de la colonne actual_value: {e}")
             return False
+
+    def create_drift_metrics_table(self):
+        """
+        Crée la table drift_metrics pour stocker les métriques de drift
+        
+        Returns:
+            True si succès, False sinon
+        """
+        if not self.db_uri:
+            logger.warning("DB URI non fournie, création de table drift_metrics ignorée")
+            return False
+
+        create_query = """
+        CREATE TABLE IF NOT EXISTS drift_metrics (
+            drift_id UUID PRIMARY KEY,
+            run_id TEXT NOT NULL,
+            timestamp TIMESTAMP NOT NULL,
+            drift_type TEXT NOT NULL,
+            metric_name TEXT NOT NULL,
+            metric_value DOUBLE PRECISION NOT NULL,
+            drift_detected BOOLEAN NOT NULL,
+            threshold DOUBLE PRECISION,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """
+
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(create_query)
+                    # Index pour les requêtes fréquentes
+                    cursor.execute(
+                        "CREATE INDEX IF NOT EXISTS idx_drift_metrics_run_id ON drift_metrics (run_id);"
+                    )
+                    cursor.execute(
+                        "CREATE INDEX IF NOT EXISTS idx_drift_metrics_timestamp ON drift_metrics (timestamp);"
+                    )
+                    cursor.execute(
+                        "CREATE INDEX IF NOT EXISTS idx_drift_metrics_drift_type ON drift_metrics (drift_type);"
+                    )
+                    conn.commit()
+            logger.info("Table drift_metrics créée ou déjà existante")
+            return True
+        except Exception as e:
+            logger.error(f"Erreur lors de la création de la table drift_metrics: {e}")
+            return False
+
+    def store_drift_metrics(self, drift_results, run_id):
+        """
+        Stocke les métriques de drift dans la base de données
+        
+        Args:
+            drift_results: Dict avec les résultats de drift detection
+            run_id: ID de la run de prédiction
+            
+        Returns:
+            True si succès, False sinon
+        """
+        if not self.db_uri:
+            logger.warning("DB URI non fournie, stockage des métriques de drift ignoré")
+            return False
+
+        if not drift_results:
+            logger.warning("Aucun résultat de drift à stocker")
+            return False
+
+        insert_query = """
+        INSERT INTO drift_metrics (
+            drift_id, run_id, timestamp, drift_type, metric_name, 
+            metric_value, drift_detected, threshold
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (drift_id) DO NOTHING;
+        """
+
+        try:
+            import uuid
+            from datetime import datetime
+            
+            with self._get_connection() as conn:
+                with conn.cursor() as cursor:
+                    data = []
+                    current_timestamp = datetime.now()
+                    
+                    # Extraire et structurer les métriques de drift
+                    for drift_type, metrics in drift_results.items():
+                        if isinstance(metrics, dict):
+                            for metric_name, metric_value in metrics.items():
+                                # Déterminer si c'est une détection de drift
+                                drift_detected = False
+                                threshold = None
+                                
+                                if metric_name == 'drift_detected' and isinstance(metric_value, bool):
+                                    drift_detected = metric_value
+                                elif 'drift' in metric_name.lower() and isinstance(metric_value, (int, float)):
+                                    # Si c'est une valeur de drift, on peut détecter si elle dépasse un seuil
+                                    pass
+                                
+                                data.append((
+                                    str(uuid.uuid4()),
+                                    run_id,
+                                    current_timestamp,
+                                    drift_type,
+                                    metric_name,
+                                    float(metric_value) if isinstance(metric_value, (int, float)) else None,
+                                    drift_detected,
+                                    threshold
+                                ))
+                    
+                    if data:
+                        execute_batch(cursor, insert_query, data)
+                        conn.commit()
+                        logger.info(f"{len(data)} métriques de drift stockées")
+                    else:
+                        logger.warning("Aucune métrique valide à stocker")
+            return True
+        except Exception as e:
+            logger.error(f"Erreur lors du stockage des métriques de drift: {e}")
+            return False
+
+    def get_drift_metrics(self, run_id=None, limit=100):
+        """
+        Récupère les métriques de drift
+        
+        Args:
+            run_id: ID de la run spécifique (optionnel)
+            limit: Nombre maximum de résultats (défaut: 100)
+            
+        Returns:
+            DataFrame des métriques ou None
+        """
+        if not self.db_uri:
+            logger.warning("DB URI non fournie, récupération des métriques de drift ignorée")
+            return None
+
+        if run_id:
+            query = """
+            SELECT drift_id, run_id, timestamp, drift_type, metric_name, 
+                   metric_value, drift_detected, threshold, created_at
+            FROM drift_metrics
+            WHERE run_id = %s
+            ORDER BY timestamp DESC
+            LIMIT %s
+            """
+            params = (run_id, limit)
+        else:
+            query = """
+            SELECT drift_id, run_id, timestamp, drift_type, metric_name, 
+                   metric_value, drift_detected, threshold, created_at
+            FROM drift_metrics
+            ORDER BY timestamp DESC
+            LIMIT %s
+            """
+            params = (limit,)
+
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(query, params)
+                    rows = cursor.fetchall()
+                    columns = [desc[0] for desc in cursor.description]
+            return pd.DataFrame(rows, columns=columns)
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération des métriques de drift: {e}")
+            return None

@@ -33,7 +33,8 @@ from ml.workflows.prediction_tasks import (
     prepare_features_task,
     run_predictions_task,
     store_predictions_task,
-    verify_results_task
+    verify_results_task,
+    detect_drift_task
 )
 
 # Importer les utilitaires
@@ -164,8 +165,17 @@ def prediction_full_pipeline(
         logger.warning("Aucune URI de base de données fournie, stockage ignoré")
         storage_info = {"status": "skipped", "reason": "no_db_uri"}
     
-    # 7. ===== VÉRIFICATION =====
-    logger.info("\n=== ÉTAPE 7: Vérification des résultats ===")
+    # 7. ===== DÉTECTION DE DRIFT =====
+    logger.info("\n=== ÉTAPE 7: Détection de drift ===")
+    
+    if db_uri:
+        drift_info = detect_drift_task(pipeline=pipeline, config_path="src/configs/consumption.yaml")
+    else:
+        logger.warning("Détection de drift ignorée (pas de base de données)")
+        drift_info = {"status": "skipped", "reason": "no_db_uri"}
+    
+    # 8. ===== VÉRIFICATION =====
+    logger.info("\n=== ÉTAPE 8: Vérification des résultats ===")
     
     if db_uri:
         verification_info = verify_results_task(pipeline=pipeline)
@@ -173,7 +183,7 @@ def prediction_full_pipeline(
         logger.warning("Vérification ignorée (pas de base de données)")
         verification_info = {"status": "skipped", "reason": "no_db_uri"}
     
-    # 8. ===== RÉSULTAT FINAL =====
+    # 9. ===== RÉSULTAT FINAL =====
     logger.info("\n" + "="*60)
     logger.info("PIPELINE DE PRÉDICTION TERMINÉ AVEC SUCCÈS")
     logger.info("="*60)
@@ -185,6 +195,7 @@ def prediction_full_pipeline(
         "features": features_info,
         "predictions": predictions_info,
         "storage": storage_info,
+        "drift_detection": drift_info,
         "verification": verification_info
     }
 

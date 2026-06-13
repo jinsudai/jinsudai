@@ -70,25 +70,16 @@ monitoring:
   metric_target: 0.90  # Target 90%
   alert_threshold: 0.85  # Warning si < 85%
 
-# SFTP Configuration pour récupération des valeurs réelles
-sftp:
-  enabled: true  # Activer/désactiver l'intégration SFTP
-  host: "${SFTP_HOST:sftp.example.com}"
-  port: 22
-  username: "${SFTP_USERNAME:sftp_user}"
-  ssh_private_key_content: "${SFTP_SSH_PRIVATE_KEY_CONTENT:}"  # Contenu de la clé SSH (format OpenSSH) depuis secret (requis)
-  passphrase: "${SFTP_PASSPHRASE:}"  # Passphrase pour la clé SSH (optionnel)
-  timeout: 30
-  
-  # Répertoires
-  remote_directory: "${SFTP_REMOTE_DIRECTORY:/data/incoming}"  # Répertoire contenant les fichiers à traiter
-  archive_directory: "${SFTP_ARCHIVE_DIRECTORY:/data/archived}"  # Répertoire pour les fichiers traités
-  file_pattern: "${SFTP_FILE_PATTERN:*.csv}"  # Pattern des fichiers à traiter
-  
-  # Traitement local
-  temp_local_dir: "${SFTP_TEMP_LOCAL_DIR:/tmp/sftp_temp}"  # Répertoire temporaire local
-
 # Configuration des notifications par email
 # Note: La configuration détaillée est dans config.yaml (section email)
 email:
-  enabled: true  # Activer/désactiver les notifications email pour ce module
+  enabled: false  # Activer/désactiver les notifications email pour ce module
+
+# Configuration de la détection de drift
+drift_detection:
+  enabled: true  # Activer/désactiver la détection de drift
+  data_drift_threshold: 0.1  # Seuil pour Population Stability Index (PSI)
+  concept_drift_threshold: 0.15  # Seuil pour drift de performance
+  feature_drift_threshold: 0.2  # Seuil pour drift par feature
+  reference_data_path: "../data/dev/train_consumption.parquet"  # Chemin vers les données de référence
+  min_samples_for_detection: 100  # Nombre minimum d'échantillons pour détecter le drift
