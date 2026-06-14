@@ -18,8 +18,9 @@ from pathlib import Path
 import tempfile
 import pandas as pd
 import numpy as np
+import requests
 
-from analytics.utils.api.weather.weather_api import WeatherAPI
+from src.ml.connectors.weather.weather_api import WeatherAPI
 
 
 class TestWeatherAPI(unittest.TestCase):
@@ -215,6 +216,88 @@ class TestWeatherAPI(unittest.TestCase):
         """Test avec format de date invalide."""
         with self.assertRaises(ValueError):
             self.weather.fetch_historical("01/01/2024", "02/01/2024")
+
+    @patch('requests.get')
+    def test_fetch_forecast_success(self, mock_get):
+        """Test la récupération de prévisions météo réussie."""
+        # Mock de la réponse API pour forecast
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "hourly": {
+                "time": ["2024-01-01T00:00", "2024-01-01T01:00", "2024-01-01T02:00"],
+                "temperature_2m": [5.0, 4.5, 4.0],
+                "relative_humidity_2m": [80, 82, 84],
+                "precipitation": [0.0, 0.1, 0.0]
+            }
+        }
+        mock_get.return_value = mock_response
+        
+        df = self.weather.fetch_forecast(forecast_days=1, hourly=True)
+        
+        self.assertEqual(len(df), 3)
+        self.assertIsNotNone(self.weather.data)
+        self.assertIn("temperature_2m_mean", df.columns)
+        mock_get.assert_called_once()
+
+    @patch('requests.get')
+    def test_fetch_forecast_daily(self, mock_get):
+        """Test la récupération de prévisions météo journalières."""
+        # Mock de la réponse API pour forecast daily
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "daily": {
+                "time": ["2024-01-01", "2024-01-02"],
+                "temperature_2m_mean": [5.0, 6.0],
+                "relative_humidity_2m_mean": [80, 82],
+                "precipitation_sum": [2.5, 1.2]
+            }
+        }
+        mock_get.return_value = mock_response
+        
+        df = self.weather.fetch_forecast(forecast_days=2, hourly=False)
+        
+        self.assertEqual(len(df), 2)
+        self.assertEqual(df["temperature_2m_mean"].iloc[0], 5.0)
+        self.assertEqual(df["precipitation_sum"].iloc[0], 2.5)
+
+    def test_fetch_forecast_invalid_days_too_low(self):
+        """Test fetch_forecast avec nombre de jours invalide (trop bas)."""
+        with self.assertRaises(ValueError) as context:
+            self.weather.fetch_forecast(forecast_days=0)
+        self.assertIn("forecast_days doit être entre 1 et 16", str(context.exception))
+
+    def test_fetch_forecast_invalid_days_too_high(self):
+        """Test fetch_forecast avec nombre de jours invalide (trop haut)."""
+        with self.assertRaises(ValueError) as context:
+            self.weather.fetch_forecast(forecast_days=17)
+        self.assertIn("forecast_days doit être entre 1 et 16", str(context.exception))
+
+    @patch('requests.get')
+    def test_fetch_forecast_max_days(self, mock_get):
+        """Test fetch_forecast avec le maximum de jours (16)."""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "hourly": {
+                "time": ["2024-01-01T00:00"],
+                "temperature_2m": [5.0],
+                "relative_humidity_2m": [80],
+                "precipitation": [0.0]
+            }
+        }
+        mock_get.return_value = mock_response
+        
+        df = self.weather.fetch_forecast(forecast_days=16, hourly=True)
+        
+        self.assertEqual(len(df), 1)
+        mock_get.assert_called_once()
+
+    @patch('requests.get')
+    def test_fetch_forecast_api_error(self, mock_get):
+        """Test fetch_forecast avec erreur API."""
+        mock_get.side_effect = requests.RequestException("API Error")
+        
+        with self.assertRaises(requests.RequestException):
+            self.weather.fetch_forecast(forecast_days=1)
 
 
 class TestWeatherAPIIntegration(unittest.TestCase):

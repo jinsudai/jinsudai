@@ -83,9 +83,9 @@ def generate_inference_data(
         }
 
     # Récupérer les prévisions météo avec l'API
-    weather_latitude = get_nested(config, "data.weather_latitude", 48.8566)  # Défaut: Paris
-    weather_longitude = get_nested(config, "data.weather_longitude", 2.3522)
-    weather_location = get_nested(config, "data.weather_location", "Paris")
+    weather_latitude = get_nested(config, "data.weather_latitude", 43.5297)  # Défaut: Aix en Provence
+    weather_longitude = get_nested(config, "data.weather_longitude", 5.4474)
+    weather_location = get_nested(config, "data.weather_location", "Aix en Provence")
     
     weather_api = WeatherAPI(
         latitude=weather_latitude,

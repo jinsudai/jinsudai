@@ -31,9 +31,9 @@ logger = logging.getLogger(__name__)
 def fetch_weather_task(
     start_date: str,
     end_date: str,
-    latitude: float = 48.8566,  # Paris par défaut
-    longitude: float = 2.3522,
-    location_name: str = "Paris",
+    latitude: float = 43.5297,  # Aix en Provence par défaut
+    longitude: float = 5.4474,
+    location_name: str = "Aix en Provence",
     hourly: bool = True
 ) -> str:
     """
@@ -77,9 +77,9 @@ def generate_weather_parquet_task(
     start_date: str,
     end_date: str,
     output_path: str,
-    latitude: float = 48.8566,
-    longitude: float = 2.3522,
-    location_name: str = "Paris",
+    latitude: float = 43.5297,
+    longitude: float = 5.4474,
+    location_name: str = "Aix en Provence",
     validate: bool = True
 ) -> str:
     """
@@ -130,9 +130,9 @@ def generate_weather_parquet_task(
 def generate_weather_dataframe_task(
     start_date: str,
     end_date: str,
-    latitude: float = 48.8566,
-    longitude: float = 2.3522,
-    location_name: str = "Paris"
+    latitude: float = 43.5297,
+    longitude: float = 5.4474,
+    location_name: str = "Aix en Provence"
 ) -> str:
     """
     Tâche Prefect : Génère un DataFrame météo en mémoire.

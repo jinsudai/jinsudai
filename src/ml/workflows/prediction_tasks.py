@@ -477,3 +477,128 @@ def detect_drift_task(
         "drift_results": drift_results,
         "run_id": run_id
     }
+
+
+@task(
+    name="retrain_model",
+    description="Retraîne le modèle avec les données de production",
+    retries=1,
+    retry_delay_seconds=60
+)
+def retrain_model_task(
+    pipeline,
+    config_path: str = "src/configs/consumption.yaml",
+    enabled: bool = True,
+    min_samples: int = 100,
+    drift_detected: bool = False
+) -> Dict[str, Any]:
+    """
+    Tâche Prefect : Retraîne le modèle avec les données de production.
+    
+    Args:
+        pipeline: Instance de PredictionPipeline
+        config_path: Chemin vers la config consommation
+        enabled: Si False, skip le retraining (activation globale)
+        min_samples: Nombre minimum d'échantillons requis pour le retraining
+        drift_detected: Si False, skip le retraining (déclenchement conditionnel)
+    
+    Returns:
+        dict: Contient status, training_result, staging_result
+    """
+    if not enabled:
+        logger.info("Retraining désactivé (enabled=False)")
+        return {
+            "status": "skipped",
+            "reason": "disabled"
+        }
+    
+    if not drift_detected:
+        logger.info("Retraining non déclenché (pas de drift détecté)")
+        return {
+            "status": "skipped",
+            "reason": "no_drift"
+        }
+    
+    if not pipeline.db_handler:
+        logger.warning("Pas de DatabaseHandler, retraining impossible")
+        return {
+            "status": "skipped",
+            "reason": "no_database"
+        }
+    
+    # 1. Récupérer les données de production
+    production_data = pipeline.db_handler.get_production_data_for_retraining()
+    
+    if production_data is None or production_data.empty:
+        logger.warning("Pas de données de production disponibles pour le retraining")
+        return {
+            "status": "skipped",
+            "reason": "no_production_data"
+        }
+    
+    if len(production_data) < min_samples:
+        logger.warning(f"Pas assez de données pour le retraining: {len(production_data)} < {min_samples}")
+        return {
+            "status": "skipped",
+            "reason": "insufficient_data",
+            "n_samples": len(production_data)
+        }
+    
+    logger.info(f"Données de production récupérées: {len(production_data)} enregistrements")
+    
+    # 2. Déclencher le flow consumption pour le retraining
+    try:
+        from ml.workflows.consumption_flow import consumption_full_pipeline
+        from ml.config import load_config
+        import pandas as pd
+        from pathlib import Path
+        from datetime import datetime
+        
+        config = load_config(config_path)
+        
+        # Déterminer les dates pour le retraining
+        production_data['prediction_date'] = pd.to_datetime(production_data['prediction_date'])
+        min_date = production_data['prediction_date'].min()
+        max_date = production_data['prediction_date'].max()
+        
+        logger.info(f"Période de production: {min_date} à {max_date}")
+        
+        # Déterminer les chemins depuis la config
+        raw_path = config.get('data', {}).get('raw_path', 'data/templates/raw_template.csv')
+        output_dir = config.get('data', {}).get('processed_path', 'data/processed/')
+        
+        # Vérifier que le fichier brut existe
+        if not Path(raw_path).exists():
+            logger.warning(f"Fichier brut non trouvé: {raw_path}")
+            return {
+                "status": "skipped",
+                "reason": "raw_data_not_found",
+                "raw_path": raw_path
+            }
+        
+        # Déclencher le flow consumption
+        logger.info("Déclenchement du flow consumption pour le retraining")
+        
+        consumption_result = consumption_full_pipeline(
+            start_date=min_date.strftime('%Y-%m-%d'),
+            end_date=max_date.strftime('%Y-%m-%d'),
+            raw_path=raw_path,
+            output_dir=output_dir
+        )
+        
+        logger.info(f"Flow consumption terminé: {consumption_result.get('status')}")
+        
+        return {
+            "status": "completed",
+            "consumption_result": consumption_result,
+            "n_samples": len(production_data)
+        }
+        
+    except Exception as e:
+        logger.error(f"Erreur lors du retraining: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return {
+            "status": "error",
+            "reason": str(e)
+        }

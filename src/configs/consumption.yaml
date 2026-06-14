@@ -13,9 +13,9 @@ data:
   holidays_zone: "C"  # Zone scolaire (A, B ou C)
   
   # Configuration API météo pour prévisions
-  weather_latitude: 48.8566  # Paris par défaut
-  weather_longitude: 2.3522
-  weather_location: "Paris"
+  weather_latitude: 43.5297  # Aix en Provence par défaut
+  weather_longitude: 5.4474
+  weather_location: "Aix en Provence"
 
   target_column: "Valeur"  # Consommation en kWh
   

@@ -1,3 +1,12 @@
+---
+title: docsify
+emoji: 👀
+colorFrom: indigo
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # Documentation avec Mermaid
 
 Bienvenue dans cette documentation générée avec **Docsify** et **Mermaid**.

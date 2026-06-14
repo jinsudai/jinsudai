@@ -34,7 +34,8 @@ from ml.workflows.prediction_tasks import (
     run_predictions_task,
     store_predictions_task,
     verify_results_task,
-    detect_drift_task
+    detect_drift_task,
+    retrain_model_task
 )
 
 # Importer les utilitaires
@@ -174,8 +175,25 @@ def prediction_full_pipeline(
         logger.warning("Détection de drift ignorée (pas de base de données)")
         drift_info = {"status": "skipped", "reason": "no_db_uri"}
     
-    # 8. ===== VÉRIFICATION =====
-    logger.info("\n=== ÉTAPE 8: Vérification des résultats ===")
+    # 8. ===== RETRAINING CONDITIONNEL =====
+    logger.info("\n=== ÉTAPE 8: Retraining conditionnel ===")
+    
+    drift_detected = drift_info.get("drift_results", {}).get("overall_drift_detected", False)
+    
+    if db_uri:
+        retraining_info = retrain_model_task(
+            pipeline=pipeline,
+            config_path="src/configs/consumption.yaml",
+            enabled=True,
+            min_samples=100,
+            drift_detected=drift_detected
+        )
+    else:
+        logger.warning("Retraining ignoré (pas de base de données)")
+        retraining_info = {"status": "skipped", "reason": "no_db_uri"}
+    
+    # 9. ===== VÉRIFICATION =====
+    logger.info("\n=== ÉTAPE 9: Vérification des résultats ===")
     
     if db_uri:
         verification_info = verify_results_task(pipeline=pipeline)
@@ -183,7 +201,7 @@ def prediction_full_pipeline(
         logger.warning("Vérification ignorée (pas de base de données)")
         verification_info = {"status": "skipped", "reason": "no_db_uri"}
     
-    # 9. ===== RÉSULTAT FINAL =====
+    # 10. ===== RÉSULTAT FINAL =====
     logger.info("\n" + "="*60)
     logger.info("PIPELINE DE PRÉDICTION TERMINÉ AVEC SUCCÈS")
     logger.info("="*60)
@@ -196,6 +214,7 @@ def prediction_full_pipeline(
         "predictions": predictions_info,
         "storage": storage_info,
         "drift_detection": drift_info,
+        "retraining": retraining_info,
         "verification": verification_info
     }
 

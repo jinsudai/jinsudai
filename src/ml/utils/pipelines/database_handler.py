@@ -443,3 +443,49 @@ class DatabaseHandler:
         except Exception as e:
             logger.error(f"Erreur lors de la récupération des métriques de drift: {e}")
             return None
+
+    def get_production_data_for_retraining(self, limit=None):
+        """
+        Récupère les données de production avec valeurs réelles pour le retraining.
+        
+        Args:
+            limit: Nombre maximum d'enregistrements (optionnel)
+            
+        Returns:
+            DataFrame avec les colonnes prediction_date, prediction, actual_value
+            ou None en cas d'erreur
+        """
+        if not self.db_uri:
+            logger.warning("DB URI non fournie, récupération des données de production ignorée")
+            return None
+
+        if limit:
+            query = """
+            SELECT prediction_date, prediction, actual_value
+            FROM predictions_pipeline
+            WHERE actual_value IS NOT NULL
+            ORDER BY prediction_date DESC
+            LIMIT %s
+            """
+            params = (limit,)
+        else:
+            query = """
+            SELECT prediction_date, prediction, actual_value
+            FROM predictions_pipeline
+            WHERE actual_value IS NOT NULL
+            ORDER BY prediction_date DESC
+            """
+            params = ()
+
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(query, params)
+                    rows = cursor.fetchall()
+                    columns = [desc[0] for desc in cursor.description]
+            df = pd.DataFrame(rows, columns=columns)
+            logger.info(f"Données de production récupérées: {len(df)} enregistrements")
+            return df
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération des données de production: {e}")
+            return None
