@@ -371,12 +371,17 @@ def detect_drift_task(
     from ml.utils.monitoring.drift_detector import (
         load_reference_data,
         load_production_data,
-        run_drift_detection
+        run_drift_detection,
+        run_evidently_drift_detection
     )
     
     # Charger la configuration
     config = load_config(config_path)
     drift_config = config.get('drift_detection', {})
+    
+    # Charger la configuration Evidently globale
+    global_config = load_config('config.yaml')
+    evidently_config = global_config.get('evidently', {})
     
     # Vérifier si la détection de drift est activée
     if not drift_config.get('enabled', False):
@@ -431,12 +436,33 @@ def detect_drift_task(
         "target_column": target_column
     }
     
+    # Déterminer si on utilise les rapports Evidently natifs
+    use_evidently_native = evidently_config.get('use_native_reports', True)
+    save_to_mlflow = evidently_config.get('save_to_mlflow', True)
+    
     # Exécuter la détection de drift
-    drift_results = run_drift_detection(
-        reference_data=reference_data,
-        current_data=production_data,
-        config=drift_detection_config
-    )
+    if use_evidently_native:
+        logger.info("Utilisation des rapports Evidently natifs")
+        
+        # Récupérer le run_id MLflow actuel si disponible
+        mlflow_run_id = pipeline.model_info.get('run_id', None) if pipeline.model_info else None
+        
+        # Exécuter avec Evidently natif
+        drift_results = run_evidently_drift_detection(
+            reference_data=reference_data,
+            current_data=production_data,
+            config=drift_detection_config,
+            save_to_mlflow=save_to_mlflow,
+            mlflow_run_id=mlflow_run_id
+        )
+    else:
+        logger.info("Utilisation de l'implémentation drift detection personnalisée")
+        # Exécuter avec l'implémentation personnalisée
+        drift_results = run_drift_detection(
+            reference_data=reference_data,
+            current_data=production_data,
+            config=drift_detection_config
+        )
     
     # Stocker les métriques dans la base de données
     run_id = pipeline.model_info.get('run_id', 'unknown') if pipeline.model_info else 'unknown'

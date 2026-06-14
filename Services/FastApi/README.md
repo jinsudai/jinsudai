@@ -2,7 +2,7 @@
 title: FastAPI - Consumption Prediction Service
 emoji: ⚡
 colorFrom: blue
-colorTo: cyan
+colorTo: purple
 sdk: docker
 pinned: false
 ---

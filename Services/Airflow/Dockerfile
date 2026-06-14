@@ -34,6 +34,9 @@ USER airflow
 COPY requirements.txt requirements.txt 
 RUN pip install -r requirements.txt
 
+# COPY SOURCE CODE
+COPY ./src /opt/airflow/src
+
 # COPY DAGS
 COPY ./dags /opt/airflow/dags
 
