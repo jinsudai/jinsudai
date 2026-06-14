@@ -12,7 +12,7 @@ import sys
 import os
 
 # Ajouter le répertoire src au PYTHONPATH
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from ml.workflows.weather_flow import update_weather_daily_flow
 

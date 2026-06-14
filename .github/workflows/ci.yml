@@ -74,4 +74,17 @@ jobs:
     
     - name: Validate YAML configs
       run: |
-        poetry run python -c "import yaml; [yaml.safe_load(open(f)) for f in ['src/configs/*.yaml', 'config.yaml', 'openspec/config.yaml']]"
+        poetry run python -c "
+        import yaml
+        import glob
+        import sys
+        yaml_files = glob.glob('src/configs/*.yaml') + ['config.yaml', 'openspec/config.yaml']
+        for f in yaml_files:
+            try:
+                with open(f) as fp:
+                    yaml.safe_load(fp)
+                print(f'✓ {f}')
+            except Exception as e:
+                print(f'✗ {f}: {e}')
+                sys.exit(1)
+        "

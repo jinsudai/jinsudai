@@ -11,7 +11,7 @@ import sys
 import os
 
 # Ajouter le répertoire src au PYTHONPATH
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from ml.workflows.prediction_flow import prediction_full_pipeline
 
