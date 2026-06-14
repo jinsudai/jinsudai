@@ -54,3 +54,12 @@ environment: "dev"  # Options: "dev", "test", "prod"
 logging:
   level: "INFO"  # Options: "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Configuration Evidently AI
+evidently:
+  enabled: true  # Activer/désactiver Evidently
+  workspace_path: "./evidently_workspace"  # Chemin du workspace Evidently
+  report_path: "./evidently_reports"  # Chemin pour sauvegarder les rapports
+  use_native_reports: true  # Utiliser les rapports natifs Evidently (recommandé)
+  save_to_mlflow: true  # Sauvegarder les rapports dans MLflow
+  mlflow_artifact_path: "evidently_reports"  # Chemin des artefacts dans MLflow

@@ -24,7 +24,10 @@ dependencies = [
     "prefect (>=3.0.0)",
     "psycopg2-binary>=2.9.12,<3.0.0",
     "paramiko>=3.0.0",
-    "resend>=0.8.0"
+    "resend>=0.8.0",
+    "fastapi[standard]",
+    "uvicorn[standard]",
+    "python-multipart"
 ]
 
 [tool.setuptools]

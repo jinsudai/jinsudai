@@ -9,6 +9,8 @@ Fonctions principales :
 - detect_concept_drift(): Compare distribution des prédictions vs cibles
 - load_reference_data(): Charge les données d'entraînement
 - load_production_data(): Charge les prédictions récentes depuis PostgreSQL
+- generate_evidently_report(): Génère un rapport Evidently natif
+- save_evidently_report_to_mlflow(): Sauvegarde le rapport dans MLflow
 """
 
 import pandas as pd
@@ -16,6 +18,14 @@ import numpy as np
 import logging
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
+from datetime import datetime
+import tempfile
+
+# Import Evidently
+from evidently.report import Report
+from evidently.metrics import DataDriftPreset, DatasetDriftMetric
+from evidently.metric_preset import DataDriftPreset as DataDriftPresetClass
+from evidently.ui.workspace import Workspace
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -364,3 +374,192 @@ def run_drift_detection(
             "concept_drift": {"drift_detected": False, "error": str(e)},
             "overall_drift_detected": False
         }
+
+
+def generate_evidently_report(
+    reference_data: pd.DataFrame,
+    current_data: pd.DataFrame,
+    output_path: Optional[str] = None,
+    report_name: str = "drift_report"
+) -> Tuple[Report, Dict[str, Any]]:
+    """
+    Génère un rapport Evidently natif pour la détection de drift.
+    
+    Args:
+        reference_data: DataFrame de référence
+        current_data: DataFrame courant
+        output_path: Chemin pour sauvegarder le rapport HTML (optionnel)
+        report_name: Nom du rapport
+    
+    Returns:
+        Tuple: (Report Evidently, résultats sous forme de dict)
+    """
+    try:
+        if reference_data is None or current_data is None:
+            logger.error("Données de référence ou courantes manquantes")
+            return None, {"error": "missing_data"}
+        
+        # Créer le rapport avec les presets Evidently
+        report = Report(metrics=[
+            DataDriftPreset(),
+            DatasetDriftMetric()
+        ])
+        
+        # Exécuter le rapport
+        report.run(reference_data=reference_data, current_data=current_data)
+        
+        # Extraire les résultats
+        report_dict = report.as_dict()
+        
+        # Sauvegarder le rapport HTML si un chemin est fourni
+        if output_path:
+            output_file = Path(output_path) / f"{report_name}.html"
+            report.save_html(str(output_file))
+            logger.info(f"Rapport Evidently sauvegardé: {output_file}")
+        
+        return report, report_dict
+        
+    except Exception as e:
+        logger.error(f"Erreur lors de la génération du rapport Evidently: {e}")
+        return None, {"error": str(e)}
+
+
+def save_evidently_report_to_mlflow(
+    report: Report,
+    report_dict: Dict[str, Any],
+    run_id: Optional[str] = None,
+    artifact_path: str = "evidently_reports"
+) -> bool:
+    """
+    Sauvegarde le rapport Evidently et ses métriques dans MLflow.
+    
+    Args:
+        report: Rapport Evidently
+        report_dict: Résultats du rapport sous forme de dict
+        run_id: ID de la run MLflow (optionnel, utilise la run active si None)
+        artifact_path: Chemin pour les artefacts dans MLflow
+    
+    Returns:
+        bool: True si succès, False sinon
+    """
+    try:
+        import mlflow
+        
+        # Créer un fichier temporaire pour le rapport HTML
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as f:
+            temp_path = f.name
+        
+        # Sauvegarder le rapport HTML
+        report.save_html(temp_path)
+        
+        # Logger les métriques dans MLflow
+        if run_id:
+            with mlflow.start_run(run_id=run_id):
+                _log_metrics_and_artifacts(report_dict, temp_path, artifact_path)
+        else:
+            _log_metrics_and_artifacts(report_dict, temp_path, artifact_path)
+        
+        # Nettoyer le fichier temporaire
+        Path(temp_path).unlink()
+        
+        logger.info("Rapport Evidently sauvegardé dans MLflow")
+        return True
+        
+    except ImportError:
+        logger.warning("MLflow n'est pas installé, impossible de sauvegarder le rapport")
+        return False
+    except Exception as e:
+        logger.error(f"Erreur lors de la sauvegarde du rapport dans MLflow: {e}")
+        return False
+
+
+def _log_metrics_and_artifacts(
+    report_dict: Dict[str, Any],
+    html_path: str,
+    artifact_path: str
+):
+    """Fonction helper pour logger les métriques et artefacts dans MLflow."""
+    import mlflow
+    
+    # Extraire et logger les métriques de drift
+    if "metrics" in report_dict and len(report_dict["metrics"]) > 0:
+        first_metric = report_dict["metrics"][0]
+        if "result" in first_metric:
+            result = first_metric["result"]
+            
+            # Logger les métriques principales
+            mlflow.log_metric("dataset_drift", int(result.get("dataset_drift", False)))
+            mlflow.log_metric("drifted_features", result.get("number_of_drifted_columns", 0))
+            mlflow.log_metric("total_features", result.get("number_of_columns", 0))
+            
+            # Logger les métriques par feature
+            if "drift_by_columns" in result:
+                for col, metrics in result["drift_by_columns"].items():
+                    mlflow.log_metric(f"drift_{col}", int(metrics.get("drift_detected", False)))
+    
+    # Logger le rapport HTML comme artefact
+    mlflow.log_artifact(html_path, artifact_path)
+
+
+def run_evidently_drift_detection(
+    reference_data: pd.DataFrame,
+    current_data: pd.DataFrame,
+    config: Dict[str, Any],
+    save_to_mlflow: bool = True,
+    mlflow_run_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Exécute la détection de drift complète avec Evidently (rapports natifs).
+    
+    Args:
+        reference_data: DataFrame de référence
+        current_data: DataFrame courant
+        config: Configuration avec les seuils
+        save_to_mlflow: Sauvegarder le rapport dans MLflow
+        mlflow_run_id: ID de la run MLflow (optionnel)
+    
+    Returns:
+        Dict avec tous les résultats de drift detection
+    """
+    try:
+        results = {
+            "evidently_report": None,
+            "evidently_results": None,
+            "overall_drift_detected": False
+        }
+        
+        # Générer le rapport Evidently
+        report, report_dict = generate_evidently_report(
+            reference_data=reference_data,
+            current_data=current_data
+        )
+        
+        if report is None:
+            logger.error("Impossible de générer le rapport Evidently")
+            return {"error": "report_generation_failed"}
+        
+        results["evidently_report"] = report
+        results["evidently_results"] = report_dict
+        
+        # Extraire les résultats de drift
+        if "metrics" in report_dict and len(report_dict["metrics"]) > 0:
+            first_metric = report_dict["metrics"][0]
+            if "result" in first_metric:
+                result = first_metric["result"]
+                results["overall_drift_detected"] = result.get("dataset_drift", False)
+                results["drifted_features_count"] = result.get("number_of_drifted_columns", 0)
+                results["total_features_analyzed"] = result.get("number_of_columns", 0)
+        
+        # Sauvegarder dans MLflow si demandé
+        if save_to_mlflow and report is not None:
+            save_evidently_report_to_mlflow(
+                report=report,
+                report_dict=report_dict,
+                run_id=mlflow_run_id
+            )
+        
+        return results
+        
+    except Exception as e:
+        logger.error(f"Erreur lors de la détection de drift avec Evidently: {e}")
+        return {"error": str(e)}
