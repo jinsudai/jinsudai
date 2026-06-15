@@ -48,7 +48,7 @@ with DAG(
     'prediction_full_pipeline',
     default_args=default_args,
     description='Pipeline complet de prédiction : configuration → modèle → données → prédictions → stockage',
-    schedule_interval='0 8 * * *',  # Tous les jours à 8h
+    schedule='0 8 * * *',  # Tous les jours à 8h
     catchup=False,
     max_active_runs=1,
     tags=['prediction', 'ml', 'inference'],
@@ -69,5 +69,4 @@ with DAG(
     prediction_task = PythonOperator(
         task_id='run_prediction_pipeline',
         python_callable=run_prediction_pipeline,
-        provide_context=True
     )

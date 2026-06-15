@@ -44,7 +44,7 @@ with DAG(
     'weather_daily_update',
     default_args=default_args,
     description='Met à jour quotidiennement le fichier weather.parquet avec les nouvelles données météo',
-    schedule_interval='0 6 * * *',  # Tous les jours à 6h
+    schedule='0 6 * * *',  # Tous les jours à 6h
     catchup=False,
     max_active_runs=1,
     tags=['weather', 'daily', 'data-update'],
@@ -58,5 +58,4 @@ with DAG(
     weather_update_task = PythonOperator(
         task_id='update_weather_data',
         python_callable=run_weather_update,
-        provide_context=True
     )

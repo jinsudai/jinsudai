@@ -42,7 +42,7 @@ with DAG(
     'consumption_full_pipeline',
     default_args=default_args,
     description='Pipeline complet : données brutes → modèle en production',
-    schedule_interval='0 3 * * 0',  # Tous les dimanches à 3h du matin
+    schedule='0 3 * * 0',  # Tous les dimanches à 3h du matin
     catchup=False,
     max_active_runs=1,
     tags=['consumption', 'training', 'ml'],
@@ -57,5 +57,4 @@ with DAG(
     consumption_task = PythonOperator(
         task_id='run_consumption_pipeline',
         python_callable=run_consumption_pipeline,
-        provide_context=True
     )

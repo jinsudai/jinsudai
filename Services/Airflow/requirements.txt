@@ -5,3 +5,14 @@ boto3
 requests
 apache-airflow-providers-ssh
 apache-airflow-providers-amazon
+apache-airflow-providers-postgres
+PyYAML
+scikit-learn
+autogluon.tabular
+autogluon.common
+mlflow
+python-dotenv
+evidently
+psycopg2-binary>=2.9.12,<3.0.0
+paramiko>=3.0.0
+resend>=0.8.0

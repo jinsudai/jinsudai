@@ -44,7 +44,7 @@ with DAG(
     'holidays_annual_pipeline',
     default_args=default_args,
     description='Génère le fichier holidays.parquet pour une année complète',
-    schedule_interval='0 0 1 1 *',  # 1er janvier de chaque année
+    schedule='0 0 1 1 *',  # 1er janvier de chaque année
     catchup=False,
     max_active_runs=1,
     tags=['holidays', 'annual', 'data-generation'],
@@ -58,5 +58,4 @@ with DAG(
     holidays_task = PythonOperator(
         task_id='generate_holidays',
         python_callable=run_holidays_generation,
-        provide_context=True
     )

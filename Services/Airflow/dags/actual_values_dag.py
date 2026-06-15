@@ -39,7 +39,7 @@ with DAG(
     'actual_values_full_pipeline',
     default_args=default_args,
     description='Pipeline complet de mise à jour des valeurs réelles : configuration → récupération veille → génération aléatoire → mise à jour BD',
-    schedule_interval='0 7 * * *',  # Tous les jours à 7h
+    schedule='0 7 * * *',  # Tous les jours à 7h
     catchup=False,
     max_active_runs=1,
     tags=['actual-values', 'data-update', 'monitoring'],
@@ -51,5 +51,4 @@ with DAG(
     actual_values_task = PythonOperator(
         task_id='run_actual_values_pipeline',
         python_callable=run_actual_values_pipeline,
-        provide_context=True
     )

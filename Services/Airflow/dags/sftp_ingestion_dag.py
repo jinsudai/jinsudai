@@ -50,7 +50,7 @@ with DAG(
     'sftp_ingestion_pipeline',
     default_args=default_args,
     description='Pipeline d\'ingestion des données via SFTP : listing → téléchargement → parsing → matching → mise à jour BD → archivage',
-    schedule_interval='0 */4 * * *',  # Toutes les 4 heures
+    schedule='0 */4 * * *',  # Toutes les 4 heures
     catchup=False,
     max_active_runs=1,
     tags=['sftp', 'ingestion', 'data-update'],
@@ -73,5 +73,4 @@ with DAG(
     sftp_ingestion_task = PythonOperator(
         task_id='run_sftp_ingestion',
         python_callable=run_sftp_ingestion,
-        provide_context=True
     )
