@@ -41,5 +41,7 @@ find = { where = ["src"], include = ["ml*", "utils*", "connectors*"] }
 dev = [
     "ipykernel (>=7.2.0,<8.0.0)",
     "jupyterlab (>=4.5.7,<5.0.0)",
-    "notebook (>=7.5.7,<8.0.0)"
+    "notebook (>=7.5.7,<8.0.0)",
+    "pytest",
+    "pytest-cov"
 ]
