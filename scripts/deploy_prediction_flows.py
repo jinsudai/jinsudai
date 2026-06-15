@@ -8,14 +8,35 @@ Usage:
     python scripts/deploy_prediction_flows.py
 """
 
+from prefect import get_client
 from ml.workflows.prediction_flow import (
     prediction_full_pipeline,
     prediction_inference_only_pipeline,
     prediction_batch_pipeline
 )
 
+async def create_work_pool_if_not_exists(pool_name: str):
+    """Create work pool if it doesn't exist."""
+    async with get_client() as client:
+        try:
+            await client.read_work_pool(pool_name)
+            print(f"Work pool '{pool_name}' already exists")
+        except Exception:
+            print(f"Creating work pool '{pool_name}'...")
+            await client.create_work_pool(
+                name=pool_name,
+                type="process"
+            )
+            print(f"✅ Work pool '{pool_name}' created")
+
 if __name__ == "__main__":
+    import asyncio
+    
     print("=== Déploiement des flows de prédiction ===\n")
+    
+    # Create work pool if it doesn't exist
+    asyncio.run(create_work_pool_if_not_exists("default-pool"))
+    print()
     
     # Déployer le pipeline complet
     print("1. Déploiement de prediction_full_pipeline...")

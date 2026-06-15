@@ -20,11 +20,11 @@ ENV HOME=/home/user \
 WORKDIR $HOME/app
 
 # Install basic dependencies
-COPY requirements.txt /dependencies/requirements.txt
+COPY Services/FastApi/requirements.txt /dependencies/requirements.txt
 RUN pip install -r /dependencies/requirements.txt
 
 # Copy all local files to /home/user/app with "user" as owner of these files
 # Always use --chown=user when using HUGGINGFACE to avoid permission errors
-COPY --chown=user . $HOME/app
+COPY --chown=user Services/FastApi/. $HOME/app
 
 CMD uvicorn main:app --host 0.0.0.0 --port 7860 
