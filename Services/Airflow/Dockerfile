@@ -31,18 +31,19 @@ RUN usermod -u 1000 airflow
 USER airflow
 
 # Install any additional dependencies if needed
-COPY requirements.txt requirements.txt 
+COPY Services/airflow/requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
 # COPY SOURCE CODE
-COPY ./src /opt/airflow/src
+COPY src /opt/airflow/src
 
 # COPY DAGS
-COPY ./dags /opt/airflow/dags
+COPY Services/airflow/dags /opt/airflow/dags
 
 # Expose the necessary ports (optional if Hugging Face already handles port exposure)
 EXPOSE 7860
 
 # Initialize the Airflow database (PostgreSQL in this case)
 # Start Airflow webserver and scheduler within the same container
-CMD ["bash", "-c", "airflow db migrate && (airflow users create --username $AIRFLOW_ADMIN_USER --firstname $AIRFLOW_ADMIN_USER --lastname $AIRFLOW_ADMIN_USER --role Admin --email ${AIRFLOW_ADMIN_USER}@sustcoop.fr --password $AIRFLOW_ADMIN_PASSWORD || echo 'User already exists') && (airflow scheduler & airflow api-server)"]
+#CMD ["bash", "-c", "airflow db migrate && (airflow users create --username $AIRFLOW_ADMIN_USER --firstname $AIRFLOW_ADMIN_USER --lastname $AIRFLOW_ADMIN_USER --role Admin --email ${AIRFLOW_ADMIN_USER}@sustcoop.fr --password $AIRFLOW_ADMIN_PASSWORD || echo 'User already exists') && (airflow scheduler & airflow api-server)"]
+CMD ["bash", "-c", "airflow db migrate && (airflow users create --username $AIRFLOW_ADMIN_USER --firstname $AIRFLOW_ADMIN_USER --lastname $AIRFLOW_ADMIN_USER --role Admin --email ${AIRFLOW_ADMIN_USER}@sustcoop.fr --password $AIRFLOW_ADMIN_PASSWORD || true) && airflow dag-processor & airflow scheduler & airflow api-server"]

@@ -501,12 +501,81 @@ def _log_metrics_and_artifacts(
     mlflow.log_artifact(html_path, artifact_path)
 
 
+def save_evidently_report_to_workspace(
+    report: Report,
+    project_name: str = "energy_consumption",
+    report_name: Optional[str] = None,
+    workspace_path: str = "/app/workspace",
+    metadata: Optional[Dict[str, Any]] = None,
+    tags: Optional[list] = None
+) -> bool:
+    """
+    Sauvegarde le rapport Evidently dans un workspace Evidently UI.
+    
+    Args:
+        report: Rapport Evidently
+        project_name: Nom du projet dans le workspace
+        report_name: Nom du rapport (optionnel, généré automatiquement si None)
+        workspace_path: Chemin du workspace Evidently
+        metadata: Métadonnées à attacher au rapport
+        tags: Tags à attacher au rapport
+    
+    Returns:
+        bool: True si succès, False sinon
+    """
+    try:
+        from evidently.ui.workspace import Workspace
+        from pathlib import Path
+        
+        # Créer ou charger le workspace
+        workspace_path_obj = Path(workspace_path)
+        workspace_path_obj.mkdir(parents=True, exist_ok=True)
+        
+        workspace = Workspace.create(workspace_path_obj)
+        
+        # Créer ou charger le projet
+        try:
+            project = workspace.create_project(project_name)
+            project.description = "Monitoring de la consommation d'énergie"
+            project.save()
+        except Exception:
+            # Le projet existe déjà
+            project = workspace.get_project(project_name)
+        
+        # Générer le nom du rapport si non fourni
+        if report_name is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            report_name = f"drift_report_{timestamp}"
+        
+        # Ajouter le rapport au projet
+        project.add_report(
+            report,
+            report_name,
+            metadata=metadata or {},
+            tags=tags or []
+        )
+        
+        project.save()
+        logger.info(f"Rapport Evidently sauvegardé dans le workspace: {workspace_path}/{project_name}/{report_name}")
+        return True
+        
+    except ImportError:
+        logger.warning("Evidently UI n'est pas installé, impossible de sauvegarder dans le workspace")
+        return False
+    except Exception as e:
+        logger.error(f"Erreur lors de la sauvegarde du rapport dans le workspace: {e}")
+        return False
+
+
 def run_evidently_drift_detection(
     reference_data: pd.DataFrame,
     current_data: pd.DataFrame,
     config: Dict[str, Any],
     save_to_mlflow: bool = True,
-    mlflow_run_id: Optional[str] = None
+    mlflow_run_id: Optional[str] = None,
+    save_to_workspace: bool = False,
+    workspace_path: Optional[str] = None,
+    project_name: str = "energy_consumption"
 ) -> Dict[str, Any]:
     """
     Exécute la détection de drift complète avec Evidently (rapports natifs).
@@ -517,6 +586,9 @@ def run_evidently_drift_detection(
         config: Configuration avec les seuils
         save_to_mlflow: Sauvegarder le rapport dans MLflow
         mlflow_run_id: ID de la run MLflow (optionnel)
+        save_to_workspace: Sauvegarder le rapport dans le workspace Evidently UI
+        workspace_path: Chemin du workspace Evidently (optionnel)
+        project_name: Nom du projet dans le workspace
     
     Returns:
         Dict avec tous les résultats de drift detection
@@ -556,6 +628,31 @@ def run_evidently_drift_detection(
                 report=report,
                 report_dict=report_dict,
                 run_id=mlflow_run_id
+            )
+        
+        # Sauvegarder dans le workspace Evidently si demandé
+        if save_to_workspace and report is not None:
+            ws_path = workspace_path or config.get("evidently_workspace_path", "/app/workspace")
+            proj_name = config.get("evidently_project_name", project_name)
+            
+            # Préparer les métadonnées
+            metadata = {
+                "timestamp": datetime.now().isoformat(),
+                "data_drift_threshold": config.get("data_drift_threshold", 0.1),
+                "concept_drift_threshold": config.get("concept_drift_threshold", 0.15)
+            }
+            
+            # Tags
+            tags = ["drift_detection"]
+            if results["overall_drift_detected"]:
+                tags.append("drift_detected")
+            
+            save_evidently_report_to_workspace(
+                report=report,
+                project_name=proj_name,
+                workspace_path=ws_path,
+                metadata=metadata,
+                tags=tags
             )
         
         return results

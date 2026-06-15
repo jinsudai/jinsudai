@@ -13,7 +13,8 @@ import os
 # Ajouter le répertoire src au PYTHONPATH
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from ml.workflows.prediction_flow import prediction_full_pipeline
+from ml.utils.pipelines.Prediction_pipeline import PredictionPipeline
+from ml.config import load_config
 
 default_args = {
     'owner': 'airflow',
@@ -29,20 +30,43 @@ def run_prediction_pipeline(**context):
     """Exécute le pipeline complet de prédiction."""
     params = context.get('params', {})
     
-    result = prediction_full_pipeline(
-        model_name=params.get('model_name', 'consumption_model'),
-        mlflow_uri=params.get('mlflow_uri'),
-        experiment_name=params.get('experiment_name'),
-        db_uri=params.get('db_uri'),
-        n_days=params.get('n_days', 3),
-        n_samples_per_day=params.get('n_samples_per_day', 48),
-        feature_columns=params.get('feature_columns'),
-        alias_prod=params.get('alias_prod', 'prod'),
-        use_existing_data=params.get('use_existing_data', False),
-        df_inference_path=params.get('df_inference_path')
-    )
+    # Charger la config pour les valeurs par défaut
+    config = load_config(config_name="consumption")
     
-    return result
+    mlflow_uri = params.get('mlflow_uri') or config.get('mlflow', {}).get('tracking_uri', 'http://localhost:5000')
+    experiment_name = params.get('experiment_name') or config.get('mlflow', {}).get('experiment_name', 'consumption_experiment')
+    db_uri = params.get('db_uri') or config.get('database', {}).get('uri')
+    
+    # Créer et configurer le pipeline
+    pipeline = PredictionPipeline(mlflow_uri, experiment_name, db_uri)
+    
+    if not pipeline.setup():
+        raise Exception("Échec de la configuration du pipeline")
+    
+    # Charger le modèle
+    model_name = params.get('model_name', 'consumption_model')
+    alias_prod = params.get('alias_prod', 'prod')
+    
+    if not pipeline.load_model(model_name, alias_prod=alias_prod):
+        raise Exception(f"Échec du chargement du modèle {model_name}")
+    
+    # Générer les données d'inférence
+    n_days = params.get('n_days', 3)
+    n_samples_per_day = params.get('n_samples_per_day', 48)
+    
+    pipeline.generate_inference_data(n_days=n_days, n_samples_per_day=n_samples_per_day)
+    
+    # Préparer les features
+    pipeline.prepare_features()
+    
+    # Exécuter les prédictions
+    pipeline.run_predictions()
+    
+    # Stocker si base de données disponible
+    if db_uri:
+        pipeline.store_predictions()
+    
+    return {"status": "success", "model": model_name}
 
 with DAG(
     'prediction_full_pipeline',

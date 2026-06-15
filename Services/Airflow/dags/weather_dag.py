@@ -14,7 +14,8 @@ import os
 # Ajouter le répertoire src au PYTHONPATH
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from ml.workflows.weather_flow import update_weather_daily_flow
+from ml.connectors.weather.weather_api import WeatherAPI
+from ml.config import load_config
 
 default_args = {
     'owner': 'airflow',
@@ -28,17 +29,35 @@ default_args = {
 
 def run_weather_update(**context):
     """Exécute le flow de mise à jour des données météo."""
-    config_path = context.get('params', {}).get('config_path', 'src/configs/consumption.yaml')
-    weather_output_path = context.get('params', {}).get('weather_output_path', None)
-    days_ahead = context.get('params', {}).get('days_ahead', 7)
+    params = context.get('params', {})
     
-    result = update_weather_daily_flow(
-        config_path=config_path,
-        weather_output_path=weather_output_path,
-        days_ahead=days_ahead
-    )
+    config_path = params.get('config_path', 'src/configs/consumption.yaml')
+    weather_output_path = params.get('weather_output_path', None)
+    days_ahead = params.get('days_ahead', 7)
     
-    return result
+    # Charger la configuration
+    config = load_config(config_path=config_path)
+    
+    # Récupérer les paramètres depuis la config
+    latitude = config.get('data', {}).get('weather_latitude', 43.5297)
+    longitude = config.get('data', {}).get('weather_longitude', 5.4474)
+    location_name = config.get('data', {}).get('weather_location', 'Aix en Provence')
+    
+    if weather_output_path is None:
+        weather_output_path = config.get('data', {}).get('weather_file', 'data/processed/weather.parquet')
+    
+    # Déterminer la date de début (aujourd'hui - 30 jours par défaut)
+    start_date = datetime.now() - timedelta(days=30)
+    end_date = datetime.now() + timedelta(days=days_ahead)
+    
+    # Récupérer les données météo
+    api = WeatherAPI(latitude=latitude, longitude=longitude, location_name=location_name)
+    df = api.fetch_historical(start_date=start_date.strftime('%Y-%m-%d'), end_date=end_date.strftime('%Y-%m-%d'), hourly=True)
+    
+    # Sauvegarder
+    df.to_parquet(weather_output_path)
+    
+    return {"status": "success", "output_path": weather_output_path}
 
 with DAG(
     'weather_daily_update',

@@ -13,7 +13,7 @@ import os
 # Ajouter le répertoire src au PYTHONPATH
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from ml.workflows.holidays_flow import holidays_annual_pipeline
+from ml.connectors.holidays.holidays_api import HolidaysCombinedAPI
 
 default_args = {
     'owner': 'airflow',
@@ -31,14 +31,23 @@ def run_holidays_generation(**context):
     
     # Déterminer l'année : utiliser l'année en cours ou celle passée en paramètre
     year = params.get('year', datetime.now().year)
+    output_dir = params.get('output_dir', 'data/processed/')
+    zone = params.get('zone', 'C')
     
-    result = holidays_annual_pipeline(
-        year=year,
-        output_dir=params.get('output_dir', 'data/processed/'),
-        zone=params.get('zone', 'C')
-    )
+    # Définir les dates de début et fin de l'année
+    start_date = f"{year}-01-01"
+    end_date = f"{year}-12-31"
     
-    return result
+    # Définir le chemin de sortie
+    from pathlib import Path
+    output_path = Path(output_dir) / f"holidays_{year}.parquet"
+    
+    # Générer le fichier Parquet
+    api = HolidaysCombinedAPI()
+    df = api.fetch(start_date=start_date, end_date=end_date, zone=zone)
+    df.to_parquet(output_path)
+    
+    return {"status": "success", "year": year, "output_path": str(output_path)}
 
 with DAG(
     'holidays_annual_pipeline',

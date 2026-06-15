@@ -42,16 +42,42 @@ jobs:
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
-        context: ./Services/${{ matrix.service }}
+        context: .
+        file: ./Services/${{ matrix.service }}/Dockerfile
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
+  publish-library:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+    
+    - name: Build package
+      run: poetry build
+    
+    - name: Publish to GitHub Packages
+      run: poetry publish
+      env:
+        POETRY_REPOSITORIES_GITHUB_URL: https://pypi.pkg.github.com/${{ github.repository }}
+        POETRY_REPOSITORY_GITHUB: github
+        POETRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   deploy:
     runs-on: ubuntu-latest
-    needs: build-and-push
+    needs: [build-and-push, publish-library]
     if: github.ref == 'refs/heads/main'
     
     steps:
