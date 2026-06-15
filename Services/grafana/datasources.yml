@@ -1,0 +1,85 @@
+# Configuration des Data Sources Grafana pour le projet MLOps Energy Prediction
+# Ce fichier permet de configurer automatiquement les data sources lors du déploiement de Grafana
+
+apiVersion: 1
+
+datasources:
+  # Data Source MLflow
+  - name: MLflow
+    type: prometheus
+    access: proxy
+    url: ${MLFLOW_URL:-http://localhost:5000}
+    isDefault: false
+    editable: true
+    jsonData:
+      timeInterval: "30s"
+      queryTimeout: "60s"
+      httpMethod: "POST"
+    version: 1
+
+  # Alternative: MLflow via HTTP API (si Prometheus n'est pas disponible)
+  # - name: MLflow-API
+  #   type: influxdb
+  #   access: proxy
+  #   url: http://localhost:5000
+  #   database: mlflow
+  #   user: ""
+  #   password: ""
+  #   isDefault: false
+  #   editable: true
+  #   jsonData:
+  #     timeInterval: "30s"
+  #     httpMode: "POST"
+
+  # Data Source EvidentlyAI
+  - name: EvidentlyAI
+    type: prometheus
+    access: proxy
+    url: ${EVIDENTLY_URL:-http://localhost:8501}
+    isDefault: false
+    editable: true
+    jsonData:
+      timeInterval: "30s"
+      queryTimeout: "60s"
+      httpMethod: "POST"
+    version: 1
+
+  # Alternative: EvidentlyAI via HTTP API (si Prometheus n'est pas disponible)
+  # - name: EvidentlyAI-API
+  #   type: influxdb
+  #   access: proxy
+  #   url: http://localhost:8501
+  #   database: evidently
+  #   user: ""
+  #   password: ""
+  #   isDefault: false
+  #   editable: true
+  #   jsonData:
+  #     timeInterval: "30s"
+  #     httpMode: "POST"
+
+  # Data Source PostgreSQL (pour les données de prédiction stockées en base)
+  # - name: PostgreSQL
+  #   type: postgres
+  #   access: proxy
+  #   url: localhost:5432
+  #   database: jinsudai
+  #   user: postgres
+  #   password: ${POSTGRES_PASSWORD}
+  #   isDefault: false
+  #   editable: true
+  #   jsonData:
+  #     postgresVersion: 1200
+  #     timescaledb: false
+  #   secureJsonData:
+  #     password: ${POSTGRES_PASSWORD}
+
+  # Data Source Loki (pour les logs applicatifs)
+  # - name: Loki
+  #   type: loki
+  #   access: proxy
+  #   url: http://localhost:3100
+  #   isDefault: false
+  #   editable: true
+  #   jsonData:
+  #     maxLines: 1000

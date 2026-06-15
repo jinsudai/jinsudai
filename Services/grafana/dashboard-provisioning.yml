@@ -1,0 +1,16 @@
+# Configuration de provisioning des dashboards Grafana
+# Ce fichier permet de charger automatiquement les dashboards au démarrage
+
+apiVersion: 1
+
+providers:
+  - name: 'MLOps Energy Dashboard'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: true

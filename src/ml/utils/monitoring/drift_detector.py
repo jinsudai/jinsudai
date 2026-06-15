@@ -22,7 +22,7 @@ from datetime import datetime
 import tempfile
 
 # Import Evidently
-from evidently.report import Report
+from evidently import Report
 from evidently.metrics import DataDriftPreset, DatasetDriftMetric
 from evidently.metric_preset import DataDriftPreset as DataDriftPresetClass
 from evidently.ui.workspace import Workspace
