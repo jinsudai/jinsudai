@@ -26,8 +26,8 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
-def run_actual_values_pipeline(**context):
-    """Exécute le pipeline de mise à jour des valeurs réelles."""
+def setup_actual_values_task(**context):
+    """Configure le pipeline de valeurs réelles (Base de données)."""
     params = context.get('params', {})
     
     # Charger la config pour l'URI de la base de données
@@ -37,22 +37,54 @@ def run_actual_values_pipeline(**context):
     if not db_uri:
         raise ValueError("URI de base de données requise")
     
+    # Stocker l'URI dans XCom pour les tâches suivantes
+    context['task_instance'].xcom_push(key='db_uri', value=db_uri)
+    
     # Créer et configurer le pipeline
     pipeline = ActualValuesPipeline(db_uri)
     
     if not pipeline.setup():
         raise Exception("Échec de la configuration du pipeline")
     
-    # Récupérer les prédictions de la veille
+    return {"status": "setup_complete"}
+
+def get_previous_day_predictions_task(**context):
+    """Récupère les prédictions de la veille."""
+    db_uri = context['task_instance'].xcom_pull(task_ids='setup_actual_values', key='db_uri')
+    
+    pipeline = ActualValuesPipeline(db_uri)
+    pipeline.setup()
+    
+    if not pipeline.get_previous_day_predictions():
+        raise Exception("Aucune prédiction trouvée pour la veille")
+    
+    return {"status": "predictions_retrieved", "count": len(pipeline.previous_day_predictions)}
+
+def generate_random_actual_values_task(**context):
+    """Génère des valeurs aléatoires pour les prédictions de la veille."""
+    db_uri = context['task_instance'].xcom_pull(task_ids='setup_actual_values', key='db_uri')
+    
+    pipeline = ActualValuesPipeline(db_uri)
+    pipeline.setup()
     pipeline.get_previous_day_predictions()
     
-    # Générer les valeurs aléatoires
+    if not pipeline.generate_random_actual_values():
+        raise Exception("Échec de la génération des valeurs aléatoires")
+    
+    return {"status": "values_generated", "count": pipeline.updated_count}
+
+def verify_updates_task(**context):
+    """Vérifie les mises à jour effectuées."""
+    db_uri = context['task_instance'].xcom_pull(task_ids='setup_actual_values', key='db_uri')
+    
+    pipeline = ActualValuesPipeline(db_uri)
+    pipeline.setup()
+    pipeline.get_previous_day_predictions()
     pipeline.generate_random_actual_values()
     
-    # Vérifier les mises à jour
-    pipeline.verify_updates()
+    updated_predictions = pipeline.verify_updates()
     
-    return {"status": "success", "updated_count": pipeline.updated_count}
+    return {"status": "verified", "updated_count": pipeline.updated_count}
 
 with DAG(
     'actual_values_full_pipeline',
@@ -67,7 +99,26 @@ with DAG(
     }
 ) as dag:
     
-    actual_values_task = PythonOperator(
-        task_id='run_actual_values_pipeline',
-        python_callable=run_actual_values_pipeline,
+    # Définir les tâches individuelles
+    setup_task = PythonOperator(
+        task_id='setup_actual_values',
+        python_callable=setup_actual_values_task,
     )
+    
+    get_predictions_task = PythonOperator(
+        task_id='get_previous_day_predictions',
+        python_callable=get_previous_day_predictions_task,
+    )
+    
+    generate_values_task = PythonOperator(
+        task_id='generate_random_actual_values',
+        python_callable=generate_random_actual_values_task,
+    )
+    
+    verify_task = PythonOperator(
+        task_id='verify_updates',
+        python_callable=verify_updates_task,
+    )
+    
+    # Définir les dépendances entre les tâches
+    setup_task >> get_predictions_task >> generate_values_task >> verify_task

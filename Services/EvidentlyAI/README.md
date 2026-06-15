@@ -1,3 +1,14 @@
+---
+title: EvidentlyAI
+emoji: 📊
+colorFrom: pink
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
+
+
 # Evidently AI Dashboard
 
 Dashboard Streamlit pour visualiser les rapports de drift detection générés par Evidently AI.
