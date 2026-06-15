@@ -23,8 +23,8 @@ import tempfile
 
 # Import Evidently
 from evidently import Report
-from evidently.metrics import DataDriftPreset, DatasetDriftMetric
-from evidently.metric_preset import DataDriftPreset as DataDriftPresetClass
+from evidently.presets import DataDriftPreset
+from evidently.metrics import DriftedColumnsCount
 from evidently.ui.workspace import Workspace
 
 logging.basicConfig(level=logging.INFO)
@@ -402,7 +402,7 @@ def generate_evidently_report(
         # Créer le rapport avec les presets Evidently
         report = Report(metrics=[
             DataDriftPreset(),
-            DatasetDriftMetric()
+            DriftedColumnsCount()
         ])
         
         # Exécuter le rapport
