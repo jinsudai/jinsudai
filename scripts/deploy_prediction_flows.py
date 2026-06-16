@@ -17,17 +17,23 @@ from ml.workflows.prediction_flow import (
 
 async def create_work_pool_if_not_exists(pool_name: str):
     """Create work pool if it doesn't exist."""
+    import subprocess
     async with get_client() as client:
         try:
             await client.read_work_pool(pool_name)
             print(f"Work pool '{pool_name}' already exists")
         except Exception:
             print(f"Creating work pool '{pool_name}'...")
-            await client.create_work_pool(
-                name=pool_name,
-                type="process"
-            )
-            print(f"✅ Work pool '{pool_name}' created")
+            try:
+                subprocess.run(
+                    ["prefect", "work-pool", "create", pool_name, "--type", "process"],
+                    check=True,
+                    capture_output=True
+                )
+                print(f"✅ Work pool '{pool_name}' created")
+            except subprocess.CalledProcessError as e:
+                print(f"⚠️ Failed to create work pool via CLI: {e}")
+                print("Continuing with deployment...")
 
 if __name__ == "__main__":
     import asyncio
