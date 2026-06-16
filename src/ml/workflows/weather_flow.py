@@ -7,6 +7,7 @@ le fichier weather.parquet avec les nouvelles données météo.
 from prefect import flow
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Optional
 import pandas as pd
 import logging
 

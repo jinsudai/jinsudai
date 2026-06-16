@@ -18,8 +18,8 @@ def test_consumption_pipeline():
     """Test du pipeline avec fichiers de test existants."""
     
     # Utiliser nos fichiers de test existants
-    weather_path = 'data/processed/test_weather_full.parquet'
-    holidays_path = 'data/processed/test_holidays_full.parquet'
+    weather_path = 'data/processed/weather.parquet'
+    holidays_path = 'data/processed/holidays.parquet'
     raw_path = 'data/templates/test_raw_consumption.csv'
     
     # 1. Préparer les features

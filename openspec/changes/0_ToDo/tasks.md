@@ -1,9 +1,13 @@
-
-A checker avec Devin
-
+A tester
 Faire fonctionner prefect en local
+Streamlit
+grafana
+airflow (Later)
 
-S'assurer que Airflow ne dépend pas de prefect grace aux pipelines
+A faire deployement docker avec:
+Streamlit / EvidentlyAI ou UI / Prefect interne
+Base de donnée externes / Mlflow Externe
+
 
 CI/CD erreur comment faire dans le cas d'une library?
 build-and-push (Airflow)
