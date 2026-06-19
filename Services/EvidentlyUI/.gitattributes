@@ -1,5 +1,0 @@
-# Auto detect text files and perform LF normalization
-* text=auto
-
-# Workspace directory (should not be committed)
-workspace/ export-ignore
