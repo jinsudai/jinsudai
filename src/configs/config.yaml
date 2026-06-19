@@ -33,11 +33,6 @@ mlflow:
   tracking_uri: "https://jinsudai-mlflow.hf.space/"
   default_experiment_name: "energy_consumption"
 
-# Configuration FastAPI
-fastapi:
-  url: "http://localhost:8000"
-  predict_endpoint: "/predict/batch"
-
 # Configuration SFTP
 sftp:
   enabled: false

@@ -164,8 +164,10 @@ data/dev/
 data/test/
 data/prod/
 
-# disabled services
+# disabled folders for potential future use
 services/_disabled/
+pipelines/_disabled/
+scripts/_disabled/
 
 # Copilot
 .copilotignore

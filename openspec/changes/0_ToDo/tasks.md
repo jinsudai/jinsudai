@@ -1,12 +1,48 @@
-A tester
-Faire fonctionner prefect en local
-Streamlit
-grafana
-airflow (Later)
+A faire
+- Utilisation de FastAPI par Streamlit -> A tester
+- Renomage de FastAPI en inference-service
+- 
 
-A faire deployement docker avec:
+A tester
+Evidently 
+Streamlit
+deployement
+
+A faire (later)
+- Faire en sorte que chaque pipeline soit un service -> Sauvegarder le projet
+- airflow peut orchestrer Github via des pushs git
+- Faire fonctionner prefect en local
+- Evidently -> Il faut stocker aussi les données météo pour le data drift -> Idealement oui
+- Loki pour collecter les logs ?
+- grafana
+
+Fast API qui contient tout le ML pour une orchestration peu gourmande
+L'orchestrateur qui appelle les endpoints
+
+
+
+
+
+
+
+
+CI & CD issues
+
+deployement docker avec:
 Streamlit / EvidentlyAI ou UI / Prefect interne
 Base de donnée externes / Mlflow Externe
+
+EvidentlyUI -> Erreur dockerfile
+Traceback (most recent call last):
+  File "/app/main.py", line 10, in <module>
+    from evidently.ui.dashboards import DashboardPanelPlot, DashboardPanelCounter, ReportFilter
+ModuleNotFoundError: No module named 'evidently.ui.dashboards'
+Traceback (most recent call last):
+  File "/app/main.py", line 10, in <module>
+    from evidently.ui.dashboards import DashboardPanelPlot, DashboardPanelCounter, ReportFilter
+ModuleNotFoundError: No module named 'evidently.ui.dashboards'
+
+
 
 
 CI/CD erreur comment faire dans le cas d'une library?

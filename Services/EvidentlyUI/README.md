@@ -1,3 +1,14 @@
+---
+title: Evidently UI
+emoji: 👀
+colorFrom: indigo
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
+
+
 # Evidently UI Service
 
 Service Evidently UI natif pour visualiser les rapports de monitoring ML générés par EvidentlyAI.
