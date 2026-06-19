@@ -1,0 +1,81 @@
+name: Training Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: 'Date de début (YYYY-MM-DD)'
+        required: false
+        default: '2024-01-01'
+      end_date:
+        description: 'Date de fin (YYYY-MM-DD)'
+        required: false
+        default: '2024-01-31'
+      raw_path:
+        description: 'Chemin vers le fichier brut'
+        required: false
+        default: 'data/templates/test_raw_consumption.csv'
+      features_path:
+        description: 'Chemin vers le fichier features (optionnel, si non fourni, génère les features)'
+        required: false
+  push:
+    branches:
+      - main
+    paths:
+      - 'pipelines/training/**'
+      - 'src/ml/**'
+      - 'data/templates/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'pipelines/training/**'
+      - 'src/ml/**'
+      - 'data/templates/**'
+
+jobs:
+  training:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+      
+      - name: Generate features (if features_path not provided)
+        if: github.event.inputs.features_path == ''
+        run: |
+          python scripts/run_data_pipeline_simple.py \
+            --start_date "${{ github.event.inputs.start_date || '2024-01-01' }}" \
+            --end_date "${{ github.event.inputs.end_date || '2024-01-31' }}" \
+            --raw_path "${{ github.event.inputs.raw_path || 'data/templates/test_raw_consumption.csv' }}"
+      
+      - name: Determine features path
+        id: features_path
+        run: |
+          if [ -n "${{ github.event.inputs.features_path }}" ]; then
+            echo "path=${{ github.event.inputs.features_path }}" >> $GITHUB_OUTPUT
+          else
+            echo "path=data/processed/consumption_features_${{ github.event.inputs.start_date || '2024-01-01' }}_to_${{ github.event.inputs.end_date || '2024-01-31' }}.parquet" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Run training pipeline
+        run: |
+          python pipelines/training/run_training_pipeline_simple.py \
+            --features_path "${{ steps.features_path.outputs.path }}"
+      
+      - name: Upload model artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: consumption-model
+          path: models/consumption_model.pkl
+          retention-days: 30

@@ -83,15 +83,29 @@ def main():
         print("\n=== Étape 3: Préparation features ===")
         features_path = Path(args.output_dir) / f"consumption_features_{args.start_date}_to_{args.end_date}.parquet"
         
-        # Pour l'instant, copier simplement le fichier brut avec les météo
+        # Pour l'instant, créer des features simplifiées pour tester
         # Ceci est une version simplifiée pour tester
-        raw_df = pd.read_csv(args.raw_path)
-        weather_df = pd.read_parquet(weather_path)
+        raw_df = pd.read_csv(args.raw_path, sep=';')  # Utiliser le bon séparateur
         
-        # Fusion simple basée sur la date (à améliorer)
-        features_df = raw_df.copy()
+        # Créer des features numériques simples
+        features_df = pd.DataFrame()
+        
+        # Extraire la valeur de consommation
+        if 'Valeur' in raw_df.columns:
+            features_df['Valeur'] = pd.to_numeric(raw_df['Valeur'], errors='coerce')
+        
+        # Ajouter quelques features basées sur les dates
+        if 'Horodate' in raw_df.columns:
+            features_df['Heure'] = pd.to_datetime(raw_df['Horodate'], errors='coerce').dt.hour
+            features_df['Jour'] = pd.to_datetime(raw_df['Horodate'], errors='coerce').dt.day
+            features_df['Mois'] = pd.to_datetime(raw_df['Horodate'], errors='coerce').dt.month
+        
+        # Supprimer les lignes avec des valeurs manquantes
+        features_df = features_df.dropna()
+        
         features_df.to_parquet(features_path)
         print(f"✅ Features générés (simplifiés): {features_path}")
+        print(f"Colonnes: {features_df.columns.tolist()}")
         
         print(f"\n=== Résultat ===")
         print(f"✅ Pipeline terminé avec succès")
