@@ -59,7 +59,7 @@ def get_service_secrets(service):
     """Get service-specific secrets from environment (e.g., AIRFLOW_PASSWORD)"""
     # Mapping of service -> environment variables
     service_secrets_map = {
-        "Airflow": ["AIRFLOW_ADMIN_USER", "AIRFLOW_ADMIN_PASSWORD", "AIRFLOW__DATABASE__SQL_ALCHEMY_CONN", "AIRFLOW__WEBSERVER__SECRET_KEY", "GITHUB_TOKEN", "GITHUB_REPO", "GITHUB_BRANCH"],
+        "Airflow": ["AIRFLOW_ADMIN_USER", "AIRFLOW_ADMIN_PASSWORD", "AIRFLOW__DATABASE__SQL_ALCHEMY_CONN", "AIRFLOW__WEBSERVER__SECRET_KEY", "GH_TOKEN", "GH_REPO", "GH_BRANCH"],
         "MLflow": ["MLFLOW_POSTGRES_URI", "MLFLOW_S3_ENDPOINT_URL"],
         "JupyterLab": ["JUPYTER_TOKEN", "NEON_POSTGRES_URI"],
         "Streamlit": ["NEON_POSTGRES_URI"],
