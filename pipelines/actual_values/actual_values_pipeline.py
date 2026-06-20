@@ -36,7 +36,9 @@ def main():
         db_uri = args.db_uri
     
     if not db_uri:
-        print(f"❌ Erreur: URI de base de données non fournie et non trouvée dans la config")
+        print(f"❌ Erreur: URI de base de données non fournie")
+        print(f"   Définissez la variable d'environnement DATABASE_URI ou utilisez --db_uri")
+        print(f"   Exemple: export DATABASE_URI='postgresql://user:password@host:port/database'")
         sys.exit(1)
     
     try:

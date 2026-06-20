@@ -45,6 +45,8 @@ jobs:
           pip install -e .
       
       - name: Run actual values pipeline
+        env:
+          DATABASE_URI: ${{ secrets.DATABASE_URI }}
         run: |
           python pipelines/actual_values/actual_values_pipeline.py \
             --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \

@@ -7,24 +7,24 @@ on:
         description: 'Hôte SFTP'
         required: false
       sftp_username:
-        description: 'Nom d\'utilisateur SFTP'
+        description: "Nom d'utilisateur SFTP"
         required: false
       ssh_private_key_b64:
-        description: 'Clé privée SSH encodée en base64'
+        description: "Clé privée SSH encodée en base64"
         required: false
       db_uri:
-        description: 'URI de connexion PostgreSQL'
+        description: "URI de connexion PostgreSQL"
         required: false
       remote_directory:
-        description: 'Répertoire distant SFTP'
+        description: "Répertoire distant SFTP"
         required: false
         default: '/data/incoming'
       archive_directory:
-        description: 'Répertoire d\'archive SFTP'
+        description: "Répertoire d'archive SFTP"
         required: false
         default: '/data/archived'
       passphrase:
-        description: 'Phrase de passe pour la clé SSH'
+        description: "Phrase de passe pour la clé SSH"
         required: false
       sftp_port:
         description: 'Port SFTP'
@@ -35,19 +35,19 @@ on:
         required: false
         default: '30'
       file_pattern:
-        description: 'Pattern de fichiers'
+        description: "Pattern de fichiers"
         required: false
         default: '*.csv'
       temp_local_dir:
-        description: 'Répertoire temporaire local'
+        description: "Répertoire temporaire local"
         required: false
         default: '/tmp/sftp_temp'
       config_name:
-        description: 'Nom de la config (consumption, solar_production)'
+        description: "Nom de la config (consumption, solar_production)"
         required: false
         default: 'consumption'
       use_env_config:
-        description: 'Utiliser la configuration depuis les variables d\'environnement'
+        description: "Utiliser la configuration depuis les variables d'environnement"
         required: false
         default: 'false'
   schedule:
@@ -85,6 +85,8 @@ jobs:
           pip install -e .
       
       - name: Run SFTP ingestion pipeline
+        env:
+          DATABASE_URI: ${{ secrets.DATABASE_URI }}
         run: |
           if [ "${{ github.event.inputs.use_env_config }}" = "true" ]; then
             python pipelines/sftp_ingestion/sftp_ingestion_pipeline.py \

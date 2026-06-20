@@ -47,6 +47,11 @@ sftp:
   file_pattern: "*.csv"
   temp_local_dir: "/tmp/sftp_temp"
 
+# Configuration S3
+s3:
+  bucket: "data-store"  # Nom du bucket S3 par défaut
+  prefix: "weather"  # Préfixe par défaut pour les fichiers météo
+
 # Configuration de l'environnement
 environment: "dev"  # Options: "dev", "test", "prod"
 

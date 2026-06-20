@@ -83,3 +83,7 @@ drift_detection:
   feature_drift_threshold: 0.2  # Seuil pour drift par feature
   reference_data_path: "../data/dev/train_consumption.parquet"  # Chemin vers les données de référence
   min_samples_for_detection: 100  # Nombre minimum d'échantillons pour détecter le drift
+
+# Configuration de la base de données
+database:
+  uri: null  # URI PostgreSQL (à définir via variable d'environnement DATABASE_URI)

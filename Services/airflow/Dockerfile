@@ -31,14 +31,14 @@ RUN usermod -u 1000 airflow
 USER airflow
 
 # Install any additional dependencies if needed
-COPY Services/airflow/requirements.txt requirements.txt
+COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
 # COPY SOURCE CODE
-COPY src /opt/airflow/src
+#COPY src /opt/airflow/src
 
 # COPY DAGS
-COPY Services/airflow/dags /opt/airflow/dags
+COPY dags /opt/airflow/dags
 
 # Expose the necessary ports (optional if Hugging Face already handles port exposure)
 EXPOSE 7860
