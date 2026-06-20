@@ -21,7 +21,7 @@ def add_log_entry(**context):
     """
     execution_date = context.get('execution_date')
     timestamp = execution_date.strftime('%Y-%m-%d %H:%M:%S')
-    log_message = f"[{timestamp}] Airflow - weather_daily_log_commit_v2 - Pipeline WeatherDaily exécuté avec succès\n"
+    log_message = f"[{timestamp}] Airflow - weather_daily_log_commit_v3 - Pipeline WeatherDaily exécuté avec succès\n"
     
     # S'assurer que le répertoire existe
     log_dir = os.path.dirname(LOG_FILE_PATH)
@@ -40,9 +40,9 @@ def commit_log_to_git(**context):
     return {"status": "skipped", "reason": "Git commit non implémenté"}
 
 with DAG(
-    'weather_daily_log_commit_v2',
+    'weather_daily_log_commit_v3',
     start_date=datetime(2024, 1, 1),
-    schedule=None,  # Désactivé temporairement pour tester
+    schedule=None,
     catchup=False,
     tags=['weather', 'logging', 'git-commit'],
 ) as dag:
