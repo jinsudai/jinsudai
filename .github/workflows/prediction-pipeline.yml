@@ -7,23 +7,23 @@ on:
         description: 'Nom du modèle dans MLflow'
         required: true
       config_name:
-        description: 'Nom de la config (consumption, solar_production)'
+        description: "Nom de la config (consumption, solar_production)"
         required: false
         default: 'consumption'
       n_days:
-        description: 'Nombre de jours de prédictions'
+        description: "Nombre de jours de prédictions"
         required: false
         default: '3'
       n_samples_per_day:
-        description: 'Nombre d\'échantillons par jour'
+        description: "Nombre d'échantillons par jour"
         required: false
         default: '48'
       alias_prod:
-        description: 'Alias pour la production'
+        description: "Alias pour la production"
         required: false
         default: 'prod'
       db_uri:
-        description: 'URI de connexion PostgreSQL (optionnel)'
+        description: "URI de connexion PostgreSQL (optionnel)"
         required: false
   schedule:
     # Exécution quotidienne à 6h UTC
