@@ -1,0 +1,70 @@
+name: Prediction Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_name:
+        description: 'Nom du modèle dans MLflow'
+        required: true
+      config_name:
+        description: 'Nom de la config (consumption, solar_production)'
+        required: false
+        default: 'consumption'
+      n_days:
+        description: 'Nombre de jours de prédictions'
+        required: false
+        default: '3'
+      n_samples_per_day:
+        description: 'Nombre d\'échantillons par jour'
+        required: false
+        default: '48'
+      alias_prod:
+        description: 'Alias pour la production'
+        required: false
+        default: 'prod'
+      db_uri:
+        description: 'URI de connexion PostgreSQL (optionnel)'
+        required: false
+  schedule:
+    # Exécution quotidienne à 6h UTC
+    - cron: '0 6 * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - 'pipelines/prediction/**'
+      - 'src/ml/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'pipelines/prediction/**'
+      - 'src/ml/**'
+
+jobs:
+  prediction:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+      
+      - name: Run prediction pipeline
+        run: |
+          python pipelines/prediction/prediction_pipeline.py \
+            --model_name "${{ github.event.inputs.model_name }}" \
+            --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
+            --n_days "${{ github.event.inputs.n_days || '3' }}" \
+            --n_samples_per_day "${{ github.event.inputs.n_samples_per_day || '48' }}" \
+            --alias_prod "${{ github.event.inputs.alias_prod || 'prod' }}" \
+            ${{ github.event.inputs.db_uri && format('--db_uri "{0}"', github.event.inputs.db_uri) || '' }}
