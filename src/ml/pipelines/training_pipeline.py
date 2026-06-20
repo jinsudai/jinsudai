@@ -385,7 +385,7 @@ class MLPipeline:
                 else:
                     logger.info("  ℹ Aucune version avec alias 'prod' (première fois)")
             except Exception:
-                logger.info(f"  ℹ Aucune version avec alias 'prod' (première fois)")
+                logger.info("  ℹ Aucune version avec alias 'prod' (première fois)")
 
             # Promotion automatique
             logger.info("\n[3/4] Promotion automatique en Production (alias 'prod')...")

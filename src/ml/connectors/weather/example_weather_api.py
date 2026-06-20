@@ -48,9 +48,9 @@ def main():
                 end_date=end_date,
                 hourly=True
             )
-            print(f"\nPremières lignes des données :")
+            print("\nPremières lignes des données :")
             print(df.head(10))
-            print(f"\nInformations données :")
+            print("\nInformations données :")
             print(f"  - Période : {start_date} à {end_date}")
             print(f"  - Enregistrements : {len(df)}")
             print(f"  - Colonnes : {list(df.columns)}")
@@ -60,21 +60,21 @@ def main():
             continue
 
         # Validation des données
-        print(f"\nValidation des données...")
+        print("\nValidation des données...")
         validation = weather.validate_data()
 
         print(f"  - Valide : {validation['is_valid']}")
         if validation["errors"]:
-            print(f"  - Erreurs :")
+            print("  - Erreurs :")
             for err in validation["errors"]:
                 print(f"    • {err}")
         if validation["warnings"]:
-            print(f"  - Avertissements :")
+            print("  - Avertissements :")
             for warn in validation["warnings"]:
                 print(f"    • {warn}")
 
         # Affichage statistiques
-        print(f"\nStatistiques :")
+        print("\nStatistiques :")
         stats = validation["stats"]
         print(f"  - Nombre d'enregistrements : {stats['n_records']}")
         print(f"  - Période : {stats['date_min']} à {stats['date_max']}")
@@ -86,13 +86,13 @@ def main():
         if validation["is_valid"]:
             print(f"\nGénération fichier parquet...")
             try:
-                filepath = weather.generate_parquet()
-                print(f"✓ Fichier généré avec succès")
+                weather.generate_parquet()
+                print("✓ Fichier généré avec succès")
 
                 # Export CSV optionnel
                 print(f"\nGénération fichier CSV...")
-                csv_path = weather.to_csv()
-                print(f"✓ Fichier CSV généré avec succès")
+                weather.to_csv()
+                print("✓ Fichier CSV généré avec succès")
 
             except Exception as e:
                 print(f"✗ Erreur génération fichier : {e}")

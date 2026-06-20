@@ -158,5 +158,5 @@ def generate_holidays_dataframe_task(
     # Pour Prefect, on retourne un chemin temporaire
     # En pratique, le DataFrame sera passé via le contexte Prefect
     temp_path = f"temp://holidays_df_{start_date}_to_{end_date}"
-    logger.info(f"DataFrame holidays généré (en mémoire)")
+    logger.info("DataFrame holidays généré (en mémoire)")
     return temp_path

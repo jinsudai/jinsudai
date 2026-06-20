@@ -156,9 +156,9 @@ def generate_weather_dataframe_task(
         location_name=location_name
     )
 
-    df = api.fetch_historical(start_date=start_date, end_date=end_date, hourly=True)
+    api.fetch_historical(start_date=start_date, end_date=end_date, hourly=True)
 
     # Pour Prefect, on retourne un chemin temporaire
     temp_path = f"temp://weather_df_{location_name}_{start_date}_to_{end_date}"
-    logger.info(f"DataFrame météo généré (en mémoire)")
+    logger.info("DataFrame météo généré (en mémoire)")
     return temp_path

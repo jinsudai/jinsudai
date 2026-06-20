@@ -75,7 +75,7 @@ def integrate_weather_for_consumption():
 
         # 4. Simulation chargement données consommation
         # (À remplacer par load_data() du module data)
-        print(f"  → Simul. données consommation...")
+        print("  → Simul. données consommation...")
         consumption_df = pd.DataFrame({
             "Horodate": weather_df["Horodate"],
             "Valeur": [300 + i % 200 for i in range(len(weather_df))],  # Fictif
@@ -108,7 +108,7 @@ def integrate_weather_for_consumption():
             print(f"  ✓ Fichier généré : {filepath}")
 
             # Affichage aperçu
-            print(f"\n  Aperçu données (5 premières lignes) :")
+            print("\n  Aperçu données (5 premières lignes) :")
             print(merged_df.head().to_string())
 
         except Exception as e:
@@ -163,7 +163,7 @@ def integrate_weather_for_solar():
     print(f"  ✓ Données validées")
 
     # 4. Simulation données production solaire
-    print(f"  → Simul. données production solaire...")
+    print("  → Simul. données production solaire...")
     solar_df = pd.DataFrame({
         "Horodate": weather_df["Horodate"],
         "Production_kWh": [
@@ -202,8 +202,8 @@ def integrate_weather_for_solar():
     except Exception as e:
         print(f"  ✗ Erreur export : {e}")
 
-    print(f"\n  ⚠ Note : Pour variables complètes solaire (irradiance, cloud cover),")
-    print(f"    envisager API spécialisée (PVGIS, CAMS ou Weather API premium)")
+    print("\n  ⚠ Note : Pour variables complètes solaire (irradiance, cloud cover),")
+    print("    envisager API spécialisée (PVGIS, CAMS ou Weather API premium)")
 
 
 def main():

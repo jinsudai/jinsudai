@@ -1,24 +1,51 @@
 ---
-title: docsify
-emoji: 👀
+title: Documentation MLOps Jinsudai
+emoji: �
 colorFrom: indigo
-colorTo: indigo
+colorTo: blue
 sdk: docker
 pinned: false
 ---
 
-# Documentation avec Mermaid
+# Documentation MLOps - Jinsudai
 
-Bienvenue dans cette documentation générée avec **Docsify** et **Mermaid**.
+Cette documentation présente l'architecture MLOps complète du projet de prédiction énergétique.
 
-## Exemple de diagramme Mermaid
+## 🚀 Accès à la documentation
 
-Voici un exemple de diagramme pour illustrer une architecture :
+La documentation complète est disponible dans le sous-dossier **docs/**. Utilisez le menu de navigation à gauche pour explorer les différents pipelines :
 
-```mermaid
-flowchart TD
-    A[Données EHS] --> B[Analyse des Risques]
-    B --> C[Tableau de Bord]
-    C --> D[Rapport Automatisé]
-    style A fill:#4CAF50,stroke:#388E3C
-    style D fill:#2196F3,stroke:#1976D2
+- **Architecture Globale** - Vue d'ensemble des composants
+- **Pipeline d'Ingestion** - Collecte des données sources
+- **Pipeline d'Entraînement** - Entraînement des modèles ML
+- **Pipeline d'Inférence** - Prédictions en production
+- **Pipeline CI/CD** - Automatisation du déploiement
+- **Monitoring et Drift Detection** - Surveillance des modèles
+- **Automatisation du Retraining** - Reconditionnement automatique
+
+## 📋 Caractéristiques
+
+- **Graphiques horizontaux** - Tous les diagrammes Mermaid coulent de gauche à droite
+- **Dimensions 800x600** - Taille optimisée pour la lisibilité
+- **Contraste élevé** - Thème sombre avec couleurs personnalisées
+- **Pages dédiées** - Chaque pipeline a sa propre page de documentation
+
+## 🛠️ Installation locale
+
+Pour lancer la documentation localement :
+
+```bash
+cd Services/docsify
+npm install -g docsify-cli docsify-mermaid
+docsify serve docs --port 7860 --open
+```
+
+Ou avec Docker :
+
+```bash
+cd Services/docsify
+docker build -t jinsudai-docs .
+docker run -p 7860:7860 jinsudai-docs
+```
+
+Puis ouvrez http://localhost:7860 dans votre navigateur.

@@ -125,7 +125,7 @@ def example_sftp_data_processor():
 
     # Afficher le résumé
     summary = processor.get_processing_summary(results)
-    print(f"\nRésumé du traitement:")
+    print("\nRésumé du traitement:")
     print(f"  Fichiers traités: {summary['total_files']}")
     print(f"  Succès: {summary['successful']}")
     print(f"  Échecs: {summary['failed']}")
@@ -189,7 +189,7 @@ def example_sftp_with_email_notifications():
 
     # Afficher le résumé
     summary = processor.get_processing_summary(results)
-    print(f"\nRésumé du traitement:")
+    print("\nRésumé du traitement:")
     print(f"  Fichiers traités: {summary['total_files']}")
     print(f"  Succès: {summary['successful']}")
     print(f"  Échecs: {summary['failed']}")
@@ -267,7 +267,7 @@ def example_prefect_task():
     try:
         result = process_sftp_actual_values_task(**task_config)
 
-        print(f"\nRésultat de la tâche:")
+        print("\nRésultat de la tâche:")
         print(f"  Fichiers traités: {result['summary']['total_files']}")
         print(f"  Succès: {result['summary']['successful']}")
         print(f"  Prédictions mises à jour: {result['summary']['total_predictions_updated']}")
@@ -317,7 +317,7 @@ def example_with_global_config():
     try:
         # Charger la configuration globale
         global_config = load_global_config()
-        print(f"Configuration globale chargée")
+        print("Configuration globale chargée")
         print(f"  Provider email: {global_config['email']['provider']}")
         print(f"  Environnement: {global_config.get('environment', 'dev')}")
 
