@@ -13,7 +13,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
-from ml.utils.pipelines.training_pipeline import MLPipeline
+from ml.pipelines.training_pipeline import MLPipeline
 
 def main():
     parser = argparse.ArgumentParser(description='Exécute le pipeline d\'entraînement consommation')

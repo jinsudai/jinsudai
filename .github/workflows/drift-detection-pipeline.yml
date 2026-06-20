@@ -1,0 +1,96 @@
+name: Drift Detection Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      config_name:
+        description: "Nom de la config (consumption, solar_production)"
+        required: false
+        default: 'consumption'
+      reference_path:
+        description: "Chemin vers le fichier de données de référence"
+        required: false
+        default: 'data/dev/train_consumption.parquet'
+      current_data_path:
+        description: "Chemin vers le fichier de données courantes (optionnel, utilise BD si non fourni)"
+        required: false
+      current_data_limit:
+        description: "Nombre maximum d'enregistrements depuis la BD"
+        required: false
+        default: '1000'
+      generate_report:
+        description: "Générer le rapport Evidently"
+        required: false
+        default: 'true'
+      store_metrics:
+        description: "Stocker les métriques dans MLflow/PostgreSQL"
+        required: false
+        default: 'true'
+      send_notifications:
+        description: "Envoyer les notifications email si drift détecté"
+        required: false
+        default: 'true'
+  schedule:
+    # Exécution quotidienne à 7h UTC (après le pipeline de prédiction)
+    - cron: '0 7 * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - 'pipelines/drift_detection/**'
+      - 'src/ml/utils/monitoring/**'
+      - 'src/ml/pipelines/drift_detection_pipeline.py'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'pipelines/drift_detection/**'
+      - 'src/ml/utils/monitoring/**'
+      - 'src/ml/pipelines/drift_detection_pipeline.py'
+
+jobs:
+  drift_detection:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+      
+      - name: Run drift detection pipeline
+        env:
+          DATABASE_URI: ${{ secrets.DATABASE_URI }}
+        run: |
+          python pipelines/drift_detection/drift_detection_pipeline.py \
+            --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
+            --reference_path "${{ github.event.inputs.reference_path || 'data/dev/train_consumption.parquet' }}" \
+            ${{ github.event.inputs.current_data_path && format('--current_data_path "{0}"', github.event.inputs.current_data_path) || '' }} \
+            --current_data_limit "${{ github.event.inputs.current_data_limit || '1000' }}" \
+            ${{ github.event.inputs.generate_report == 'false' && '--no-generate_report' || '--generate_report' }} \
+            ${{ github.event.inputs.store_metrics == 'false' && '--no-store_metrics' || '--store_metrics' }} \
+            ${{ github.event.inputs.send_notifications == 'false' && '--no-send_notifications' || '--send_notifications' }}
+      
+      - name: Upload drift report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-report
+          path: drift_report_*.html
+          retention-days: 30
+      
+      - name: Upload drift metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-metrics
+          path: drift_metrics_*.json
+          retention-days: 30

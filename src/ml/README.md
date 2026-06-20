@@ -13,6 +13,13 @@ src/
 │
 └── ml/
     ├── config.py                 # ✅ Chargeur central de configs
+    ├── pipelines/                # 🔄 Pipelines ML (orchestration complète)
+    │   ├── training_pipeline.py  # Classe MLPipeline (entraînement)
+    │   ├── Prediction_pipeline.py
+    │   ├── Actual_values_pipeline.py
+    │   ├── sftp_ingestion_pipeline.py
+    │   └── database_handler.py   # Gestion base de données PostgreSQL
+    │
     ├── utils/                     # 🔧 Code utilitaire partagé (réutilisable)
     │   ├── data/
     │   │   ├── data_loader.py      # Chargement CSV depuis data/raw/
@@ -24,10 +31,6 @@ src/
     │   │   ├── model.py             # Entraînement (RandomForest, AutoGluon)
     │   │   ├── inference_model.py   # Classe InferenceModel (chargement MLflow)
     │   │   └── mlflow_tracker.py    # Logging métriques/artefacts dans MLflow
-    │   
-    │   ├── pipelines/
-    │   │   ├── training_pipeline.py # Classe MLPipeline (orchestration complète)
-    │   │   └── Prediction_pipeline.py
     │   
     │   └── api/                   # Intégrations externes
     │       ├── weather_api.py      # Récupération données météo
@@ -118,7 +121,7 @@ workflows/        → Orchestre
 from prefect import flow, task
 from ml.config import load_config  # Chargeur central
 from ml.utils.data.data_loader import load_data
-from ml.utils.pipelines.training_pipeline import MLPipeline
+from ml.pipelines.training_pipeline import MLPipeline
 
 @flow
 def consumption_full_pipeline():

@@ -6,7 +6,7 @@ sys.path.insert(0, 'src')
 
 import pandas as pd
 import numpy as np
-from ml.utils.pipelines.database_handler import DatabaseHandler
+from ml.pipelines.database_handler import DatabaseHandler
 from ml.utils.monitoring.drift_detector import (
     load_reference_data,
     detect_data_drift,

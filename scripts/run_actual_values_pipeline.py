@@ -13,7 +13,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
-from ml.utils.pipelines.Actual_values_pipeline import ActualValuesPipeline
+from ml.pipelines.Actual_values_pipeline import ActualValuesPipeline
 from ml.config import load_config
 
 def main():

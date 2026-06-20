@@ -7,7 +7,7 @@ from dotenv import find_dotenv, load_dotenv
 load_dotenv(find_dotenv(".env"), override=True)
 load_dotenv(find_dotenv(".env.secrets"), override=True)
 
-from ml.utils.pipelines.training_pipeline import MLPipeline
+from ml.pipelines.training_pipeline import MLPipeline
 
 file_path = "data/templates/training_template.csv"
 

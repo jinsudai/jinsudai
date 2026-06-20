@@ -33,7 +33,7 @@ def test_database_handler_retraining_method():
     print("\n=== TEST 3: Méthode get_production_data_for_retraining ===")
     
     try:
-        from ml.utils.pipelines.database_handler import DatabaseHandler
+        from ml.pipelines.database_handler import DatabaseHandler
         
         if hasattr(DatabaseHandler, 'get_production_data_for_retraining'):
             print("[OK] Méthode get_production_data_for_retraining existe")

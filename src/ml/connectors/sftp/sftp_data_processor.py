@@ -9,7 +9,7 @@ Ce module intègre le connector SFTP avec le DatabaseHandler pour:
 
 Exemple d'utilisation :
     from ml.connectors.sftp.sftp_data_processor import SFTPDataProcessor
-    from ml.utils.pipelines.database_handler import DatabaseHandler
+    from ml.pipelines.database_handler import DatabaseHandler
     
     processor = SFTPDataProcessor(
         sftp_host="sftp.example.com",
@@ -34,7 +34,7 @@ import logging
 from datetime import datetime
 
 from .sftp_connector import SFTPConnector
-from ml.utils.pipelines.database_handler import DatabaseHandler
+from ml.pipelines.database_handler import DatabaseHandler
 from ml.utils.notifications.email_notifier import EmailNotifier
 
 logging.basicConfig(level=logging.INFO)
