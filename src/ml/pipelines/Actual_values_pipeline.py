@@ -14,8 +14,6 @@ import logging
 from datetime import datetime, timedelta
 import random
 
-import pandas as pd
-
 from .database_handler import DatabaseHandler
 
 logging.basicConfig(level=logging.INFO)

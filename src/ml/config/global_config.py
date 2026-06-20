@@ -138,7 +138,7 @@ def get_environment(config_path: Optional[Path] = None) -> str:
     return config.get("environment", "dev")
 
 
-def create_email_notifier_from_config(config_path: Optional[Path] = None) -> 'EmailNotifier':
+def create_email_notifier_from_config(config_path: Optional[Path] = None):
     """
     Crée un notificateur email à partir de la configuration globale.
 

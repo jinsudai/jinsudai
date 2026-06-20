@@ -23,12 +23,7 @@ import pandas as pd
 from pathlib import Path
 from typing import Optional, Union
 import logging
-import yaml
 
-# Importer les utilitaires partagés
-from ml.utils.data.data_loader import load_data
-from ml.utils.data.data_preparation import detect_feature_types, create_preprocessor
-from ml.utils.data.data_validator import validate_data_quality
 from ml.config import load_config
 
 logging.basicConfig(level=logging.INFO)

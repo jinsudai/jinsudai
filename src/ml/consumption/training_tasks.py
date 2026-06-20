@@ -17,19 +17,14 @@ Exemple d'utilisation :
 from prefect import task
 import pandas as pd
 import logging
-from pathlib import Path
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, Optional, List
 
 # Importer les classes utilitaires partagées
 from ml.utils.models.model import train_model, evaluate_model, get_feature_importance
-from ml.utils.data.data_preparation import split_data, prepare_data
-from ml.utils.data.data_validator import validate_data_quality
+from ml.utils.data.data_preparation import split_data
 from ml.utils.monitoring.performance_monitor import (
     run_monitoring,
-    flatten_monitoring_metrics,
-    generate_monitoring_summary,
-    detect_prediction_drift,
-    create_performance_report
+    generate_monitoring_summary
 )
 from ml.utils.models.models_mlflow import (
     promote_model_to_production,
@@ -37,7 +32,6 @@ from ml.utils.models.models_mlflow import (
     register_model_version,
     set_mlflow_tracking
 )
-from ml.config import get_mlflow_config
 from ml.config import load_config
 
 logging.basicConfig(level=logging.INFO)
@@ -578,7 +572,7 @@ def stage_consumption_model_task(
     logger.info(f"✅ Modèle enregistré: {model_name} v{version}")
 
     # 5. Vérifier la version Production actuelle
-    prod_version = get_model_version_by_alias(model_name, "prod")
+    # prod_version = get_model_version_by_alias(model_name, "prod")
 
     # 6. Promotion vers Production (si demandé)
     promotion_result = None

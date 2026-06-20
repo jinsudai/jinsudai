@@ -52,10 +52,10 @@ def calculate_easter(year: int) -> datetime:
     h = (19 * a + b - d - g + 15) % 30
     i = c // 4
     k = c % 4
-    l = (32 + 2 * e + 2 * i - h - k) % 7
-    m = (a + 11 * h + 22 * l) // 451
-    month = (h + l - 7 * m + 114) // 31
-    day = ((h + l - 7 * m + 114) % 31) + 1
+    L = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * L) // 451
+    month = (h + L - 7 * m + 114) // 31
+    day = ((h + L - 7 * m + 114) % 31) + 1
     return datetime(year, month, day)
 
 
@@ -244,13 +244,13 @@ class VacancesAPI:
             year_data = raw_data.copy()
         elif isinstance(year, int):
             year_data = raw_data[
-                (raw_data["start_date"].dt.year == year) |
-                (raw_data["end_date"].dt.year == year)
+                (raw_data["start_date"].dt.year == year)
+                | (raw_data["end_date"].dt.year == year)
             ].copy()
         elif isinstance(year, list):
             year_data = raw_data[
-                raw_data["start_date"].dt.year.isin(year) |
-                raw_data["end_date"].dt.year.isin(year)
+                raw_data["start_date"].dt.year.isin(year)
+                | raw_data["end_date"].dt.year.isin(year)
             ].copy()
         else:
             year_data = raw_data.copy()

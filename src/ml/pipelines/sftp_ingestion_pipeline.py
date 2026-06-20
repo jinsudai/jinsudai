@@ -5,7 +5,7 @@ Ce module contient la logique métier indépendante de Prefect.
 Il est ensuite utilisé par `ml.workflows.sftp_ingestion_flow`.
 """
 
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 from ml.connectors.sftp.sftp_data_processor import SFTPDataProcessor
 from ml.config import load_config
 import os

@@ -28,8 +28,6 @@ import pandas as pd
 from ml.utils.monitoring.drift_detector import (
     load_reference_data,
     load_production_data,
-    detect_data_drift,
-    detect_concept_drift,
     run_drift_detection,
     generate_evidently_report,
     save_evidently_report_to_mlflow

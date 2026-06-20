@@ -14,9 +14,6 @@ Fonctions principales :
 - Metrics : R², MAE, RMSE (régression) ; métriques classification si problem_type adapté
 """
 import logging
-from turtle import pd
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.metrics import mean_squared_error, r2_score
 
 logging.basicConfig(level=logging.INFO)

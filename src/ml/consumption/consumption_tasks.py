@@ -17,8 +17,6 @@ Exemple d'utilisation :
 """
 
 from prefect import task
-from pathlib import Path
-from typing import Optional
 import logging
 
 from .consumption_preparer import ConsumptionDataPreparer
@@ -104,10 +102,9 @@ def prepare_consumption_from_parquets_task(
     Returns:
         str: Chemin vers le fichier Parquet généré
     """
-    preparer = ConsumptionDataPreparer()
-
     # Non implémenté, mais pourrait être utile pour ne pas générer les features à partir du CSV brut à chaque fois
     # Exemple d'implémentation possible (désactivée) :
+    # preparer = ConsumptionDataPreparer()
     # features_df = preparer.prepare_from_parquets(
     #     consumption_parquet=consumption_parquet,
     #     weather_parquet=weather_parquet,
@@ -140,7 +137,7 @@ def validate_consumption_features_task(
         bool: True si valide
     """
     import pandas as pd
-    from .consumption_preparer import ConsumptionDataPreparer, FEATURES_TEMPLATE_COLUMNS
+    from .consumption_preparer import ConsumptionDataPreparer
 
     preparer = ConsumptionDataPreparer()
     df = pd.read_parquet(features_path)

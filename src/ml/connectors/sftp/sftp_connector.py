@@ -156,7 +156,8 @@ class SFTPConnector:
             if private_key is None:
                 temp_path = None
                 try:
-                    import tempfile, os
+                    import tempfile
+                    import os
                     with tempfile.NamedTemporaryFile(mode='wb', suffix='.key', delete=False) as temp_file:
                         temp_file.write(key_content.encode('utf-8'))
                         temp_file.flush()

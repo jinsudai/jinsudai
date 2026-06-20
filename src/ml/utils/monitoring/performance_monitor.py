@@ -394,5 +394,3 @@ def monitor_model_performance(
     except Exception as e:
         logger.error(f"Erreur lors du monitoring: {e}")
         return None
-
-

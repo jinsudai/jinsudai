@@ -153,7 +153,7 @@ def generate_holidays_dataframe_task(
         str: Chemin temporaire (pour compatibilité Prefect)
     """
     api = HolidaysCombinedAPI(zone=zone)
-    df = api.generate_holidays_dataframe(start_date=start_date, end_date=end_date)
+    api.generate_holidays_dataframe(start_date=start_date, end_date=end_date)
 
     # Pour Prefect, on retourne un chemin temporaire
     # En pratique, le DataFrame sera passé via le contexte Prefect
