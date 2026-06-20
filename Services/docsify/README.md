@@ -1,6 +1,6 @@
 ---
 title: Documentation MLOps Jinsudai
-emoji: �
+emoji: 👀
 colorFrom: indigo
 colorTo: blue
 sdk: docker
