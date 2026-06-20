@@ -15,6 +15,7 @@ Streamlit
 deployement
 
 A faire (later)
+- sortir le .env
 - Réparer base de donnée neon jinsudai
 - airflow peut orchestrer Github via des pushs git
 - Faire fonctionner prefect en local
