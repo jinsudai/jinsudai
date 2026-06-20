@@ -42,7 +42,7 @@ def commit_log_to_git(**context):
 with DAG(
     'weather_daily_log_commit_v2',
     start_date=datetime(2024, 1, 1),
-    schedule=None,
+    schedule='0 6 * * *',  # Tous les jours à 6h
     catchup=False,
     tags=['weather', 'logging', 'git-commit'],
 ) as dag:
