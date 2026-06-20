@@ -22,14 +22,14 @@ on:
     branches:
       - main
     paths:
-      - 'pipelines/3_training/**'
+      - 'pipelines/training/**'
       - 'src/ml/**'
       - 'data/templates/**'
   pull_request:
     branches:
       - main
     paths:
-      - 'pipelines/3_training/**'
+      - 'pipelines/training/**'
       - 'src/ml/**'
       - 'data/templates/**'
 
@@ -70,7 +70,7 @@ jobs:
       
       - name: Run training pipeline
         run: |
-          python pipelines/3_training/training_pipeline.py \
+          python pipelines/training/training_pipeline.py \
             --features_path "${{ steps.features_path.outputs.path }}"
       
       - name: Upload model artifact

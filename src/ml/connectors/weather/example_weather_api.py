@@ -30,9 +30,9 @@ def main():
 
     # Récupération données pour chaque localisation
     for loc in locations:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Traitement : {loc['name']}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         # Initialisation API
         weather = WeatherAPI(

@@ -2,7 +2,7 @@
 
 A faire
 - Connexion à S3
-- 
+- Ordonnancement dans GitHub ou via Airflow?
 - Utilisation de FastAPI par Streamlit -> A tester
 
 - grafana
@@ -23,6 +23,7 @@ A faire (later)
 - Faire en sorte que chaque pipeline soit un service -> Sauvegarder le projet
 - Evidently -> Il faut stocker aussi les données météo pour le data drift -> Idealement oui
 - Loki pour collecter les logs ?
+- pb de Secret Database non poussé avec Airflow?
 
 
 Idées

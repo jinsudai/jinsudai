@@ -32,13 +32,13 @@ on:
     branches:
       - main
     paths:
-      - 'pipelines/4_inference/**'
+      - 'pipelines/inference/**'
       - 'src/ml/**'
   pull_request:
     branches:
       - main
     paths:
-      - 'pipelines/4_inference/**'
+      - 'pipelines/inference/**'
       - 'src/ml/**'
 
 jobs:
@@ -64,7 +64,7 @@ jobs:
           PREDICTIONS_POSTGRES_URI: ${{ secrets.PREDICTIONS_POSTGRES_URI }}
           Environment: ${{ github.ref == 'refs/heads/main' && 'Prod' || 'Dev' }}
         run: |
-          python pipelines/4_inference/prediction_pipeline.py \
+          python pipelines/inference/prediction_pipeline.py \
             --model_name "${{ github.event.inputs.model_name || '' }}" \
             --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
             --n_days "${{ github.event.inputs.n_days || '3' }}" \
