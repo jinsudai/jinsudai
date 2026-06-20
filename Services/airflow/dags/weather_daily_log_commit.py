@@ -20,6 +20,8 @@ def add_log_entry(**context):
     Ajoute une entrée de log horodatée dans le fichier weather_daily.log.
     """
     execution_date = context.get('execution_date')
+    if execution_date is None:
+        execution_date = datetime.now()
     timestamp = execution_date.strftime('%Y-%m-%d %H:%M:%S')
     log_message = f"[{timestamp}] Airflow - weather_daily_log_commit_v3 - Pipeline WeatherDaily exécuté avec succès\n"
     

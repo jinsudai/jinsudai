@@ -1,51 +1,77 @@
-# Use an official Airflow image as base
-FROM apache/airflow:3.1.7
+FROM apache/airflow:3.2.1
 
-# Apply the Hugging Faces secrets
 ARG AIRFLOW_ADMIN_USER
 ARG AIRFLOW_ADMIN_PASSWORD
 ARG AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+ARG AIRFLOW_SECRET_KEY
+ARG RESEND_API_KEY
 
-# Set environment variables (Low resources configuration for development)
+#ENV AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}
+
+# Même secret pour les JWT internes scheduler ↔ worker...
+#ENV AIRFLOW__API__SECRET_KEY=${AIRFLOW_SECRET_KEY} Doit être defini dans les Secrets sinon cela ne fonctionne pas (Marche sans ARG non plus...)
+ENV AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_SECRET_KEY}
+ENV AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_SECRET_KEY}
+ENV AIRFLOW__SECRETS__JWT_SECRET=${AIRFLOW_SECRET_KEY}
+
 ENV AIRFLOW_HOME=/opt/airflow
+ENV AIRFLOW__CORE__EXECUTOR=LocalExecutor
+#ENV AIRFLOW__CORE__PARALLELISM=2
+ENV AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG=2
+ENV AIRFLOW__CORE__MAX_ACTIVE_RUNS_PER_DAG=1
 ENV AIRFLOW__CORE__LOAD_EXAMPLES=False
-#ENV AIRFLOW__CORE__EXECUTOR=LocalExecutor
-ENV AIRFLOW__CORE__EXECUTOR=SequentialExecutor
-ENV AIRFLOW__WEBSERVER__WORKERS=1
-ENV AIRFLOW__WEBSERVER__WEB_SERVER_MASTER_TIMEOUT=300
-ENV AIRFLOW__WEBSERVER__WORKER_CLASS=gevent
-ENV AIRFLOW__WEBSERVER__WEB_SERVER_PORT=7860
-ENV AIRFLOW__CORE__TEST_CONNECTION='Enabled'
-ENV AIRFLOW__SCHEDULER__PARSING_PROCESSES=1
 ENV AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=True
-ENV AIRFLOW__CORE__PARALLELISM=4
-
-# Activer le vrai système RBAC pour la gestion des utilisateurs et des rôles
+ENV AIRFLOW__CORE__TEST_CONNECTION=Enabled
 ENV AIRFLOW__CORE__AUTH_MANAGER=airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
 
-# Switch user
+# ── CRITIQUE : URL que le worker utilise pour joindre l'Execution API ─────────
+# En single-container, l'api-server écoute sur 7860
+ENV AIRFLOW__CORE__EXECUTION_API_SERVER_URL=http://localhost:7860/execution/
+
+ENV AIRFLOW__SCHEDULER__PARSING_PROCESSES=1
+ENV AIRFLOW__SCHEDULER__SCHEDULER_HEARTBEAT_SEC=10
+ENV AIRFLOW__SCHEDULER__TASK_QUEUED_TIMEOUT=300
+ENV AIRFLOW__SCHEDULER__SCHEDULER_ZOMBIE_TASK_THRESHOLD=300
+
+ENV AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL=30
+ENV AIRFLOW__DAG_PROCESSOR__LOAD_EXAMPLES=False
+
+ENV AIRFLOW__API__PORT=7860
+ENV AIRFLOW__API__WORKERS=1
+ENV AIRFLOW__WEBSERVER__WEB_SERVER_MASTER_TIMEOUT=300
+ENV AIRFLOW__WEBSERVER__WORKER_CLASS=gevent
+
+# Pool adapté à Neon free (max ~10 connexions)
+#ENV AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_SIZE=5
+#ENV AIRFLOW__DATABASE__SQL_ALCHEMY_MAX_OVERFLOW=2
+#ENV AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_TIMEOUT=60
+#ENV AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_RECYCLE=1800
+#ENV AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_PRE_PING=True
+
+#ENV AIRFLOW__LOGGING__BASE_LOG_FOLDER=/opt/airflow/logs
 USER root
-
-# Change the UID of airflow user to 1000
 RUN usermod -u 1000 airflow
-
-# Switch back to airflow user
 USER airflow
 
-# Install any additional dependencies if needed
 COPY requirements.txt requirements.txt
-RUN pip install -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# COPY SOURCE CODE
-#COPY src /opt/airflow/src
+COPY ./dags /opt/airflow/dags
 
-# COPY DAGS
-COPY dags /opt/airflow/dags
-
-# Expose the necessary ports (optional if Hugging Face already handles port exposure)
 EXPOSE 7860
 
-# Initialize the Airflow database (PostgreSQL in this case)
-# Start Airflow webserver and scheduler within the same container
-#CMD ["bash", "-c", "airflow db migrate && (airflow users create --username $AIRFLOW_ADMIN_USER --firstname $AIRFLOW_ADMIN_USER --lastname $AIRFLOW_ADMIN_USER --role Admin --email ${AIRFLOW_ADMIN_USER}@sustcoop.fr --password $AIRFLOW_ADMIN_PASSWORD || echo 'User already exists') && (airflow scheduler & airflow api-server)"]
-CMD ["bash", "-c", "airflow db migrate && (airflow users create --username $AIRFLOW_ADMIN_USER --firstname $AIRFLOW_ADMIN_USER --lastname $AIRFLOW_ADMIN_USER --role Admin --email ${AIRFLOW_ADMIN_USER}@sustcoop.fr --password $AIRFLOW_ADMIN_PASSWORD || true) && airflow dag-processor & airflow scheduler & airflow api-server"]
+CMD ["bash", "-c", "\
+  airflow db migrate && \
+  (airflow users create \
+    --username $AIRFLOW_ADMIN_USER \
+    --firstname $AIRFLOW_ADMIN_USER \
+    --lastname $AIRFLOW_ADMIN_USER \
+    --role Admin \
+    --email ${AIRFLOW_ADMIN_USER}@sustcoop.fr \
+    --password $AIRFLOW_ADMIN_PASSWORD \
+    || echo 'User already exists') && \
+  airflow dag-processor & \
+  sleep 5 && \
+  airflow api-server & \
+  sleep 10 && \
+  exec airflow scheduler"]

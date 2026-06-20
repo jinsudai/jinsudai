@@ -9,7 +9,7 @@ on:
       config_name:
         description: "Nom de la config (consumption, solar_production)"
         required: false
-        default: 'consumption'
+        default: 'consumption_model_test'
       n_days:
         description: "Nombre de jours de prédictions"
         required: false
