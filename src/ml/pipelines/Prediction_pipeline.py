@@ -25,7 +25,7 @@ import pandas as pd
 from ml.utils.data.data_transformer import clean_data
 from ml.utils.models.models_inference import InferenceModel
 from ml.utils.data.data_prediction import generate_inference_data, add_predictions_to_data
-from .database_handler import DatabaseHandler
+from ml.pipelines.database_handler import DatabaseHandler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
