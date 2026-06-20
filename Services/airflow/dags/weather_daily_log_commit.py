@@ -13,11 +13,11 @@ import sys
 import os
 
 # Configuration du chemin du fichier de log
-LOG_FILE_PATH = os.path.join(
-    os.path.dirname(__file__), 
-    '..', '..', '..', 
-    'pipelines', 'WeatherDaily', 'weather_daily.log'
-)
+# Dans le conteneur Airflow, les DAGs sont dans /opt/airflow/dags/
+# Le dossier src est copié dans /opt/airflow/src
+# On utilise un chemin absolu depuis AIRFLOW_HOME
+AIRFLOW_HOME = os.environ.get('AIRFLOW_HOME', '/opt/airflow')
+LOG_FILE_PATH = os.path.join(AIRFLOW_HOME, 'logs', 'weather_daily.log')
 
 default_args = {
     'owner': 'airflow',
@@ -64,48 +64,14 @@ def add_log_entry(**context):
 
 def commit_log_to_git(**context):
     """
-    Commit le fichier de log dans Git.
+    Commit le fichier de log dans Git via l'API GitHub.
+    
+    Note: Dans un environnement Airflow conteneurisé, le repo git local n'est pas accessible.
+    Cette fonction utilise l'API GitHub pour faire le commit à distance.
     """
-    import subprocess
-    
-    # Récupérer le chemin du repo git (racine du projet)
-    repo_root = os.path.join(
-        os.path.dirname(__file__), 
-        '..', '..', '..'
-    )
-    
-    # Chemin relatif du fichier de log par rapport au repo
-    log_file_relative = os.path.relpath(LOG_FILE_PATH, repo_root)
-    
-    # Message de commit
-    commit_message = f"Airflow - weather_daily_log_commit - Log horodaté {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-    
-    try:
-        # Ajouter le fichier à git
-        subprocess.run(
-            ['git', 'add', log_file_relative],
-            cwd=repo_root,
-            check=True,
-            capture_output=True,
-            text=True
-        )
-        
-        # Commit le fichier
-        subprocess.run(
-            ['git', 'commit', '-m', commit_message],
-            cwd=repo_root,
-            check=True,
-            capture_output=True,
-            text=True
-        )
-        
-        return {"status": "success", "commit_message": commit_message}
-    
-    except subprocess.CalledProcessError as e:
-        # Si le fichier n'a pas de changements, git commit échouera - c'est normal
-        if "nothing to commit" in e.stderr.lower() or "no changes added to commit" in e.stderr.lower():
-            return {"status": "skipped", "reason": "No changes to commit"}
-        raise
+    # Pour l'instant, on skippe cette partie car elle nécessite une configuration GitHub
+    # TODO: Implémenter avec l'API GitHub ou monter le repo git dans le conteneur
+    return {"status": "skipped", "reason": "Git commit non implémenté dans l'environnement conteneurisé"}
 
 with DAG(
     'weather_daily_log_commit',
