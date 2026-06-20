@@ -62,9 +62,10 @@ jobs:
       - name: Run prediction pipeline
         env:
           DATABASE_URI: ${{ secrets.DATABASE_URI }}
+          Environment: ${{ github.ref == 'refs/heads/main' && 'Prod' || 'Dev' }}
         run: |
           python pipelines/prediction/prediction_pipeline.py \
-            --model_name "${{ github.event.inputs.model_name || 'consumption_model' }}" \
+            --model_name "${{ github.event.inputs.model_name || '' }}" \
             --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
             --n_days "${{ github.event.inputs.n_days || '3' }}" \
             --n_samples_per_day "${{ github.event.inputs.n_samples_per_day || '48' }}" \

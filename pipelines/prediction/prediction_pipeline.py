@@ -2,11 +2,17 @@
 Script simple pour exécuter le pipeline de prédiction (sans Prefect).
 
 Usage:
-    python pipelines/prediction/prediction_pipeline.py --model_name consumption_model_dev --n_days 3
+    python pipelines/prediction/prediction_pipeline.py --n_days 3
 """
 import argparse
+import os
 import sys
 from pathlib import Path
+from dotenv import find_dotenv, load_dotenv
+
+# Charger les variables d'environnement
+load_dotenv(find_dotenv(".env"), override=True)
+load_dotenv(find_dotenv(".env.secrets"), override=True)
 
 # Ajouter le répertoire src au path
 project_root = Path(__file__).parent.parent.parent
@@ -17,8 +23,12 @@ from ml.pipelines.Prediction_pipeline import PredictionPipeline
 from ml.config import load_config
 
 def main():
+    # Construire le nom du modèle par défaut basé sur l'environnement
+    environment = os.getenv('Environment', 'Dev').lower()
+    default_model_name = f"consumption_model_{environment}"
+    
     parser = argparse.ArgumentParser(description='Exécute le pipeline de prédiction')
-    parser.add_argument('--model_name', type=str, required=True, help='Nom du modèle dans MLflow')
+    parser.add_argument('--model_name', type=str, default=default_model_name, help='Nom du modèle dans MLflow')
     parser.add_argument('--config_name', type=str, default='consumption', help='Nom de la config (consumption, solar_production)')
     parser.add_argument('--n_days', type=int, default=3, help='Nombre de jours de prédictions')
     parser.add_argument('--n_samples_per_day', type=int, default=48, help='Nombre d\'échantillons par jour')
