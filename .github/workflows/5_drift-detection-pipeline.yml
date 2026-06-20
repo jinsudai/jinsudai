@@ -69,6 +69,11 @@ jobs:
       - name: Run drift detection pipeline
         env:
           PREDICTIONS_POSTGRES_URI: ${{ secrets.PREDICTIONS_POSTGRES_URI }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_BUCKET: ${{ secrets.AWS_BUCKET }}
+          AWS_REGION: ${{ secrets.AWS_REGION || 'eu-west-3' }}
+          AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
         run: |
           python pipelines/monitoring/drift_detection_pipeline.py \
             --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \

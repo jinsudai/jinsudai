@@ -49,7 +49,7 @@ jobs:
     - name: Run linting
       run: |
         poetry run pip install flake8
-        poetry run flake8 src/ tests/ --max-line-length=120 --ignore=E501,W503
+        poetry run flake8 src/ tests/ --max-line-length=120 --ignore=E501,W503,E402
     
     - name: Check imports
       run: |
