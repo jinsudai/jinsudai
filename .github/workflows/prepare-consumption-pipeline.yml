@@ -1,0 +1,107 @@
+name: Prepare Consumption Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: 'Date de début (YYYY-MM-DD)'
+        required: false
+        default: '2024-01-01'
+      end_date:
+        description: 'Date de fin (YYYY-MM-DD)'
+        required: false
+        default: '2024-01-31'
+      raw_path:
+        description: 'Chemin vers le fichier brut PRM'
+        required: false
+        default: 'data/templates/raw_consumption.csv'
+      output_dir:
+        description: 'Répertoire de sortie local'
+        required: false
+        default: 'data/processed/'
+      upload_s3:
+        description: 'Uploader sur S3'
+        required: false
+        default: 'true'
+      s3_bucket:
+        description: 'Nom du bucket S3 (optionnel, utilise AWS_S3_CONSUMPTION_BUCKET par défaut)'
+        required: false
+      s3_prefix:
+        description: 'Préfixe S3'
+        required: false
+        default: 'consumption/features/'
+  push:
+    branches:
+      - main
+    paths:
+      - 'pipelines/prepare_consumption/**'
+      - 'src/ml/consumption/**'
+      - 'src/ml/utils/s3_handler.py'
+      - 'data/templates/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'pipelines/prepare_consumption/**'
+      - 'src/ml/consumption/**'
+      - 'src/ml/utils/s3_handler.py'
+      - 'data/templates/**'
+
+jobs:
+  prepare_consumption:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+      
+      - name: Run prepare consumption pipeline
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
+          AWS_S3_CONSUMPTION_BUCKET: ${{ secrets.AWS_S3_CONSUMPTION_BUCKET }}
+        run: |
+          python scripts/run_prepare_consumption_pipeline.py \
+            --start_date "${{ github.event.inputs.start_date || '2024-01-01' }}" \
+            --end_date "${{ github.event.inputs.end_date || '2024-01-31' }}" \
+            --raw_path "${{ github.event.inputs.raw_path || 'data/templates/raw_consumption.csv' }}" \
+            --output_dir "${{ github.event.inputs.output_dir || 'data/processed/' }}" \
+            ${{ github.event.inputs.upload_s3 == 'false' && '--no_upload_s3' || '' }} \
+            ${{ github.event.inputs.s3_bucket && format('--s3_bucket "{0}"', github.event.inputs.s3_bucket) || '' }} \
+            --s3_prefix "${{ github.event.inputs.s3_prefix || 'consumption/features/' }}"
+      
+      - name: Upload weather artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weather-data
+          path: data/processed/weather_*.parquet
+          retention-days: 30
+      
+      - name: Upload holidays artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: holidays-data
+          path: data/processed/holidays_*.parquet
+          retention-days: 30
+      
+      - name: Upload consumption features artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: consumption-features
+          path: data/processed/consumption_features_*.parquet
+          retention-days: 30
