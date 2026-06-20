@@ -34,6 +34,7 @@ from ml.utils.monitoring.drift_detector import (
 )
 from ml.config import load_config
 from .database_handler import DatabaseHandler
+from ml.utils.s3_handler import S3Handler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -61,12 +62,14 @@ class DriftDetectionPipeline:
 
         logger.info(f"Pipeline de détection de drift initialisé avec config={config_name}")
 
-    def step_1_load_reference_data(self, reference_path: Optional[str] = None) -> bool:
+    def step_1_load_reference_data(self, reference_path: Optional[str] = None, 
+                                   download_from_s3_if_missing: bool = True) -> bool:
         """
         Étape 1: Chargement des données de référence.
 
         Args:
             reference_path: Chemin vers le fichier de référence (optionnel)
+            download_from_s3_if_missing: Télécharger depuis S3 si le fichier n'existe pas
 
         Returns:
             True si succès, False sinon
@@ -87,6 +90,20 @@ class DriftDetectionPipeline:
             project_root = Path(__file__).parent.parent.parent.parent
             reference_path = project_root / reference_path
 
+        # Vérifier si le fichier existe, sinon essayer de le télécharger depuis S3
+        if not Path(reference_path).exists():
+            logger.warning(f"Fichier de référence non trouvé: {reference_path}")
+            
+            if download_from_s3_if_missing:
+                logger.info("Tentative de téléchargement depuis S3...")
+                success = self._download_reference_from_s3(reference_path)
+                if not success:
+                    logger.error("Impossible de télécharger le fichier depuis S3")
+                    return False
+            else:
+                logger.error("Fichier de référence non trouvé et téléchargement S3 désactivé")
+                return False
+
         target_column = self.config.get('data', {}).get('target_column', 'Valeur')
         feature_columns = self.config.get('data', {}).get('feature_columns')
 
@@ -102,6 +119,78 @@ class DriftDetectionPipeline:
 
         logger.info(f"Données de référence chargées: {len(self.reference_data)} enregistrements")
         return True
+
+    def _download_reference_from_s3(self, local_path: str) -> bool:
+        """
+        Télécharge le dernier fichier train.parquet depuis S3.
+
+        Args:
+            local_path: Chemin local de destination
+
+        Returns:
+            True si succès, False sinon
+        """
+        try:
+            # Charger la configuration S3
+            global_config = load_config('src/configs/config.yaml')
+            s3_config = global_config.get('s3', {})
+            
+            bucket = s3_config.get('bucket', 'data-store')
+            prefix = s3_config.get('prefix', 'weather')
+            
+            # Déterminer l'environnement depuis le chemin local
+            if 'prod' in str(local_path):
+                environment = 'prod'
+            elif 'test' in str(local_path):
+                environment = 'test'
+            else:
+                environment = 'dev'
+            
+            env_prefix = f"{prefix}/{environment}"
+            
+            logger.info(f"Recherche sur S3: bucket={bucket}, prefix={env_prefix}")
+            
+            # Initialiser le handler S3
+            s3_handler = S3Handler(bucket=bucket)
+            
+            if not s3_handler.s3_enabled:
+                logger.warning("S3 non disponible (credentials manquants)")
+                return False
+            
+            # Lister les fichiers train.parquet
+            files = s3_handler.list_files(prefix=env_prefix)
+            train_files = [f for f in files if 'train' in f and f.endswith('.parquet')]
+            
+            if not train_files:
+                logger.warning(f"Aucun fichier train.parquet trouvé dans s3://{bucket}/{env_prefix}/")
+                return False
+            
+            # Trouver le plus récent
+            train_files_sorted = sorted(train_files, reverse=True)
+            latest_file = train_files_sorted[0]
+            
+            logger.info(f"Fichier le plus récent sur S3: {latest_file}")
+            
+            # Télécharger le fichier
+            local_path_obj = Path(local_path)
+            local_path_obj.parent.mkdir(parents=True, exist_ok=True)
+            
+            result = s3_handler.download_file(
+                s3_key=latest_file,
+                local_path=str(local_path),
+                overwrite=True
+            )
+            
+            if result["status"] == "success":
+                logger.info(f"Fichier téléchargé depuis S3: {local_path}")
+                return True
+            else:
+                logger.error(f"Erreur lors du téléchargement: {result.get('reason')}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Erreur lors du téléchargement depuis S3: {e}")
+            return False
 
     def step_2_load_current_data(self, current_data_path: Optional[str] = None, 
                                  limit: int = 1000) -> bool:
@@ -343,7 +432,8 @@ class DriftDetectionPipeline:
                           report_output_path: Optional[str] = None,
                           store_metrics: bool = True,
                           send_notifications: bool = True,
-                          mlflow_run_id: Optional[str] = None) -> Dict[str, Any]:
+                          mlflow_run_id: Optional[str] = None,
+                          download_from_s3: bool = True) -> Dict[str, Any]:
         """
         Exécute le pipeline complet de détection de drift.
 
@@ -356,6 +446,7 @@ class DriftDetectionPipeline:
             store_metrics: Stocker les métriques
             send_notifications: Envoyer les notifications
             mlflow_run_id: ID de la run MLflow
+            download_from_s3: Télécharger depuis S3 si le fichier de référence n'existe pas
 
         Returns:
             Dict avec les résultats du pipeline
@@ -371,7 +462,7 @@ class DriftDetectionPipeline:
 
         try:
             # Étape 1: Chargement données référence
-            if not self.step_1_load_reference_data(reference_path):
+            if not self.step_1_load_reference_data(reference_path, download_from_s3):
                 results["error"] = "Échec du chargement des données de référence"
                 return results
             results["steps_completed"].append("load_reference_data")

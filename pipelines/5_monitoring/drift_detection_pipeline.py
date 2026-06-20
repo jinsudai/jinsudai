@@ -21,8 +21,8 @@ def main():
     parser = argparse.ArgumentParser(description='Exécute le pipeline de détection de drift')
     parser.add_argument('--config_name', type=str, default='consumption', 
                         help='Nom de la config (consumption, solar_production)')
-    parser.add_argument('--reference_path', type=str, required=True, 
-                        help='Chemin vers le fichier de données de référence (entraînement)')
+    parser.add_argument('--reference_path', type=str, default=None, 
+                        help='Chemin vers le fichier de données de référence (entraînement). Si non fourni, utilise la config et télécharge depuis S3 si nécessaire')
     parser.add_argument('--current_data_path', type=str, default=None, 
                         help='Chemin vers le fichier de données courantes (optionnel, utilise BD si non fourni)')
     parser.add_argument('--current_data_limit', type=int, default=1000, 
@@ -39,20 +39,18 @@ def main():
                         help='Envoyer les notifications email si drift détecté')
     parser.add_argument('--mlflow_run_id', type=str, default=None, 
                         help='ID de la run MLflow (optionnel)')
+    parser.add_argument('--download_from_s3', action='store_true', default=True, 
+                        help='Télécharger depuis S3 si le fichier de référence n\'existe pas')
     
     args = parser.parse_args()
     
     print(f"=== Pipeline de détection de drift ===")
     print(f"Config: {args.config_name}")
-    print(f"Données référence: {args.reference_path}")
+    print(f"Données référence: {args.reference_path or 'Depuis config/S3'}")
     print(f"Données courantes: {args.current_data_path or 'Base de données'}")
     print(f"Limite données courantes: {args.current_data_limit}")
+    print(f"Téléchargement S3: {args.download_from_s3}")
     print()
-    
-    # Vérifier que le fichier de référence existe
-    if not Path(args.reference_path).exists():
-        print(f"❌ Erreur: Le fichier de référence n'existe pas: {args.reference_path}")
-        sys.exit(1)
     
     # Vérifier le fichier de données courantes si fourni
     if args.current_data_path and not Path(args.current_data_path).exists():
@@ -75,7 +73,8 @@ def main():
             report_output_path=args.report_output_path,
             store_metrics=args.store_metrics,
             send_notifications=args.send_notifications,
-            mlflow_run_id=args.mlflow_run_id
+            mlflow_run_id=args.mlflow_run_id,
+            download_from_s3=args.download_from_s3
         )
         
         if results["success"]:
