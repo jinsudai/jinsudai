@@ -84,20 +84,20 @@ def main():
 
         # Génération fichier parquet
         if validation["is_valid"]:
-            print(f"\nGénération fichier parquet...")
+            print("\nGénération fichier parquet...")
             try:
                 weather.generate_parquet()
                 print("✓ Fichier généré avec succès")
 
                 # Export CSV optionnel
-                print(f"\nGénération fichier CSV...")
+                print("\nGénération fichier CSV...")
                 weather.to_csv()
                 print("✓ Fichier CSV généré avec succès")
 
             except Exception as e:
                 print(f"✗ Erreur génération fichier : {e}")
         else:
-            print(f"\n✗ Données invalides - pas de fichier généré")
+            print("\n✗ Données invalides - pas de fichier généré")
 
 
 if __name__ == "__main__":

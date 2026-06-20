@@ -93,7 +93,7 @@ class DriftDetectionPipeline:
         # Vérifier si le fichier existe, sinon essayer de le télécharger depuis S3
         if not Path(reference_path).exists():
             logger.warning(f"Fichier de référence non trouvé: {reference_path}")
-            
+
             if download_from_s3_if_missing:
                 logger.info("Tentative de téléchargement depuis S3...")
                 success = self._download_reference_from_s3(reference_path)
@@ -134,10 +134,10 @@ class DriftDetectionPipeline:
             # Charger la configuration S3
             global_config = load_config('src/configs/config.yaml')
             s3_config = global_config.get('s3', {})
-            
+
             bucket = s3_config.get('bucket', 'data-store')
             prefix = s3_config.get('prefix', 'weather')
-            
+
             # Déterminer l'environnement depuis le chemin local
             if 'prod' in str(local_path):
                 environment = 'prod'
@@ -145,49 +145,49 @@ class DriftDetectionPipeline:
                 environment = 'test'
             else:
                 environment = 'dev'
-            
+
             env_prefix = f"{prefix}/{environment}"
-            
+
             logger.info(f"Recherche sur S3: bucket={bucket}, prefix={env_prefix}")
-            
+
             # Initialiser le handler S3
             s3_handler = S3Handler(bucket=bucket)
-            
+
             if not s3_handler.s3_enabled:
                 logger.warning("S3 non disponible (credentials manquants)")
                 return False
-            
+
             # Lister les fichiers train.parquet
             files = s3_handler.list_files(prefix=env_prefix)
             train_files = [f for f in files if 'train' in f and f.endswith('.parquet')]
-            
+
             if not train_files:
                 logger.warning(f"Aucun fichier train.parquet trouvé dans s3://{bucket}/{env_prefix}/")
                 return False
-            
+
             # Trouver le plus récent
             train_files_sorted = sorted(train_files, reverse=True)
             latest_file = train_files_sorted[0]
-            
+
             logger.info(f"Fichier le plus récent sur S3: {latest_file}")
-            
+
             # Télécharger le fichier
             local_path_obj = Path(local_path)
             local_path_obj.parent.mkdir(parents=True, exist_ok=True)
-            
+
             result = s3_handler.download_file(
                 s3_key=latest_file,
                 local_path=str(local_path),
                 overwrite=True
             )
-            
+
             if result["status"] == "success":
                 logger.info(f"Fichier téléchargé depuis S3: {local_path}")
                 return True
             else:
                 logger.error(f"Erreur lors du téléchargement: {result.get('reason')}")
                 return False
-                
+
         except Exception as e:
             logger.error(f"Erreur lors du téléchargement depuis S3: {e}")
             return False

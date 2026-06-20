@@ -197,7 +197,7 @@ def example_sftp_with_email_notifications():
     print(f"  Prédictions mises à jour: {summary['total_predictions_updated']}")
     print(f"  Fichiers archivés: {summary['files_archived']}")
     print(f"  Taux de succès: {summary['success_rate']:.2%}")
-    print(f"\n✅ Notifications email envoyées pour chaque événement")
+    print("\n✅ Notifications email envoyées pour chaque événement")
 
 
 def example_with_config():

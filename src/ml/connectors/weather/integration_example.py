@@ -71,7 +71,7 @@ def integrate_weather_for_consumption():
         if not validation["is_valid"]:
             print(f"  ✗ Données météo invalides : {validation['errors']}")
             continue
-        print(f"  ✓ Données météo validées")
+        print("  ✓ Données météo validées")
 
         # 4. Simulation chargement données consommation
         # (À remplacer par load_data() du module data)
@@ -160,7 +160,7 @@ def integrate_weather_for_solar():
     if not validation["is_valid"]:
         print(f"  ✗ Données invalides : {validation['errors']}")
         return
-    print(f"  ✓ Données validées")
+    print("  ✓ Données validées")
 
     # 4. Simulation données production solaire
     print("  → Simul. données production solaire...")
