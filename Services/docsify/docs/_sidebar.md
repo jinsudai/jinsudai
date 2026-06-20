@@ -1,0 +1,8 @@
+- [Accueil](/)
+- [Architecture Globale](architecture-globale.md)
+- [Pipeline d'Ingestion](pipeline-ingestion.md)
+- [Pipeline d'Entraînement](pipeline-entrainement.md)
+- [Pipeline d'Inférence](pipeline-inference.md)
+- [Pipeline CI/CD](pipeline-cicd.md)
+- [Monitoring et Drift Detection](monitoring-drift.md)
+- [Automatisation du Retraining](retraining-auto.md)
