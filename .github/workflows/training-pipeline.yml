@@ -70,7 +70,7 @@ jobs:
       
       - name: Run training pipeline
         run: |
-          python pipelines/training/run_training_pipeline_simple.py \
+          python pipelines/training/training_pipeline.py \
             --features_path "${{ steps.features_path.outputs.path }}"
       
       - name: Upload model artifact
