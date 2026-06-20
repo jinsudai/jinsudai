@@ -37,14 +37,14 @@ on:
     branches:
       - main
     paths:
-      - 'pipelines/drift_detection/**'
+      - 'pipelines/5_monitoring/**'
       - 'src/ml/utils/monitoring/**'
       - 'src/ml/pipelines/drift_detection_pipeline.py'
   pull_request:
     branches:
       - main
     paths:
-      - 'pipelines/drift_detection/**'
+      - 'pipelines/5_monitoring/**'
       - 'src/ml/utils/monitoring/**'
       - 'src/ml/pipelines/drift_detection_pipeline.py'
 
@@ -70,7 +70,7 @@ jobs:
         env:
           DATABASE_URI: ${{ secrets.DATABASE_URI }}
         run: |
-          python pipelines/drift_detection/drift_detection_pipeline.py \
+          python pipelines/5_monitoring/drift_detection_pipeline.py \
             --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
             --reference_path "${{ github.event.inputs.reference_path || 'data/dev/train_consumption.parquet' }}" \
             ${{ github.event.inputs.current_data_path && format('--current_data_path "{0}"', github.event.inputs.current_data_path) || '' }} \

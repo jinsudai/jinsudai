@@ -1,10 +1,8 @@
-A corriger
--sFtp & prepare consumption pipelines
 
 
 A faire
 - Connexion à S3
-- Faire en sorte que chaque pipeline soit un service -> Sauvegarder le projet
+- 
 - Utilisation de FastAPI par Streamlit -> A tester
 
 - grafana
@@ -14,11 +12,15 @@ Evidently
 Streamlit
 deployement
 
+A vérifier
+- prepare consumption pipelines
+
 A faire (later)
 - sortir le .env
 - Réparer base de donnée neon jinsudai
 - airflow peut orchestrer Github via des pushs git
 - Faire fonctionner prefect en local
+- Faire en sorte que chaque pipeline soit un service -> Sauvegarder le projet
 - Evidently -> Il faut stocker aussi les données météo pour le data drift -> Idealement oui
 - Loki pour collecter les logs ?
 

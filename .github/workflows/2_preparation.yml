@@ -34,7 +34,7 @@ on:
     branches:
       - main
     paths:
-      - 'pipelines/prepare_consumption/**'
+      - 'pipelines/2_preparation/**'
       - 'src/ml/consumption/**'
       - 'src/ml/utils/s3_handler.py'
       - 'data/templates/**'
@@ -42,7 +42,7 @@ on:
     branches:
       - main
     paths:
-      - 'pipelines/prepare_consumption/**'
+      - 'pipelines/2_preparation/**'
       - 'src/ml/consumption/**'
       - 'src/ml/utils/s3_handler.py'
       - 'data/templates/**'

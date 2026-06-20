@@ -57,13 +57,13 @@ on:
     branches:
       - main
     paths:
-      - 'pipelines/sftp_ingestion/**'
+      - 'pipelines/1_ingestion/**'
       - 'src/ml/**'
   pull_request:
     branches:
       - main
     paths:
-      - 'pipelines/sftp_ingestion/**'
+      - 'pipelines/1_ingestion/**'
       - 'src/ml/**'
 
 jobs:
@@ -100,12 +100,12 @@ jobs:
           SFTP_TEMP_LOCAL_DIR: ${{ secrets.SFTP_TEMP_LOCAL_DIR || '/tmp/sftp_temp' }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.use_env_config }}" = "true" ]; then
-            python pipelines/sftp_ingestion/sftp_ingestion_pipeline.py \
+            python pipelines/1_ingestion/sftp_ingestion_pipeline.py \
               --use_env_config \
               --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
               ${{ github.event.inputs.db_uri && format('--db_uri "{0}"', github.event.inputs.db_uri) || '' }}
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            python pipelines/sftp_ingestion/sftp_ingestion_pipeline.py \
+            python pipelines/1_ingestion/sftp_ingestion_pipeline.py \
               --sftp_host "${{ github.event.inputs.sftp_host }}" \
               --sftp_username "${{ github.event.inputs.sftp_username }}" \
               --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
@@ -119,7 +119,7 @@ jobs:
               ${{ github.event.inputs.passphrase && format('--passphrase "{0}"', github.event.inputs.passphrase) || '' }} \
               ${{ github.event.inputs.db_uri && format('--db_uri "{0}"', github.event.inputs.db_uri) || '' }}
           else
-            python pipelines/sftp_ingestion/sftp_ingestion_pipeline.py \
+            python pipelines/1_ingestion/sftp_ingestion_pipeline.py \
               --use_env_config \
               --config_name "consumption"
           fi
