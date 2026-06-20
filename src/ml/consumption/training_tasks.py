@@ -28,7 +28,6 @@ from ml.utils.monitoring.performance_monitor import (
 )
 from ml.utils.models.models_mlflow import (
     promote_model_to_production,
-    get_model_version_by_alias,
     register_model_version,
     set_mlflow_tracking
 )

@@ -1,4 +1,4 @@
-name: Push Service Files to HF
+name: 7 - Deployment - Push Service Files to HF
 
 on:
   push:

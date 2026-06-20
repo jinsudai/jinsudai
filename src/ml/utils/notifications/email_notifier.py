@@ -353,7 +353,7 @@ Drift global détecté: {overall_drift}
 
         if data_drift:
             if data_drift.get('drift_detected'):
-                body += f"Drift détecté: OUI\n"
+                body += "Drift détecté: OUI\n"
                 features_drift = data_drift.get('features_drift', {})
                 drifted_count = data_drift.get('drifted_features_count', 0)
                 total_count = data_drift.get('total_features_analyzed', 0)
@@ -367,7 +367,7 @@ Drift global détecté: {overall_drift}
         else:
             body += "Non analysé\n"
 
-        body += f"""
+        body += """
 === CONCEPT DRIFT ===
 """
 
@@ -376,7 +376,7 @@ Drift global détecté: {overall_drift}
             perf_drift = concept_drift.get('performance_drift', {})
 
             if pred_drift.get('drift_detected'):
-                body += f"Drift de prédictions: OUI\n"
+                body += "Drift de prédictions: OUI\n"
                 body += f"  - Mean drift: {pred_drift.get('mean_drift', 0):.4f}\n"
                 body += f"  - Std drift: {pred_drift.get('std_drift', 0):.4f}\n"
             else:
@@ -384,7 +384,7 @@ Drift global détecté: {overall_drift}
 
             if perf_drift:
                 if perf_drift.get('drift_detected'):
-                    body += f"Drift de performance: OUI\n"
+                    body += "Drift de performance: OUI\n"
                     body += f"  - MAE drift: {perf_drift.get('mae_drift', 0):.4f}\n"
                     body += f"  - R² drift: {perf_drift.get('r2_drift', 0):.4f}\n"
                 else:
@@ -462,20 +462,20 @@ Ceci est un message automatique du système de monitoring de drift.
 
             if pred_drift.get('drift_detected'):
                 html_body += "<p style='color: red;'><strong>Drift de prédictions: OUI</strong></p>"
-                html_body += f"<ul>"
+                html_body += "<ul>"
                 html_body += f"<li>Mean drift: {pred_drift.get('mean_drift', 0):.4f}</li>"
                 html_body += f"<li>Std drift: {pred_drift.get('std_drift', 0):.4f}</li>"
-                html_body += f"</ul>"
+                html_body += "</ul>"
             else:
                 html_body += "<p style='color: green;'><strong>Drift de prédictions: NON</strong></p>"
 
             if perf_drift:
                 if perf_drift.get('drift_detected'):
                     html_body += "<p style='color: red;'><strong>Drift de performance: OUI</strong></p>"
-                    html_body += f"<ul>"
+                    html_body += "<ul>"
                     html_body += f"<li>MAE drift: {perf_drift.get('mae_drift', 0):.4f}</li>"
                     html_body += f"<li>R² drift: {perf_drift.get('r2_drift', 0):.4f}</li>"
-                    html_body += f"</ul>"
+                    html_body += "</ul>"
                 else:
                     html_body += "<p style='color: green;'><strong>Drift de performance: NON</strong></p>"
         else:

@@ -1,7 +1,13 @@
+A corriger
+-sFtp & prepare consumption pipelines
+
+
 A faire
+- Connexion à S3
+- Faire en sorte que chaque pipeline soit un service -> Sauvegarder le projet
 - Utilisation de FastAPI par Streamlit -> A tester
-- Renomage de FastAPI en inference-service
-- 
+
+- grafana
 
 A tester
 Evidently 
@@ -9,15 +15,17 @@ Streamlit
 deployement
 
 A faire (later)
-- Faire en sorte que chaque pipeline soit un service -> Sauvegarder le projet
+- Réparer base de donnée neon jinsudai
 - airflow peut orchestrer Github via des pushs git
 - Faire fonctionner prefect en local
 - Evidently -> Il faut stocker aussi les données météo pour le data drift -> Idealement oui
 - Loki pour collecter les logs ?
-- grafana
 
-Fast API qui contient tout le ML pour une orchestration peu gourmande
-L'orchestrateur qui appelle les endpoints
+
+Idées
+- Renomage de FastAPI en inference-service
+- Fast API qui contient tout le ML pour une orchestration peu gourmande
+  L'orchestrateur qui appelle les endpoints
 
 
 

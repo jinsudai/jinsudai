@@ -337,7 +337,7 @@ class MLPipeline:
             set_mlflow_tracking(tracking_uri)
             mlflow.set_experiment(experiment_name)
 
-            logger.info(f"\n[1/4] Récupération du run_id et enregistrement du modèle en Staging...")
+            logger.info("\n[1/4] Récupération du run_id et enregistrement du modèle en Staging...")
             logger.info(f"  Métriques à comparer (priorité): {metric_keys}")
 
             # Récupérer le run_id de la dernière run
@@ -377,18 +377,18 @@ class MLPipeline:
                 return False
 
             # Vérifier les versions existantes avec l'alias "prod"
-            logger.info(f"\n[2/4] État des versions avec alias 'prod'...")
+            logger.info("\n[2/4] État des versions avec alias 'prod'...")
             try:
                 prod_version = get_model_version_by_alias(self.model_name, "prod")
                 if prod_version:
                     logger.info(f"  ℹ Version actuelle avec alias 'prod': v{prod_version.version}")
                 else:
-                    logger.info(f"  ℹ Aucune version avec alias 'prod' (première fois)")
+                    logger.info("  ℹ Aucune version avec alias 'prod' (première fois)")
             except Exception:
                 logger.info(f"  ℹ Aucune version avec alias 'prod' (première fois)")
 
             # Promotion automatique
-            logger.info(f"\n[3/4] Promotion automatique en Production (alias 'prod')...")
+            logger.info("\n[3/4] Promotion automatique en Production (alias 'prod')...")
 
             # Promouvoir avec validation des métriques
             self.promotion_result = promote_model_to_production(
@@ -400,17 +400,17 @@ class MLPipeline:
             )
 
             # Résultat final
-            logger.info(f"\n[4/4] Résultat:")
+            logger.info("\n[4/4] Résultat:")
             logger.info("-" * 60)
             if self.promotion_result['success']:
-                logger.info(f"  ✓ SUCCÈS - Modèle promu avec alias 'prod'")
+                logger.info("  ✓ SUCCÈS - Modèle promu avec alias 'prod'")
                 logger.info(f"    Version: {self.promotion_result['version']}")
                 logger.info(f"    Alias: {self.promotion_result.get('alias_prod', 'prod')}")
                 logger.info(f"    Métrique de décision: {self.promotion_result.get('metric_used', 'N/A')}")
 
                 # Afficher tous les métriques de la nouvelle version
                 if self.promotion_result.get('metrics_new'):
-                    logger.info(f"    Métriques de la nouvelle version:")
+                    logger.info("    Métriques de la nouvelle version:")
                     for key, val in self.promotion_result['metrics_new'].items():
                         logger.info(f"      • {key}: {val:.4f}")
 
