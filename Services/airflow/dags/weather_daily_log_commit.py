@@ -11,7 +11,7 @@ from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 
 with DAG(
-    'weather_daily_log_commit',
+    'weather_daily_log_commit_v2',  # Nouveau nom pour éviter les conflits avec les anciens runs
     start_date=datetime(2024, 1, 1),
     schedule=None,
     catchup=False,

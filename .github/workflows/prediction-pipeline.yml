@@ -64,7 +64,7 @@ jobs:
           DATABASE_URI: ${{ secrets.DATABASE_URI }}
         run: |
           python pipelines/prediction/prediction_pipeline.py \
-            --model_name "${{ github.event.inputs.model_name }}" \
+            --model_name "${{ github.event.inputs.model_name || 'consumption_model' }}" \
             --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
             --n_days "${{ github.event.inputs.n_days || '3' }}" \
             --n_samples_per_day "${{ github.event.inputs.n_samples_per_day || '48' }}" \
