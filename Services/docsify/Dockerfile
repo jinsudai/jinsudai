@@ -5,7 +5,7 @@ FROM node:18-alpine
 RUN npm install -g docsify-cli docsify-mermaid
 
 # Crée le répertoire de travail
-WORKDIR /app
+WORKDIR /docs
 
 # Copie les fichiers de documentation
 COPY . .
