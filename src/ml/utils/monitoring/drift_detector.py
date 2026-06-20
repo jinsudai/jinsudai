@@ -117,10 +117,14 @@ def detect_data_drift(
             return {"drift_detected": False, "error": "missing_data"}
 
         if feature_columns is None:
-            # Utiliser toutes les colonnes numériques communes
+            # Utiliser toutes les colonnes numériques communes (exclure datetime)
             ref_cols = set(reference_data.select_dtypes(include=[np.number]).columns)
             curr_cols = set(current_data.select_dtypes(include=[np.number]).columns)
             feature_columns = list(ref_cols.intersection(curr_cols))
+            
+            # Exclure explicitement les colonnes datetime
+            datetime_cols = reference_data.select_dtypes(include=['datetime64[ns]', 'datetime64']).columns
+            feature_columns = [col for col in feature_columns if col not in datetime_cols]
 
         results = {
             "drift_detected": False,
@@ -132,6 +136,10 @@ def detect_data_drift(
 
         for feature in feature_columns:
             if feature not in reference_data.columns or feature not in current_data.columns:
+                continue
+            
+            # Skip datetime columns (PSI cannot be calculated on datetime)
+            if pd.api.types.is_datetime64_any_dtype(reference_data[feature]):
                 continue
 
             ref_values = reference_data[feature].dropna()
