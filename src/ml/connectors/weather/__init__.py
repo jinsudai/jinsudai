@@ -6,7 +6,7 @@ Classes :
 
 Utilisation :
     from ml.utils.api import WeatherAPI
-    
+
     weather = WeatherAPI(latitude=48.8566, longitude=2.3522, location_name="Paris")
     df = weather.fetch_historical("2024-01-01", "2024-12-31")
     weather.validate_data()

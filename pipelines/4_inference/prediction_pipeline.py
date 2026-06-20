@@ -51,7 +51,7 @@ def main():
     experiment_name = config.get('mlflow', {}).get('experiment_name')
     
     if args.db_uri is None:
-        db_uri = config.get('database', {}).get('uri')
+        db_uri = os.getenv('PREDICTIONS_POSTGRES_URI') or config.get('database', {}).get('uri')
     else:
         db_uri = args.db_uri
     

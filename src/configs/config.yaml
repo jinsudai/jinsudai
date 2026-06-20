@@ -26,7 +26,7 @@ email:
 
 # Configuration de la base de données
 database:
-  uri: null  # URI PostgreSQL (à définir via variable d'environnement DATABASE_URI)
+  uri: null  # URI PostgreSQL (à définir via variable d'environnement PREDICTIONS_POSTGRES_URI)
 
 # Configuration MLflow
 mlflow:

@@ -196,7 +196,7 @@ def integrate_weather_for_solar():
         merged_df.to_parquet(filepath, index=False, compression="snappy")
         print(f"  ✓ Fichier généré : {filepath}")
 
-        print(f"\n  Aperçu données (5 premières lignes) :")
+        print("\n  Aperçu données (5 premières lignes) :")
         print(merged_df.head().to_string())
 
     except Exception as e:
@@ -229,9 +229,9 @@ Utilisation dans pipelines ML :
   2. data_preparation.py : Nettoyage + normalisation
   3. data_transformer.py : Feature engineering (heure, jour, saison)
   4. training_pipeline.py : Entraînement modèle
-  
+
 Pipeline complet (avec vacances + jours fériés) :
-  
+
   WeatherAPI
       ↓
   fetch_historical() → weather_2024.parquet

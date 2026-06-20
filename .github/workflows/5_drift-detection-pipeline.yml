@@ -68,7 +68,7 @@ jobs:
       
       - name: Run drift detection pipeline
         env:
-          DATABASE_URI: ${{ secrets.DATABASE_URI }}
+          PREDICTIONS_POSTGRES_URI: ${{ secrets.PREDICTIONS_POSTGRES_URI }}
         run: |
           python pipelines/5_monitoring/drift_detection_pipeline.py \
             --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \

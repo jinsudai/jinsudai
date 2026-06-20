@@ -86,7 +86,7 @@ jobs:
       
       - name: Run SFTP ingestion pipeline
         env:
-          DATABASE_URI: ${{ secrets.DATABASE_URI }}
+          PREDICTIONS_POSTGRES_URI: ${{ secrets.PREDICTIONS_POSTGRES_URI }}
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
           SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
           SFTP_PRIVATE_KEY_B64: ${{ secrets.SFTP_PRIVATE_KEY_B64 }}

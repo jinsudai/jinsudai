@@ -160,7 +160,6 @@ def evaluate_model(model, X_test, y_test):
         logger.error(f"Erreur lors de l'évaluation: {e}")
         return None
 
-
 # Note: Sauvegarde du modèle gérée par MLflow avec mlflow.sklearn.log_model()
 # Voir mlflow_tracker.py pour les détails
 

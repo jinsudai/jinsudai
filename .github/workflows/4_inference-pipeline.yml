@@ -61,7 +61,7 @@ jobs:
       
       - name: Run prediction pipeline
         env:
-          DATABASE_URI: ${{ secrets.DATABASE_URI }}
+          PREDICTIONS_POSTGRES_URI: ${{ secrets.PREDICTIONS_POSTGRES_URI }}
           Environment: ${{ github.ref == 'refs/heads/main' && 'Prod' || 'Dev' }}
         run: |
           python pipelines/4_inference/prediction_pipeline.py \

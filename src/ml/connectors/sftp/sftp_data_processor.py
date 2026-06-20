@@ -10,7 +10,7 @@ Ce module intègre le connector SFTP avec le DatabaseHandler pour:
 Exemple d'utilisation :
     from ml.connectors.sftp.sftp_data_processor import SFTPDataProcessor
     from ml.pipelines.database_handler import DatabaseHandler
-    
+
     processor = SFTPDataProcessor(
         sftp_host="sftp.example.com",
         sftp_username="user",
@@ -18,7 +18,7 @@ Exemple d'utilisation :
         passphrase="passphrase",
         db_uri="postgresql://user:pass@host/db"
     )
-    
+
     # Traiter tous les fichiers CSV
     results = processor.process_directory(
         remote_directory="/data/incoming",

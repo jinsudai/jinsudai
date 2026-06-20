@@ -6,7 +6,7 @@ du modèle de consommation en utilisant les classes partagées de utils/.
 
 Exemple d'utilisation :
     from analytics.consumption.training_tasks import train_consumption_model_task
-    
+
     # Dans un flow Prefect
     result = train_consumption_model_task(
         features_path="data/processed/consumption_features.parquet",
@@ -475,13 +475,13 @@ def monitor_and_log_consumption_model_task(
 
         if monitor_result.get("performance_test"):
             log_metrics({
-                f"monitoring_test_{k}": v 
+                f"monitoring_test_{k}": v
                 for k, v in monitor_result["performance_test"].items()
             })
 
         if monitor_result.get("performance_train"):
             log_metrics({
-                f"monitoring_train_{k}": v 
+                f"monitoring_train_{k}": v
                 for k, v in monitor_result["performance_train"].items()
             })
 

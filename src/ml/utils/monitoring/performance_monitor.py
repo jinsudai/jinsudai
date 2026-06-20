@@ -70,7 +70,7 @@ def create_performance_report(
             # Fallback - créer un rapport HTML simple
             logger.warning("Evidently API non disponible, utilisation de rapport simple")
             return generate_simple_performance_report(
-                reference_data, current_data, 
+                reference_data, current_data,
                 predictions_ref, predictions_current,
                 output_path, problem_type
             )

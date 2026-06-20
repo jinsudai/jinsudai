@@ -17,7 +17,6 @@ from pathlib import Path
 
 import yaml
 
-
 DEFAULT_CONFIG_DIR = Path(__file__).resolve().parents[1] / "configs"
 
 # Chemins par défaut pour chaque domaine

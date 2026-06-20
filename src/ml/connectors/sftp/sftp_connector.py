@@ -6,7 +6,7 @@ protégée par une passphrase, et de récupérer des fichiers depuis un réperto
 
 Exemple d'utilisation :
     from ml.connectors.sftp.sftp_connector import SFTPConnector
-    
+
     connector = SFTPConnector(
         host="sftp.example.com",
         port=22,
@@ -14,13 +14,13 @@ Exemple d'utilisation :
         ssh_private_key_b64="<BASE64_ENCODED_OPENSSH_KEY>",
         passphrase="your_passphrase"
     )
-    
+
     # Lister les fichiers
     files = connector.list_files("/remote/directory")
-    
+
     # Télécharger un fichier
     connector.download_file("/remote/directory/file.csv", "/local/path/file.csv")
-    
+
     # Télécharger tous les fichiers d'un répertoire
     connector.download_directory("/remote/directory", "/local/path")
 """

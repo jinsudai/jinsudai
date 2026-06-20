@@ -10,7 +10,7 @@ Supporte deux providers:
 
 Exemple d'utilisation avec SMTP:
     from ml.utils.notifications.email_notifier import EmailNotifier
-    
+
     notifier = EmailNotifier(
         provider="smtp",
         smtp_server="smtp.gmail.com",
@@ -22,7 +22,7 @@ Exemple d'utilisation avec SMTP:
 
 Exemple d'utilisation avec Resend:
     from ml.utils.notifications.email_notifier import EmailNotifier
-    
+
     notifier = EmailNotifier(
         provider="resend",
         resend_api_key="re_xxxxx",
@@ -280,7 +280,7 @@ Ceci est un message automatique du système de traitement SFTP.
 <html>
 <body>
     <h2>Nouveau fichier reçu sur le serveur SFTP</h2>
-    
+
     <table border="1" cellpadding="10" cellspacing="0">
         <tr>
             <td><strong>Fichier</strong></td>
@@ -299,9 +299,9 @@ Ceci est un message automatique du système de traitement SFTP.
             <td>{timestamp.strftime('%Y-%m-%d %H:%M:%S')}</td>
         </tr>
     </table>
-    
+
     <p>Le fichier sera traité automatiquement et les valeurs réelles seront mises à jour dans la base de données.</p>
-    
+
     <hr>
     <p><em>Ceci est un message automatique du système de traitement SFTP.</em></p>
 </body>
@@ -406,7 +406,7 @@ Ceci est un message automatique du système de monitoring de drift.
 <html>
 <body>
     <h2 style="color: {drift_color}">ALERTE DE DRIFT DÉTECTÉE</h2>
-    
+
     <table border="1" cellpadding="10" cellspacing="0">
         <tr>
             <td><strong>Modèle</strong></td>
@@ -425,7 +425,7 @@ Ceci est un message automatique du système de monitoring de drift.
             <td style="color: {drift_color}; font-weight: bold;">{'OUI' if overall_drift else 'NON'}</td>
         </tr>
     </table>
-    
+
     <h3>DATA DRIFT</h3>
 """
 
@@ -483,7 +483,7 @@ Ceci est un message automatique du système de monitoring de drift.
 
         html_body += """
     <p style='color: orange;'><strong>Recommandation:</strong> Envisager un retraining du modèle.</p>
-    
+
     <hr>
     <p><em>Ceci est un message automatique du système de monitoring de drift.</em></p>
 </body>
@@ -547,7 +547,7 @@ Ceci est un message automatique du système de traitement SFTP.
 <html>
 <body>
     <h2 style="color: {status_color}">Résultat du traitement du fichier SFTP</h2>
-    
+
     <table border="1" cellpadding="10" cellspacing="0">
         <tr>
             <td><strong>Fichier</strong></td>
@@ -581,7 +581,7 @@ Ceci est un message automatique du système de traitement SFTP.
 
         html_body += """
     </table>
-    
+
     <hr>
     <p><em>Ceci est un message automatique du système de traitement SFTP.</em></p>
 </body>
@@ -642,7 +642,7 @@ Ceci est un message automatique du système de traitement SFTP.
 <html>
 <body>
     <h2>Rapport de traitement par lots SFTP</h2>
-    
+
     <table border="1" cellpadding="10" cellspacing="0">
         <tr>
             <td><strong>Fichiers totaux</strong></td>
@@ -673,7 +673,7 @@ Ceci est un message automatique du système de traitement SFTP.
             <td>{timestamp.strftime('%Y-%m-%d %H:%M:%S')}</td>
         </tr>
     </table>
-    
+
     <hr>
     <p><em>Ceci est un message automatique du système de traitement SFTP.</em></p>
 </body>

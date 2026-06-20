@@ -6,7 +6,7 @@ SFTP pour récupérer les valeurs réelles et mettre à jour la base de données
 
 Exemple d'utilisation :
     from ml.connectors.sftp.sftp_tasks import process_sftp_actual_values_task
-    
+
     # Dans un flow Prefect
     results = process_sftp_actual_values_task(
         sftp_host="sftp.example.com",

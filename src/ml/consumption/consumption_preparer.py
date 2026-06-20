@@ -7,7 +7,7 @@ features prêtes pour l'entraînement.
 
 Exemple d'utilisation :
     from analytics.consumption.consumption_preparer import ConsumptionDataPreparer
-    
+
     preparer = ConsumptionDataPreparer()
     df = preparer.prepare(
         raw_path="data/test/test_raw_consumption.csv",

@@ -152,7 +152,7 @@ class TestWeatherAPI(unittest.TestCase):
             loaded_df = pd.read_parquet(filepath)
             self.assertEqual(len(loaded_df), 100)
             self.assertEqual(list(loaded_df.columns), [
-                "Horodate", "temperature_2m_mean", 
+                "Horodate", "temperature_2m_mean",
                 "relative_humidity_mean", "precipitation_sum"
             ])
 

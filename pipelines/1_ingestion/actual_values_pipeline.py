@@ -37,15 +37,15 @@ def main():
     # Priorité : argument CLI > variable d'environnement > config
     if args.db_uri is not None:
         db_uri = args.db_uri
-    elif os.getenv('DATABASE_URI'):
-        db_uri = os.getenv('DATABASE_URI')
+    elif os.getenv('PREDICTIONS_POSTGRES_URI'):
+        db_uri = os.getenv('PREDICTIONS_POSTGRES_URI')
     else:
         db_uri = config.get('database', {}).get('uri')
     
     if not db_uri:
         print(f"❌ Erreur: URI de base de données non fournie")
-        print(f"   Définissez la variable d'environnement DATABASE_URI ou utilisez --db_uri")
-        print(f"   Exemple: export DATABASE_URI='postgresql://user:password@host:port/database'")
+        print(f"   Définissez la variable d'environnement PREDICTIONS_POSTGRES_URI ou utilisez --db_uri")
+        print(f"   Exemple: export PREDICTIONS_POSTGRES_URI='postgresql://user:password@host:port/database'")
         sys.exit(1)
     
     try:

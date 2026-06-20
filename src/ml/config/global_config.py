@@ -6,13 +6,13 @@ depuis le fichier config.yaml à la racine du projet.
 
 Exemple d'utilisation :
     from ml.config.global_config import load_global_config, get_email_config
-    
+
     # Charger toute la configuration
     config = load_global_config()
-    
+
     # Récupérer uniquement la configuration email
     email_config = get_email_config()
-    
+
     # Créer un notificateur email avec la configuration globale
     from ml.utils.notifications.email_notifier import EmailNotifier
     notifier = EmailNotifier(config=email_config)
@@ -26,7 +26,6 @@ import os
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 
 # Chemin vers le fichier de configuration globale
 GLOBAL_CONFIG_PATH = Path(__file__).parent.parent.parent.parent / "config.yaml"
@@ -175,7 +174,7 @@ def get_database_uri(config_path: Optional[Path] = None) -> Optional[str]:
         URI de la base de données ou None
     """
     # Priorité: variable d'environnement > configuration
-    db_uri = os.getenv("DATABASE_URI")
+    db_uri = os.getenv("PREDICTIONS_POSTGRES_URI")
 
     if not db_uri:
         db_config = get_database_config(config_path)

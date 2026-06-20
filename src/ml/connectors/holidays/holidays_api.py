@@ -7,10 +7,10 @@ Sources :
 
 Exemple d'utilisation :
     from analytics.utils.api.holidays.holidays_api import VacancesAPI, JoursFeriesAPI
-    
+
     vacances = VacancesAPI()
     df_vacances = vacances.fetch(year=2024, zone="C")
-    
+
     jours_feries = JoursFeriesAPI()
     df_feries = jours_feries.fetch(year=2024)
 """
@@ -25,7 +25,6 @@ import re
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 
 # Constants
 VACANCES_SCOLAIRES_URL = "https://raw.githubusercontent.com/AntoineAugusti/vacances-scolaires/refs/heads/master/data.csv"

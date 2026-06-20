@@ -6,7 +6,7 @@ des données de consommation à partir des fichiers bruts PRM.
 
 Exemple d'utilisation :
     from analytics.consumption.consumption_tasks import prepare_consumption_features_task
-    
+
     # Dans un flow Prefect
     features_path = prepare_consumption_features_task(
         raw_path="data/templates/raw_template.csv",

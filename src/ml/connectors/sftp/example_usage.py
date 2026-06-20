@@ -14,7 +14,7 @@ Usage:
     export SFTP_PPK_PATH="/path/to/your/key.ppk"
     export SFTP_PASSPHRASE="your_passphrase"
     export DB_URI="postgresql://user:pass@host:port/database"
-    
+
     # Exécuter le script
     python example_usage.py
 """

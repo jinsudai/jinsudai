@@ -1,6 +1,5 @@
 # NE pas modifier ce fichier directement, il doit être remplacer par l'usage de la librarie
 
-
 """
 Transformation des données avant entraînement ou inférence.
 Permet de supprimer les colonnes configurées dans le YAML, de nettoyer les noms,

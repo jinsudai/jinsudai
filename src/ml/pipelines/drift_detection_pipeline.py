@@ -62,7 +62,7 @@ class DriftDetectionPipeline:
 
         logger.info(f"Pipeline de détection de drift initialisé avec config={config_name}")
 
-    def step_1_load_reference_data(self, reference_path: Optional[str] = None, 
+    def step_1_load_reference_data(self, reference_path: Optional[str] = None,
                                    download_from_s3_if_missing: bool = True) -> bool:
         """
         Étape 1: Chargement des données de référence.
@@ -192,7 +192,7 @@ class DriftDetectionPipeline:
             logger.error(f"Erreur lors du téléchargement depuis S3: {e}")
             return False
 
-    def step_2_load_current_data(self, current_data_path: Optional[str] = None, 
+    def step_2_load_current_data(self, current_data_path: Optional[str] = None,
                                  limit: int = 1000) -> bool:
         """
         Étape 2: Chargement des données courantes (production).
@@ -424,7 +424,7 @@ class DriftDetectionPipeline:
             logger.error(f"Erreur lors de l'envoi de la notification: {e}")
             return False
 
-    def run_full_pipeline(self, 
+    def run_full_pipeline(self,
                           reference_path: Optional[str] = None,
                           current_data_path: Optional[str] = None,
                           current_data_limit: int = 1000,

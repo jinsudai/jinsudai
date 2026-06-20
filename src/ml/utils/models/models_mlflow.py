@@ -234,8 +234,8 @@ def log_training_session(model, metrics, params, artifact_path="model", experime
     except Exception as e:
         logger.error(f"Erreur lors de l'enregistrement de la session: {e}")
 
-
 # ============= GESTION DES ALIASES MLFLOW =============
+
 
 def register_model_version(model_name, run_id, artifact_path="model", description=None):
     """

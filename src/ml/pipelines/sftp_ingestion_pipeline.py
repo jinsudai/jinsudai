@@ -50,7 +50,7 @@ def get_default_db_uri(db_uri: Optional[str] = None) -> Optional[str]:
     if db_uri:
         return db_uri
 
-    env_db_uri = os.getenv('DATABASE_URI')
+    env_db_uri = os.getenv('PREDICTIONS_POSTGRES_URI')
     if env_db_uri:
         return env_db_uri
 

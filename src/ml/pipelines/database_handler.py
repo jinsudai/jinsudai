@@ -198,7 +198,7 @@ class DatabaseHandler:
             return None
 
         query = """
-        SELECT prediction_id, prediction_timestamp, prediction_date, prediction_index, 
+        SELECT prediction_id, prediction_timestamp, prediction_date, prediction_index,
                prediction, confidence, model_version, entity_id, run_id, actual_value
         FROM predictions_pipeline
         WHERE prediction_date >= %s AND prediction_date <= %s
@@ -347,7 +347,7 @@ class DatabaseHandler:
 
         insert_query = """
         INSERT INTO drift_metrics (
-            drift_id, run_id, timestamp, drift_type, metric_name, 
+            drift_id, run_id, timestamp, drift_type, metric_name,
             metric_value, drift_detected, threshold
         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (drift_id) DO NOTHING;
@@ -415,7 +415,7 @@ class DatabaseHandler:
 
         if run_id:
             query = """
-            SELECT drift_id, run_id, timestamp, drift_type, metric_name, 
+            SELECT drift_id, run_id, timestamp, drift_type, metric_name,
                    metric_value, drift_detected, threshold, created_at
             FROM drift_metrics
             WHERE run_id = %s
@@ -425,7 +425,7 @@ class DatabaseHandler:
             params = (run_id, limit)
         else:
             query = """
-            SELECT drift_id, run_id, timestamp, drift_type, metric_name, 
+            SELECT drift_id, run_id, timestamp, drift_type, metric_name,
                    metric_value, drift_detected, threshold, created_at
             FROM drift_metrics
             ORDER BY timestamp DESC
