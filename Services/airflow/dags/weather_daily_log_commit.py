@@ -35,32 +35,53 @@ def add_log_entry(**context):
     
     Format: [YYYY-MM-DD HH:MM:SS] Airflow - weather_daily_log_commit - Message
     """
-    dag_run = context.get('dag_run')
-    execution_date = context.get('execution_date')
+    import logging
+    logger = logging.getLogger(__name__)
     
-    # Formater la date et l'heure
-    timestamp = execution_date.strftime('%Y-%m-%d %H:%M:%S')
+    try:
+        dag_run = context.get('dag_run')
+        execution_date = context.get('execution_date')
+        
+        logger.info(f"Début de add_log_entry, execution_date: {execution_date}")
+        logger.info(f"LOG_FILE_PATH: {LOG_FILE_PATH}")
+        
+        # Formater la date et l'heure
+        timestamp = execution_date.strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Créer le message de log
+        log_message = f"[{timestamp}] Airflow - weather_daily_log_commit - Pipeline WeatherDaily exécuté avec succès\n"
+        
+        # S'assurer que le répertoire existe
+        log_dir = os.path.dirname(LOG_FILE_PATH)
+        logger.info(f"Création du répertoire si nécessaire: {log_dir}")
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir, exist_ok=True)
+            logger.info(f"Répertoire créé: {log_dir}")
+        
+        # Lire le fichier existant s'il existe
+        existing_content = ""
+        if os.path.exists(LOG_FILE_PATH):
+            logger.info(f"Lecture du fichier existant: {LOG_FILE_PATH}")
+            with open(LOG_FILE_PATH, 'r', encoding='utf-8') as f:
+                existing_content = f.read()
+        else:
+            logger.info(f"Fichier n'existe pas, création nouveau: {LOG_FILE_PATH}")
+        
+        # Ajouter la nouvelle entrée de log
+        logger.info(f"Écriture dans le fichier: {LOG_FILE_PATH}")
+        with open(LOG_FILE_PATH, 'w', encoding='utf-8') as f:
+            f.write(existing_content)
+            f.write(log_message)
+        
+        logger.info(f"Log écrit avec succès")
+        return {"status": "success", "log_file": LOG_FILE_PATH, "message": log_message.strip()}
     
-    # Créer le message de log
-    log_message = f"[{timestamp}] Airflow - weather_daily_log_commit - Pipeline WeatherDaily exécuté avec succès\n"
-    
-    # S'assurer que le répertoire existe
-    log_dir = os.path.dirname(LOG_FILE_PATH)
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir, exist_ok=True)
-    
-    # Lire le fichier existant s'il existe
-    existing_content = ""
-    if os.path.exists(LOG_FILE_PATH):
-        with open(LOG_FILE_PATH, 'r', encoding='utf-8') as f:
-            existing_content = f.read()
-    
-    # Ajouter la nouvelle entrée de log
-    with open(LOG_FILE_PATH, 'w', encoding='utf-8') as f:
-        f.write(existing_content)
-        f.write(log_message)
-    
-    return {"status": "success", "log_file": LOG_FILE_PATH, "message": log_message.strip()}
+    except Exception as e:
+        logger.error(f"Erreur dans add_log_entry: {str(e)}")
+        logger.error(f"Type d'erreur: {type(e).__name__}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise
 
 def commit_log_to_git(**context):
     """

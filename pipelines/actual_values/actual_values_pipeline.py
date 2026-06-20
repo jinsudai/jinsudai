@@ -6,6 +6,7 @@ Usage:
 """
 import argparse
 import sys
+import os
 from pathlib import Path
 
 # Ajouter le répertoire src au path
@@ -28,12 +29,18 @@ def main():
     print()
     
     # Charger la config pour les valeurs par défaut
-    config = load_config(config_name=args.config_name)
+    # Charger d'abord la config globale, puis fusionner avec la config spécifique
+    global_config = load_config(config_name="config")
+    specific_config = load_config(config_name=args.config_name)
+    config = {**global_config, **specific_config}
     
-    if args.db_uri is None:
-        db_uri = config.get('database', {}).get('uri')
-    else:
+    # Priorité : argument CLI > variable d'environnement > config
+    if args.db_uri is not None:
         db_uri = args.db_uri
+    elif os.getenv('DATABASE_URI'):
+        db_uri = os.getenv('DATABASE_URI')
+    else:
+        db_uri = config.get('database', {}).get('uri')
     
     if not db_uri:
         print(f"❌ Erreur: URI de base de données non fournie")
