@@ -67,7 +67,7 @@ class ActualValuesPipeline:
         Récupère les prédictions de la veille
         
         Returns:
-            True si succès, False sinon
+            True si succès, False si erreur critique, None si aucune prédiction
         """
         logger.info("=== ÉTAPE 2: RÉCUPÉRATION DES PRÉDICTIONS DE LA VEILLE ===")
         
@@ -90,7 +90,8 @@ class ActualValuesPipeline:
         
         if self.previous_day_predictions is None or len(self.previous_day_predictions) == 0:
             logger.warning(f"Aucune prédiction trouvée pour la date {yesterday}")
-            return False
+            logger.info("Pipeline terminé avec succès - aucune mise à jour nécessaire")
+            return None  # Retourne None pour indiquer aucune prédiction (pas une erreur)
         
         logger.info(f"{len(self.previous_day_predictions)} prédictions récupérées pour la veille")
         return True
@@ -182,7 +183,14 @@ class ActualValuesPipeline:
         if not self.setup():
             return False, None
         
-        if not self.get_previous_day_predictions():
+        predictions_result = self.get_previous_day_predictions()
+        
+        # Si aucune prédiction trouvée, retourner succès (pas une erreur)
+        if predictions_result is None:
+            logger.info("Pipeline terminé avec succès - aucune prédiction à mettre à jour")
+            return True, None
+        
+        if not predictions_result:
             return False, None
         
         if not self.generate_random_actual_values():
