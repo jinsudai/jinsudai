@@ -2,14 +2,14 @@
 Script simple pour exécuter le pipeline d'entraînement consommation.
 
 Usage:
-    python scripts/run_training_pipeline.py --features_path data/processed/consumption_features.parquet
+    python pipelines/training/training_pipeline.py --features_path data/processed/consumption_features.parquet
 """
 import argparse
 import sys
 from pathlib import Path
 
 # Ajouter le répertoire src au path
-project_root = Path(__file__).parent.parent
+project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 

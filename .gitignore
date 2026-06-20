@@ -168,6 +168,7 @@ data/prod/
 services/_disabled/
 pipelines/_disabled/
 scripts/_disabled/
+src/ml/workflows/_disabled/
 
 # Copilot
 .copilotignore
