@@ -25,7 +25,7 @@ def main():
     parser.add_argument('--raw_path', type=str, default='data/templates/raw_consumption.csv', help='Chemin vers le fichier brut PRM')
     parser.add_argument('--output_dir', type=str, default='data/processed/', help='Répertoire de sortie local')
     parser.add_argument('--no_upload_s3', action='store_true', help='Désactiver l\'upload S3')
-    parser.add_argument('--s3_bucket', type=str, help='Nom du bucket S3 (défaut: depuis env AWS_S3_CONSUMPTION_BUCKET)')
+    parser.add_argument('--s3_bucket', type=str, help='Nom du bucket S3 (défaut: depuis env AWS_BUCKET)')
     parser.add_argument('--s3_prefix', type=str, default='consumption/features/', help='Préfixe S3')
     
     args = parser.parse_args()

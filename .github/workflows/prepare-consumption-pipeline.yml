@@ -24,7 +24,7 @@ on:
         required: false
         default: 'true'
       s3_bucket:
-        description: 'Nom du bucket S3 (optionnel, utilise AWS_S3_CONSUMPTION_BUCKET par défaut)'
+        description: 'Nom du bucket S3 (optionnel, utilise AWS_BUCKET par défaut)'
         required: false
       s3_prefix:
         description: 'Préfixe S3'
@@ -71,7 +71,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
-          AWS_S3_CONSUMPTION_BUCKET: ${{ secrets.AWS_S3_CONSUMPTION_BUCKET }}
+          AWS_BUCKET: ${{ secrets.AWS_BUCKET }}
         run: |
           python scripts/run_prepare_consumption_pipeline.py \
             --start_date "${{ github.event.inputs.start_date || '2024-01-01' }}" \

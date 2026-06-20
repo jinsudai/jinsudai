@@ -27,7 +27,7 @@ sys.path.insert(0, str(project_root / 'src'))
 
 from ml.consumption.consumption_preparer import ConsumptionDataPreparer
 from ml.connectors.weather.weather_api import WeatherAPI
-from ml.connectors.holidays.holidays_api import VacancesAPI, JoursFeriesAPI
+from ml.connectors.holidays.holidays_api import HolidaysCombinedAPI
 from ml.utils.s3_handler import S3Handler
 
 logging.basicConfig(level=logging.INFO)
@@ -84,6 +84,9 @@ def prepare_consumption_features_pipeline(
                 end_date=end_date,
                 hourly=True
             )
+            # S'assurer que la colonne Horodate existe
+            if 'Horodate' not in weather_df.columns:
+                weather_df['Horodate'] = pd.to_datetime(weather_df.index)
             weather_df.to_parquet(weather_path)
             logger.info(f"  ✅ Météo générée: {weather_path}")
         except Exception as e:
@@ -98,29 +101,10 @@ def prepare_consumption_features_pipeline(
         logger.info(f"  ℹ️ Fichier vacances existe déjà: {holidays_path}")
     else:
         try:
-            start_year = int(start_date.split('-')[0])
-            end_year = int(end_date.split('-')[0])
-            
-            vacances_api = VacancesAPI()
-            vacances_dfs = []
-            for year in range(start_year, end_year + 1):
-                df_vacances = vacances_api.fetch(year=year, zone="C")
-                vacances_dfs.append(df_vacances)
-            vacances_df = vacances_dfs[0] if vacances_dfs else None
-            
-            feries_api = JoursFeriesAPI()
-            feries_dfs = []
-            for year in range(start_year, end_year + 1):
-                df_feries = feries_api.fetch(year=year)
-                feries_dfs.append(df_feries)
-            feries_df = feries_dfs[0] if feries_dfs else None
-            
-            if vacances_df is not None:
-                vacances_df.to_parquet(holidays_path)
-                logger.info(f"  ✅ Vacances générées: {holidays_path}")
-            else:
-                logger.warning(f"  ⚠️ Pas de données vacances générées")
-                holidays_path = None
+            holidays_api = HolidaysCombinedAPI(zone="C")
+            holidays_df = holidays_api.generate_holidays_dataframe(start_date, end_date)
+            holidays_df.to_parquet(holidays_path)
+            logger.info(f"  ✅ Vacances générées: {holidays_path}")
         except Exception as e:
             logger.error(f"  ❌ Erreur génération vacances: {e}")
             return {"status": "error", "step": "holidays", "error": str(e)}

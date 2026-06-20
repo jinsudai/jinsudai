@@ -32,13 +32,13 @@ class S3Handler:
         Initialise le handler S3.
         
         Args:
-            bucket: Nom du bucket S3 (défaut: depuis env AWS_S3_CONSUMPTION_BUCKET)
+            bucket: Nom du bucket S3 (défaut: depuis env AWS_BUCKET)
             aws_access_key_id: Clé d'accès AWS (défaut: depuis env AWS_ACCESS_KEY_ID)
             aws_secret_access_key: Clé secrète AWS (défaut: depuis env AWS_SECRET_ACCESS_KEY)
             region: Région AWS (défaut: depuis env AWS_REGION ou AWS_DEFAULT_REGION)
             endpoint_url: URL endpoint S3 (défaut: depuis env AWS_ENDPOINT_URL)
         """
-        self.bucket = bucket or os.environ.get('AWS_S3_CONSUMPTION_BUCKET', 'jinsudai-consumption')
+        self.bucket = bucket or os.environ.get('AWS_BUCKET', 'jinsudai-consumption')
         self.aws_access_key_id = aws_access_key_id or os.environ.get('AWS_ACCESS_KEY_ID')
         self.aws_secret_access_key = aws_secret_access_key or os.environ.get('AWS_SECRET_ACCESS_KEY')
         self.region = region or os.environ.get('AWS_REGION') or os.environ.get('AWS_DEFAULT_REGION', 'eu-west-3')
