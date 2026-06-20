@@ -61,7 +61,7 @@ def generate_inference_data(
 
     # Récupérer la configuration
     config = load_config(config_path=config_path, config_name=config_name)
-    
+
     # Générer les données de vacances avec l'API
     end_date = start_date + timedelta(days=n_days)
     holidays_zone = get_nested(config, "data.holidays_zone", "C")  # Défaut: zone C
@@ -86,20 +86,20 @@ def generate_inference_data(
     weather_latitude = get_nested(config, "data.weather_latitude", 43.5297)  # Défaut: Aix en Provence
     weather_longitude = get_nested(config, "data.weather_longitude", 5.4474)
     weather_location = get_nested(config, "data.weather_location", "Aix en Provence")
-    
+
     weather_api = WeatherAPI(
         latitude=weather_latitude,
         longitude=weather_longitude,
         location_name=weather_location
     )
-    
+
     # Déterminer si on utilise des données horaires ou journalières
     hourly = n_samples_per_day > 1
     weather_df = weather_api.fetch_forecast(
         forecast_days=n_days,
         hourly=hourly
     )
-    
+
     # Créer un mapping Horodate -> données météo
     weather_mapping = {}
     for _, row in weather_df.iterrows():
@@ -112,7 +112,7 @@ def generate_inference_data(
 
     data = {}
     for col in feature_columns:
-        if col in ("prediction_timestamp", "Horodate", "horodate"): # A revoir pour être plus générique
+        if col in ("prediction_timestamp", "Horodate", "horodate"):  # A revoir pour être plus générique
             data[col] = timestamps
         elif col == "temperature_2m_mean":
             data[col] = [weather_mapping.get(ts, {}).get("temperature_2m_mean", 20.0) for ts in timestamps]

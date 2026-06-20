@@ -170,6 +170,7 @@ pipelines/_disabled/
 scripts/_disabled/
 src/ml/workflows/_disabled/
 tests/_disabled/
+.github/workflows/_disabled/
 
 # Copilot
 .copilotignore

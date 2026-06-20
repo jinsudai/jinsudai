@@ -48,7 +48,7 @@ class EmailNotifier:
     Classe pour envoyer des notifications par email.
     Supporte SMTP et Resend.
     """
-    
+
     def __init__(
         self,
         provider: str = "smtp",
@@ -64,7 +64,7 @@ class EmailNotifier:
     ):
         """
         Initialise le notificateur email.
-        
+
         Args:
             provider: Type de provider ("smtp" ou "resend")
             smtp_server: Serveur SMTP (ex: smtp.gmail.com)
@@ -98,7 +98,7 @@ class EmailNotifier:
             self.use_tls = use_tls
             self.resend_api_key = resend_api_key or os.getenv("RESEND_API_KEY")
             self.from_email = from_email
-        
+
         # Validation
         if self.provider == "smtp":
             if not self.smtp_server or not self.sender_email or not self.sender_password:
@@ -108,12 +108,12 @@ class EmailNotifier:
                 raise ValueError("Configuration Resend incomplète: resend_api_key et from_email requis")
         else:
             raise ValueError(f"Provider non supporté: {self.provider}. Options: 'smtp', 'resend'")
-        
+
         if not self.recipient_emails:
             raise ValueError("recipient_emails est requis")
-        
+
         logger.info(f"Notificateur email initialisé (provider: {self.provider}) pour {len(self.recipient_emails)} destinataires")
-    
+
     def _send_email(
         self,
         subject: str,
@@ -122,12 +122,12 @@ class EmailNotifier:
     ) -> bool:
         """
         Envoie un email selon le provider configuré.
-        
+
         Args:
             subject: Sujet de l'email
             body: Corps du texte de l'email
             html_body: Corps HTML de l'email (optionnel)
-        
+
         Returns:
             True si succès, False sinon
         """
@@ -138,7 +138,7 @@ class EmailNotifier:
         else:
             logger.error(f"Provider non supporté: {self.provider}")
             return False
-    
+
     def _send_email_smtp(
         self,
         subject: str,
@@ -147,12 +147,12 @@ class EmailNotifier:
     ) -> bool:
         """
         Envoie un email via SMTP.
-        
+
         Args:
             subject: Sujet de l'email
             body: Corps du texte de l'email
             html_body: Corps HTML de l'email (optionnel)
-        
+
         Returns:
             True si succès, False sinon
         """
@@ -162,34 +162,34 @@ class EmailNotifier:
             msg['From'] = self.sender_email
             msg['To'] = ', '.join(self.recipient_emails)
             msg['Subject'] = subject
-            
+
             # Ajouter le corps texte
             text_part = MIMEText(body, 'plain')
             msg.attach(text_part)
-            
+
             # Ajouter le corps HTML si fourni
             if html_body:
                 html_part = MIMEText(html_body, 'html')
                 msg.attach(html_part)
-            
+
             # Connexion au serveur SMTP
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 if self.use_tls:
                     server.starttls()
-                
+
                 # Authentification
                 server.login(self.sender_email, self.sender_password)
-                
+
                 # Envoi
                 server.send_message(msg)
-            
+
             logger.info(f"Email SMTP envoyé avec succès: {subject}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Erreur lors de l'envoi de l'email SMTP: {e}")
             return False
-    
+
     def _send_email_resend(
         self,
         subject: str,
@@ -198,22 +198,22 @@ class EmailNotifier:
     ) -> bool:
         """
         Envoie un email via l'API Resend.
-        
+
         Args:
             subject: Sujet de l'email
             body: Corps du texte de l'email
             html_body: Corps HTML de l'email (optionnel)
-        
+
         Returns:
             True si succès, False sinon
         """
         try:
             import resend
-            
+
             # Utiliser le corps HTML si disponible, sinon le corps texte
             content = html_body if html_body else body
             content_type = "html" if html_body else "text"
-            
+
             # Envoyer à tous les destinataires
             for recipient in self.recipient_emails:
                 params = {
@@ -222,19 +222,19 @@ class EmailNotifier:
                     "subject": subject,
                     content_type: content
                 }
-                
+
                 resend.Emails.send(params)
-            
+
             logger.info(f"Email Resend envoyé avec succès: {subject}")
             return True
-            
+
         except ImportError:
             logger.error("La bibliothèque resend n'est pas installée. Installez-la avec: pip install resend")
             return False
         except Exception as e:
             logger.error(f"Erreur lors de l'envoi de l'email Resend: {e}")
             return False
-    
+
     def notify_file_received(
         self,
         filename: str,
@@ -244,21 +244,21 @@ class EmailNotifier:
     ) -> bool:
         """
         Notifie la réception d'un fichier sur le serveur SFTP.
-        
+
         Args:
             filename: Nom du fichier
             file_size: Taille du fichier en octets
             remote_path: Chemin distant du fichier
             timestamp: Timestamp de réception (défaut: maintenant)
-        
+
         Returns:
             True si succès, False sinon
         """
         if timestamp is None:
             timestamp = datetime.now()
-        
+
         subject = f"[SFTP] Nouveau fichier reçu: {filename}"
-        
+
         # Corps texte
         body = f"""
 Nouveau fichier reçu sur le serveur SFTP
@@ -274,7 +274,7 @@ Le fichier sera traité automatiquement et les valeurs réelles seront mises à 
 ---
 Ceci est un message automatique du système de traitement SFTP.
 """
-        
+
         # Corps HTML
         html_body = f"""
 <html>
@@ -307,9 +307,9 @@ Ceci est un message automatique du système de traitement SFTP.
 </body>
 </html>
 """
-        
+
         return self._send_email(subject, body, html_body)
-    
+
     def notify_drift_detected(
         self,
         drift_results: Dict[str, Any],
@@ -319,26 +319,26 @@ Ceci est un message automatique du système de traitement SFTP.
     ) -> bool:
         """
         Notifie la détection de drift dans le modèle.
-        
+
         Args:
             drift_results: Résultats de la détection de drift
             model_name: Nom du modèle
             run_id: ID de la run
             timestamp: Timestamp de détection (défaut: maintenant)
-        
+
         Returns:
             True si succès, False sinon
         """
         if timestamp is None:
             timestamp = datetime.now()
-        
+
         subject = f"[DRIFT ALERT] Drift détecté pour le modèle {model_name}"
-        
+
         # Extraire les informations de drift
         data_drift = drift_results.get('data_drift', {})
         concept_drift = drift_results.get('concept_drift', {})
         overall_drift = drift_results.get('overall_drift_detected', False)
-        
+
         # Corps texte
         body = f"""
 ALERTE DE DRIFT DÉTECTÉE
@@ -350,7 +350,7 @@ Drift global détecté: {overall_drift}
 
 === DATA DRIFT ===
 """
-        
+
         if data_drift:
             if data_drift.get('drift_detected'):
                 body += f"Drift détecté: OUI\n"
@@ -358,7 +358,7 @@ Drift global détecté: {overall_drift}
                 drifted_count = data_drift.get('drifted_features_count', 0)
                 total_count = data_drift.get('total_features_analyzed', 0)
                 body += f"Features avec drift: {drifted_count}/{total_count}\n"
-                
+
                 for feature, info in features_drift.items():
                     if info.get('drift_detected'):
                         body += f"  - {feature}: PSI={info.get('psi', 0):.4f}\n"
@@ -366,22 +366,22 @@ Drift global détecté: {overall_drift}
                 body += "Drift détecté: NON\n"
         else:
             body += "Non analysé\n"
-        
+
         body += f"""
 === CONCEPT DRIFT ===
 """
-        
+
         if concept_drift:
             pred_drift = concept_drift.get('prediction_drift', {})
             perf_drift = concept_drift.get('performance_drift', {})
-            
+
             if pred_drift.get('drift_detected'):
                 body += f"Drift de prédictions: OUI\n"
                 body += f"  - Mean drift: {pred_drift.get('mean_drift', 0):.4f}\n"
                 body += f"  - Std drift: {pred_drift.get('std_drift', 0):.4f}\n"
             else:
                 body += "Drift de prédictions: NON\n"
-            
+
             if perf_drift:
                 if perf_drift.get('drift_detected'):
                     body += f"Drift de performance: OUI\n"
@@ -391,17 +391,17 @@ Drift global détecté: {overall_drift}
                     body += "Drift de performance: NON\n"
         else:
             body += "Non analysé\n"
-        
+
         body += """
 Recommandation: Envisager un retraining du modèle.
 
 ---
 Ceci est un message automatique du système de monitoring de drift.
 """
-        
+
         # Corps HTML
         drift_color = "red" if overall_drift else "green"
-        
+
         html_body = f"""
 <html>
 <body>
@@ -428,7 +428,7 @@ Ceci est un message automatique du système de monitoring de drift.
     
     <h3>DATA DRIFT</h3>
 """
-        
+
         if data_drift:
             if data_drift.get('drift_detected'):
                 html_body += "<p style='color: red;'><strong>Drift détecté: OUI</strong></p>"
@@ -436,7 +436,7 @@ Ceci est un message automatique du système de monitoring de drift.
                 drifted_count = data_drift.get('drifted_features_count', 0)
                 total_count = data_drift.get('total_features_analyzed', 0)
                 html_body += f"<p>Features avec drift: {drifted_count}/{total_count}</p>"
-                
+
                 html_body += "<table border='1' cellpadding='5' cellspacing='0'>"
                 html_body += "<tr><th>Feature</th><th>PSI</th><th>Drift</th></tr>"
                 for feature, info in features_drift.items():
@@ -453,13 +453,13 @@ Ceci est un message automatique du système de monitoring de drift.
                 html_body += "<p style='color: green;'><strong>Drift détecté: NON</strong></p>"
         else:
             html_body += "<p>Non analysé</p>"
-        
+
         html_body += "<h3>CONCEPT DRIFT</h3>"
-        
+
         if concept_drift:
             pred_drift = concept_drift.get('prediction_drift', {})
             perf_drift = concept_drift.get('performance_drift', {})
-            
+
             if pred_drift.get('drift_detected'):
                 html_body += "<p style='color: red;'><strong>Drift de prédictions: OUI</strong></p>"
                 html_body += f"<ul>"
@@ -468,7 +468,7 @@ Ceci est un message automatique du système de monitoring de drift.
                 html_body += f"</ul>"
             else:
                 html_body += "<p style='color: green;'><strong>Drift de prédictions: NON</strong></p>"
-            
+
             if perf_drift:
                 if perf_drift.get('drift_detected'):
                     html_body += "<p style='color: red;'><strong>Drift de performance: OUI</strong></p>"
@@ -480,7 +480,7 @@ Ceci est un message automatique du système de monitoring de drift.
                     html_body += "<p style='color: green;'><strong>Drift de performance: NON</strong></p>"
         else:
             html_body += "<p>Non analysé</p>"
-        
+
         html_body += """
     <p style='color: orange;'><strong>Recommandation:</strong> Envisager un retraining du modèle.</p>
     
@@ -489,9 +489,9 @@ Ceci est un message automatique du système de monitoring de drift.
 </body>
 </html>
 """
-        
+
         return self._send_email(subject, body, html_body)
-    
+
     def notify_file_processed(
         self,
         filename: str,
@@ -503,7 +503,7 @@ Ceci est un message automatique du système de monitoring de drift.
     ) -> bool:
         """
         Notifie le traitement d'un fichier.
-        
+
         Args:
             filename: Nom du fichier
             records_processed: Nombre d'enregistrements traités
@@ -511,16 +511,16 @@ Ceci est un message automatique du système de monitoring de drift.
             success: Si le traitement a réussi
             error_message: Message d'erreur si échec
             timestamp: Timestamp du traitement (défaut: maintenant)
-        
+
         Returns:
             True si succès, False sinon
         """
         if timestamp is None:
             timestamp = datetime.now()
-        
+
         status = "SUCCÈS" if success else "ÉCHEC"
         subject = f"[SFTP] Traitement fichier: {filename} - {status}"
-        
+
         # Corps texte
         body = f"""
 Résultat du traitement du fichier SFTP
@@ -532,15 +532,15 @@ Détails:
 - Prédictions mises à jour: {predictions_updated}
 - Date de traitement: {timestamp.strftime('%Y-%m-%d %H:%M:%S')}
 """
-        
+
         if error_message:
             body += f"- Erreur: {error_message}\n"
-        
+
         body += """
 ---
 Ceci est un message automatique du système de traitement SFTP.
 """
-        
+
         # Corps HTML
         status_color = "green" if success else "red"
         html_body = f"""
@@ -570,7 +570,7 @@ Ceci est un message automatique du système de traitement SFTP.
             <td>{timestamp.strftime('%Y-%m-%d %H:%M:%S')}</td>
         </tr>
 """
-        
+
         if error_message:
             html_body += f"""
         <tr>
@@ -578,7 +578,7 @@ Ceci est un message automatique du système de traitement SFTP.
             <td style="color: red;">{error_message}</td>
         </tr>
 """
-        
+
         html_body += """
     </table>
     
@@ -587,9 +587,9 @@ Ceci est un message automatique du système de traitement SFTP.
 </body>
 </html>
 """
-        
+
         return self._send_email(subject, body, html_body)
-    
+
     def notify_batch_completed(
         self,
         total_files: int,
@@ -601,7 +601,7 @@ Ceci est un message automatique du système de traitement SFTP.
     ) -> bool:
         """
         Notifie la complétion d'un traitement par lots.
-        
+
         Args:
             total_files: Nombre total de fichiers
             successful: Nombre de fichiers traités avec succès
@@ -609,17 +609,17 @@ Ceci est un message automatique du système de traitement SFTP.
             total_records: Nombre total d'enregistrements traités
             total_updated: Nombre total de prédictions mises à jour
             timestamp: Timestamp du traitement (défaut: maintenant)
-        
+
         Returns:
             True si succès, False sinon
         """
         if timestamp is None:
             timestamp = datetime.now()
-        
+
         success_rate = (successful / total_files * 100) if total_files > 0 else 0
-        
+
         subject = f"[SFTP] Traitement par lots terminé: {successful}/{total_files} fichiers"
-        
+
         # Corps texte
         body = f"""
 Rapport de traitement par lots SFTP
@@ -636,7 +636,7 @@ Résumé:
 ---
 Ceci est un message automatique du système de traitement SFTP.
 """
-        
+
         # Corps HTML
         html_body = f"""
 <html>
@@ -679,5 +679,5 @@ Ceci est un message automatique du système de traitement SFTP.
 </body>
 </html>
 """
-        
+
         return self._send_email(subject, body, html_body)

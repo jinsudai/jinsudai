@@ -23,12 +23,8 @@ from ml.pipelines.Prediction_pipeline import PredictionPipeline
 from ml.config import load_config
 
 def main():
-    # Construire le nom du modèle par défaut basé sur l'environnement
-    environment = os.getenv('Environment', 'Dev').lower()
-    default_model_name = f"consumption_model_{environment}"
-    
     parser = argparse.ArgumentParser(description='Exécute le pipeline de prédiction')
-    parser.add_argument('--model_name', type=str, default=default_model_name, help='Nom du modèle dans MLflow')
+    parser.add_argument('--model_name', type=str, default=None, help='Nom du modèle dans MLflow (utilise la config par défaut)')
     parser.add_argument('--config_name', type=str, default='consumption', help='Nom de la config (consumption, solar_production)')
     parser.add_argument('--n_days', type=int, default=3, help='Nombre de jours de prédictions')
     parser.add_argument('--n_samples_per_day', type=int, default=48, help='Nombre d\'échantillons par jour')
@@ -37,15 +33,19 @@ def main():
     
     args = parser.parse_args()
     
+    # Charger la config pour les valeurs par défaut
+    config = load_config(config_name=args.config_name)
+    
+    # Utiliser le nom du modèle depuis la config si non fourni
+    if args.model_name is None:
+        args.model_name = config.get('mlflow', {}).get('model_name', 'model')
+    
     print(f"=== Pipeline de prédiction (sans Prefect) ===")
     print(f"Modèle: {args.model_name}")
     print(f"Config: {args.config_name}")
     print(f"Jours: {args.n_days}")
     print(f"Échantillons/jour: {args.n_samples_per_day}")
     print()
-    
-    # Charger la config pour les valeurs par défaut
-    config = load_config(config_name=args.config_name)
     
     mlflow_uri = config.get('mlflow', {}).get('tracking_uri')
     experiment_name = config.get('mlflow', {}).get('experiment_name')

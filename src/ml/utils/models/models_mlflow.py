@@ -63,7 +63,7 @@ def set_mlflow_tracking(tracking_uri=None, artifact_location=None):
 def start_mlflow_run(experiment_name, run_name=None, max_retries=3, backoff_factor=2):
     """
     Démarre une nouvelle run MLflow
-    
+
     Args:
         experiment_name: Nom de l'expérience
         run_name: Nom de la run (optionnel)
@@ -213,7 +213,7 @@ def end_mlflow_run():
 def log_training_session(model, metrics, params, artifact_path="model", experiment_name="default", tracking_uri=None, artifact_location=None):
     """
     Fonction utilitaire pour enregistrer une session complète
-    
+
     Args:
         model: Modèle entraîné
         metrics: Dict de métriques
@@ -240,13 +240,13 @@ def log_training_session(model, metrics, params, artifact_path="model", experime
 def register_model_version(model_name, run_id, artifact_path="model", description=None):
     """
     Enregistre une version de modèle dans le Model Registry
-    
+
     Args:
         model_name: Nom du modèle dans le registry
         run_id: ID de la run MLflow qui contient le modèle
         artifact_path: Chemin de l'artefact du modèle
         description: Description du modèle (optionnel)
-        
+
     Returns:
         ModelVersion ou None en cas d'erreur
     """
@@ -298,12 +298,12 @@ def register_model_version(model_name, run_id, artifact_path="model", descriptio
 def set_model_alias(model_name, version, alias):
     """
     Définit un alias pour une version de modèle
-    
+
     Args:
         model_name: Nom du modèle
         version: Version du modèle
         alias: Alias à attribuer (ex: "prod", "staging", "test")
-        
+
     Returns:
         True si succès, False sinon
     """
@@ -314,10 +314,10 @@ def set_model_alias(model_name, version, alias):
             alias=alias,
             version=version
         )
-        
+
         logger.info(f"Alias '{alias}' assigné à {model_name} v{version}")
         return True
-        
+
     except Exception as e:
         logger.error(f"Erreur lors de l'assignation de l'alias: {e}")
         return False
@@ -326,11 +326,11 @@ def set_model_alias(model_name, version, alias):
 def get_model_version_by_alias(model_name, alias):
     """
     Récupère la version d'un modèle pour un alias spécifique
-    
+
     Args:
         model_name: Nom du modèle
         alias: Alias à chercher (ex: "prod", "staging")
-        
+
     Returns:
         ModelVersion ou None si non trouvé
     """
@@ -338,7 +338,7 @@ def get_model_version_by_alias(model_name, alias):
         client = mlflow.tracking.MlflowClient()
         model_version = client.get_model_version_by_alias(model_name, alias)
         return model_version
-        
+
     except Exception as e:
         logger.warning(f"Alias '{alias}' non trouvé pour {model_name}: {e}")
         return None
@@ -347,25 +347,25 @@ def get_model_version_by_alias(model_name, alias):
 def list_model_aliases(model_name):
     """
     Liste tous les aliases d'un modèle
-    
+
     Args:
         model_name: Nom du modèle
-        
+
     Returns:
         Dict {alias: version} ou {} si aucun
     """
     try:
         client = mlflow.tracking.MlflowClient()
         model = client.get_registered_model(model_name)
-        
+
         # Construire un dict {alias: version}
         aliases_dict = {}
         if model.aliases:
             for alias, version in model.aliases.items():
                 aliases_dict[alias] = version
-        
+
         return aliases_dict
-        
+
     except Exception as e:
         logger.warning(f"Erreur lors de la récupération des aliases: {e}")
         return {}
@@ -375,7 +375,7 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
     """
     Compare les métriques de deux versions de modèle
     Support de plusieurs métriques avec priorité
-    
+
     Args:
         model_name: Nom du modèle
         version_new: Version nouvelle (en Staging)
@@ -384,7 +384,7 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
                     Ex: ["mae", "rmse", "mape", "accuracy"]
                     Par défaut: ["mae", "rmse", "accuracy"]
                     Les métriques doivent correspondre exactement aux noms dans MLflow
-        
+
     Returns:
         Dict avec les métriques et le résultat de comparaison
     """
@@ -392,41 +392,41 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
         # Métriques par défaut pour prédiction énergétique
         if metric_keys is None:
             metric_keys = ["mae", "rmse", "accuracy"]
-        
+
         if isinstance(metric_keys, str):
             metric_keys = [metric_keys]
-        
+
         client = mlflow.tracking.MlflowClient()
-        
+
         # Récupérer les infos des versions
         model_version_new = client.get_model_version(model_name, version_new)
         run_id_new = model_version_new.run_id
         run_new = mlflow.get_run(run_id_new)
-        
+
         # Chercher les métriques
         metrics_new = {}
         metric_used = None
         metric_value = None
         available_metrics = list(run_new.data.metrics.keys()) if run_new.data.metrics else []
-        
+
         logger.info(f"  → Métriques disponibles pour v{version_new}: {available_metrics}")
-        
+
         # Essayer chaque métrique directement
         for metric_key in metric_keys:
             if metric_key in run_new.data.metrics:
                 value = run_new.data.metrics[metric_key]
                 metrics_new[metric_key] = value
-                
+
                 # Première métrique trouvée = celle à utiliser pour la comparaison
                 if metric_used is None:
                     metric_used = metric_key
                     metric_value = value
-                
+
                 logger.info(f"    ✓ {metric_key} = {value:.4f}")
-        
+
         # Récupérer la version courante par alias
         model_version_current = get_model_version_by_alias(model_name, alias_current)
-        
+
         if model_version_current is None:
             logger.warning(f"  ! Alias '{alias_current}' non trouvé (première promotion)")
             return {
@@ -438,34 +438,34 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
                 "improvement_pct": None,
                 "alias_current": alias_current
             }
-        
+
         # Récupérer les métriques de la version courante
         run_id_current = model_version_current.run_id
         run_current = mlflow.get_run(run_id_current)
-        
+
         metrics_current = {}
         metric_current_value = None
         available_metrics_current = list(run_current.data.metrics.keys()) if run_current.data.metrics else []
-        
+
         logger.info(f"  → Métriques disponibles pour v{model_version_current.version} ({alias_current}): {available_metrics_current}")
-        
+
         for metric_key in metric_keys:
             if metric_key in run_current.data.metrics:
                 value = run_current.data.metrics[metric_key]
                 metrics_current[metric_key] = value
-                
+
                 if metric_key == metric_used:
                     metric_current_value = value
-                
+
                 logger.info(f"    ✓ {metric_key} = {value:.4f}")
         # Comparer sur la métrique sélectionnée
         is_better = False
         improvement = None
         improvement_pct = None
-        
+
         if metric_value is not None and metric_current_value is not None:
             improvement = metric_value - metric_current_value
-            
+
             # Pour MAE/RMSE/MAPE plus petit c'est mieux (négatif = amélioration)
             # Pour accuracy/R2 plus grand c'est mieux (positif = amélioration)
             if "mae" in metric_used or "rmse" in metric_used or "error" in metric_used:
@@ -474,10 +474,10 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
             else:
                 is_better = improvement > 0  # Augmentation de score = mieux
                 improvement_pct = (improvement / abs(metric_current_value)) * 100 if metric_current_value != 0 else 0
-                
+
         elif metric_value is not None:
             is_better = True
-        
+
         result = {
             "metrics_new": metrics_new,
             "metrics_current": metrics_current,
@@ -489,16 +489,16 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
             "version_current": model_version_current.version,
             "alias_current": alias_current
         }
-        
+
         # Log de comparaison
         if metric_used and improvement is not None:
             symbol = "📉" if improvement < 0 else "📈"
             logger.info(f"  {symbol} Comparaison {model_name}: {metric_used} {improvement:+.4f} ({improvement_pct:+.1f}%)")
         else:
             logger.info(f"  ⚠️  Comparaison {model_name}: Comparison impossible (métrique manquante)")
-        
+
         return result
-        
+
     except Exception as e:
         logger.error(f"Erreur lors de la comparaison: {e}")
         import traceback
@@ -510,7 +510,7 @@ def promote_model_to_production(model_name, version, alias_prod="prod", metric_k
     """
     Promeut automatiquement un modèle en Production via Alias
     Support de plusieurs métriques avec priorité
-    
+
     Args:
         model_name: Nom du modèle
         version: Version à promouvoir
@@ -519,36 +519,36 @@ def promote_model_to_production(model_name, version, alias_prod="prod", metric_k
                     Ex: "mae" ou ["mae", "rmse", "accuracy"]
                     Par défaut: ["mae", "rmse", "accuracy"] pour prédiction énergétique
         min_improvement: Amélioration minimale requise en % (défaut: 0.0)
-        
+
     Returns:
         Dict avec le résultat de la promotion
     """
     try:
         logger.info(f"=== PROMOTION EN PRODUCTION: {model_name} v{version} ===")
-        
+
         # Normaliser metric_keys - support list ou str
         metric_keys_normalized = metric_keys if isinstance(metric_keys, list) else [metric_keys] if metric_keys else ["mae", "rmse", "accuracy"]
-        
+
         # Comparer avec la version courante en prod
         comparison = compare_model_metrics(model_name, version, alias_current=alias_prod, metric_keys=metric_keys_normalized)
-        
+
         if comparison is None:
             logger.error("Impossible de comparer les modèles")
             return {"success": False, "reason": "comparison_failed"}
-        
+
         logger.info(f"Métrique utilisée: {comparison['metric_used']}")
-        
+
         # Afficher toutes les métriques trouvées
         if comparison['metrics_new']:
             logger.info("Métriques nouvelle version:")
             for key, val in comparison['metrics_new'].items():
                 logger.info(f"  • {key}: {val:.4f}")
-        
+
         if comparison['metrics_current']:
             logger.info(f"Métriques version avec alias '{alias_prod}':")
             for key, val in comparison['metrics_current'].items():
                 logger.info(f"  • {key}: {val:.4f}")
-        
+
         # Vérifier si on doit promouvoir
         if not comparison["is_better"]:
             logger.warning(f"Modèle v{version} pas assez bon pour la production")
@@ -559,7 +559,7 @@ def promote_model_to_production(model_name, version, alias_prod="prod", metric_k
                 "improvement_pct": comparison.get("improvement_pct"),
                 "metric_used": comparison["metric_used"]
             }
-        
+
         # Vérifier l'amélioration minimale
         improvement_pct = comparison.get("improvement_pct")
         if improvement_pct is not None and abs(improvement_pct) < min_improvement:
@@ -571,7 +571,7 @@ def promote_model_to_production(model_name, version, alias_prod="prod", metric_k
                 "improvement_pct": improvement_pct,
                 "metric_used": comparison["metric_used"]
             }
-        
+
         # Assigner l'alias Production
         try:
             set_model_alias(model_name, version, alias_prod)
@@ -579,7 +579,7 @@ def promote_model_to_production(model_name, version, alias_prod="prod", metric_k
         except Exception as e:
             logger.error(f"Erreur lors de l'assignation de l'alias: {e}")
             return {"success": False, "reason": "alias_assignment_failed", "error": str(e)}
-        
+
         return {
             "success": True,
             "version": version,
@@ -589,7 +589,7 @@ def promote_model_to_production(model_name, version, alias_prod="prod", metric_k
             "metric_used": comparison["metric_used"],
             "metrics_new": comparison["metrics_new"]
         }
-        
+
     except Exception as e:
         logger.error(f"Erreur lors de la promotion: {e}")
         import traceback
@@ -600,11 +600,11 @@ def promote_model_to_production(model_name, version, alias_prod="prod", metric_k
 def delete_model_alias(model_name, alias):
     """
     Supprime un alias d'un modèle
-    
+
     Args:
         model_name: Nom du modèle
         alias: Alias à supprimer
-        
+
     Returns:
         True si succès, False sinon
     """

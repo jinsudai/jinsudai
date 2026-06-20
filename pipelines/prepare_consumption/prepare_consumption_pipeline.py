@@ -70,9 +70,20 @@ def prepare_consumption_features_pipeline(
     logger.info("\n[1/4] Génération des données météo...")
     weather_path = output_dir / f"weather_{start_date}_to_{end_date}.parquet"
     
+    # Vérifier si le fichier existe et a la bonne structure
+    weather_valid = False
     if weather_path.exists():
-        logger.info(f"  ℹ️ Fichier météo existe déjà: {weather_path}")
-    else:
+        try:
+            existing_weather = pd.read_parquet(weather_path)
+            if 'Horodate' in existing_weather.columns:
+                weather_valid = True
+                logger.info(f"  ℹ️ Fichier météo existe déjà avec colonne Horodate: {weather_path}")
+            else:
+                logger.warning(f"  ⚠️ Fichier météo existe mais sans colonne Horodate, régénération...")
+        except Exception as e:
+            logger.warning(f"  ⚠️ Erreur lecture fichier météo existant: {e}")
+    
+    if not weather_valid:
         try:
             weather_api = WeatherAPI(
                 latitude=43.5297,
@@ -97,9 +108,20 @@ def prepare_consumption_features_pipeline(
     logger.info("\n[2/4] Génération des données vacances/jours fériés...")
     holidays_path = output_dir / f"holidays_{start_date}_to_{end_date}.parquet"
     
+    # Vérifier si le fichier existe et a la bonne structure
+    holidays_valid = False
     if holidays_path.exists():
-        logger.info(f"  ℹ️ Fichier vacances existe déjà: {holidays_path}")
-    else:
+        try:
+            existing_holidays = pd.read_parquet(holidays_path)
+            if 'Horodate' in existing_holidays.columns:
+                holidays_valid = True
+                logger.info(f"  ℹ️ Fichier vacances existe déjà avec colonne Horodate: {holidays_path}")
+            else:
+                logger.warning(f"  ⚠️ Fichier vacances existe mais sans colonne Horodate, régénération...")
+        except Exception as e:
+            logger.warning(f"  ⚠️ Erreur lecture fichier vacances existant: {e}")
+    
+    if not holidays_valid:
         try:
             holidays_api = HolidaysCombinedAPI(zone="C")
             holidays_df = holidays_api.generate_holidays_dataframe(start_date, end_date)

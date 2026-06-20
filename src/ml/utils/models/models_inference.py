@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 class InferenceModel:
     """Classe pour charger et utiliser un modèle en production"""
-    
+
     def __init__(
         self,
         mlflow_tracking_uri=None,
@@ -36,13 +36,13 @@ class InferenceModel:
     ):
         """
         Initialise la connexion MLflow en utilisant la configuration.
-        
+
         Args:
             mlflow_tracking_uri: URI du serveur MLflow (optionnel)
             experiment_name: Nom de l'expérience MLflow (optionnel)
             config_path: Chemin vers le fichier de configuration YAML (optionnel)
         """
-        
+
         mlflow_config = get_mlflow_config(config_path=config_path)
 
         self.mlflow_tracking_uri = mlflow_tracking_uri or mlflow_config.get("tracking_uri")
@@ -62,15 +62,15 @@ class InferenceModel:
         mlflow.set_tracking_uri(self.mlflow_tracking_uri)
         mlflow.set_experiment(self.experiment_name)
         logger.info(f"MLflow connecté à {self.mlflow_tracking_uri}")
-    
+
     def load_production_model(self, model_name=None, alias_prod=None):
         """
         Charge le modèle en production depuis MLflow via Alias
-        
+
         Args:
             model_name: Nom du modèle dans MLflow (optionnel)
             alias_prod: Alias pour la production (optionnel)
-            
+
         Returns:
             Modèle chargé ou None en cas d'erreur
         """
@@ -85,7 +85,7 @@ class InferenceModel:
             # Récupérer la version avec l'alias prod
             client = mlflow.tracking.MlflowClient()
             model_version = client.get_model_version_by_alias(model_name, alias_prod)
-            
+
             if not model_version:
                 logger.error(f"Aucune version avec l'alias '{alias_prod}' pour {model_name}")
                 return False
@@ -93,10 +93,10 @@ class InferenceModel:
             self.model_version = model_version.version
             self.run_id = model_version.run_id
             logger.info(f"Model registry source: {model_version.source}")
-            
+
             # Charger le modèle via alias
             model_uri = f"models:/{model_name}@{alias_prod}"
-            
+
             # Essayer d'abord avec sklearn (compatible modèles sklearn)
             try:
                 self.model = mlflow.sklearn.load_model(model_uri)
@@ -136,14 +136,14 @@ class InferenceModel:
                         self.model = self._load_autogluon_from_registry(model_version)
                     if self.model is not None:
                         logger.info(f"Modèle {model_name} v{self.model_version} chargé directement comme AutoGluon")
-            
+
             if self.model is None:
                 logger.error(f"Impossible de charger le modèle {model_name} v{self.model_version}")
                 return False
-            
+
             logger.info(f"Modèle {model_name} v{self.model_version} prêt pour l'inférence")
             return True
-            
+
         except Exception as e:
             logger.error(f"Erreur lors du chargement du modèle: {str(e)}")
             return False
@@ -229,21 +229,21 @@ class InferenceModel:
             if 'predictor.pkl' in files:
                 return root
         return None
-    
+
     def predict(self, X_data):
         """
         Génère des prédictions
-        
+
         Args:
             X_data: Features pour la prédiction (DataFrame ou array)
-            
+
         Returns:
             Prédictions et scores de confiance
         """
         if self.model is None:
             logger.error("Modèle non chargé")
             return None, None
-        
+
         try:
             expected_features = None
             if hasattr(self.model, 'features') and callable(getattr(self.model, 'features')):
@@ -265,7 +265,7 @@ class InferenceModel:
                     X_data = X_data[expected_features]
 
             predictions = self.model.predict(X_data)
-            
+
             confidence_scores = None
             if hasattr(self.model, 'predict_proba'):
                 try:
@@ -288,14 +288,14 @@ class InferenceModel:
                     confidence_scores = None
             elif hasattr(self.model, 'decision_function'):
                 confidence_scores = np.abs(self.model.decision_function(X_data))
-            
+
             logger.info(f"Prédictions générées pour {len(X_data)} échantillons")
             return predictions, confidence_scores
-            
+
         except Exception as e:
             logger.error(f"Erreur lors de la prédiction: {str(e)}")
             return None, None
-    
+
     def get_model_info(self):
         """Retourne les informations du modèle chargé"""
         if self.model is None:

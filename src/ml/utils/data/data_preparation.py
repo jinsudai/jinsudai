@@ -27,36 +27,36 @@ logger = logging.getLogger(__name__)
 def detect_feature_types(X):
     """
     Détecte automatiquement les colonnes numériques et catégories
-    
+
     Args:
         X: DataFrame avec les features
-    
+
     Returns:
         tuple: (numeric_features, categorical_features)
     """
     numeric_features = []
     categorical_features = []
-    
+
     for col, dtype in X.dtypes.items():
         if ('float' in str(dtype)) or ('int' in str(dtype)):
             numeric_features.append(col)
         else:
             categorical_features.append(col)
-    
+
     logger.info(f"🔍 Features numériques détectées: {numeric_features}")
     logger.info(f"🔍 Features catégories détectées: {categorical_features}")
-    
+
     return numeric_features, categorical_features
 
 
 def create_preprocessor(numeric_features, categorical_features):
     """
     Crée un preprocessor avec pipelines pour données numériques et catégories
-    
+
     Args:
         numeric_features: Liste des colonnes numériques
         categorical_features: Liste des colonnes catégories
-    
+
     Returns:
         ColumnTransformer: Preprocessor configuré
     """
@@ -66,13 +66,13 @@ def create_preprocessor(numeric_features, categorical_features):
         ('scaler', StandardScaler())
     ])
     logger.info("✓ Pipeline numériques créé: Imputer(mean) + Scaler")
-    
+
     # Pipeline pour features catégories
     categorical_transformer = Pipeline(steps=[
         ('encoder', OneHotEncoder(drop='first', sparse_output=False, handle_unknown='ignore'))
     ])
     logger.info("✓ Pipeline catégories créé: OneHotEncoder")
-    
+
     # ColumnTransformer pour combiner les deux
     preprocessor = ColumnTransformer(
         transformers=[
@@ -82,27 +82,27 @@ def create_preprocessor(numeric_features, categorical_features):
         remainder='drop'  # Ignorer les colonnes non listées
     )
     logger.info("✓ ColumnTransformer créé")
-    
+
     return preprocessor
 
 
 def get_feature_names(preprocessor, numeric_features, categorical_features):
     """
     Récupère les noms des colonnes après transformation
-    
+
     Args:
         preprocessor: ColumnTransformer configuré et fitted
         numeric_features: Liste des features numériques
         categorical_features: Liste des features catégories
-    
+
     Returns:
         list: Noms des colonnes transformées
     """
     feature_names = []
-    
+
     # Features numériques (inchangées)
     feature_names.extend(numeric_features)
-    
+
     # Features catégories (encodées)
     if categorical_features:
         try:
@@ -123,22 +123,21 @@ def get_feature_names(preprocessor, numeric_features, categorical_features):
                 raise AttributeError("Impossible de localiser l'encodeur de colonnes catégorielles")
         except Exception as e:
             logger.warning(f"Impossible de récupérer les noms de features catégories: {e}")
-    
-    return feature_names
 
+    return feature_names
 
 
 def prepare_data(X_train, X_test, numeric_features=None, categorical_features=None, autogluon=False):
     """
     Prépare les données: détection auto des types, création et application du preprocessor
-    
+
     Args:
         X_train: Features d'entraînement
         X_test: Features de test
         numeric_features: Optionnel, liste des features numériques (auto-détection si None)
         categorical_features: Optionnel, liste des features catégories (auto-détection si None)
         autogluon: bool, si True retourne des DataFrames bruts pour AutoGluon
-    
+
     Returns:
         dict: Contenant X_train_transformed / X_train, X_test_transformed / X_test,
               preprocessor, feature_names, numeric_features, categorical_features
@@ -163,8 +162,8 @@ def prepare_data(X_train, X_test, numeric_features=None, categorical_features=No
         X_test_p = X_test.copy()
 
         # Transformer colonnes date si présentes (Dejà fait pretraitement stateless?)
-        #X_train_p = transform_date_columns(X_train_p, drop_original=True)
-        #X_test_p = transform_date_columns(X_test_p, drop_original=True)
+        # X_train_p = transform_date_columns(X_train_p, drop_original=True)
+        # X_test_p = transform_date_columns(X_test_p, drop_original=True)
 
         # Forcer dtype 'category' pour colonnes catégorielles détectées
         for col in (categorical_features or []):
@@ -195,22 +194,22 @@ def prepare_data(X_train, X_test, numeric_features=None, categorical_features=No
     # Créer le preprocessor
     logger.info("\n2️⃣ Création du preprocessor...")
     preprocessor = create_preprocessor(numeric_features, categorical_features)
-    
+
     # Appliquer sur train set
     logger.info("\n3️⃣ Transformation du training set...")
     X_train_transformed = preprocessor.fit_transform(X_train)
     logger.info(f"  ✓ Shape: {X_train_transformed.shape}")
-    
+
     # Appliquer sur test set
     logger.info("\n4️⃣ Transformation du test set...")
     X_test_transformed = preprocessor.transform(X_test)
     logger.info(f"  ✓ Shape: {X_test_transformed.shape}")
-    
+
     # Récupérer les noms des features
     logger.info("\n5️⃣ Récupération des noms de features...")
     feature_names = get_feature_names(preprocessor, numeric_features, categorical_features)
     logger.info(f"  ✓ {len(feature_names)} features au total")
-    
+
     result = {
         'X_train': X_train_transformed,
         'X_test': X_test_transformed,
@@ -219,7 +218,7 @@ def prepare_data(X_train, X_test, numeric_features=None, categorical_features=No
         'numeric_features': numeric_features,
         'categorical_features': categorical_features
     }
-    
+
     logger.info("\n✓ Préparation des données terminée\n")
     return result
 
@@ -262,15 +261,15 @@ def split_data(data, test_size=0.2, random_state=42, target_column=None):
     Nettoie aussi les données (NaN, types)
     """
     from sklearn.model_selection import train_test_split
-    
+
     if data is None or data.empty:
         raise ValueError("Les données sont vides ou None")
-    
+
     # Nettoyer les données
     data_clean = data.dropna()  # Supprimer les NaN
     if data_clean.empty:
         raise ValueError("Toutes les données contiennent des NaN")
-    
+
     logger.info(f"Données après nettoyage: {data_clean.shape}")
     logger.info("Aperçu des premières lignes de data_clean:")
     logger.info(data_clean.head(2))
@@ -279,7 +278,7 @@ def split_data(data, test_size=0.2, random_state=42, target_column=None):
     target_col = None
     if target_column is not None and target_column in data_clean.columns:
         target_col = target_column
-    
+
     logger.info(f"Colonne cible utilisée (paramètre): {target_col}")
 
     if target_col:
@@ -303,11 +302,11 @@ def split_data(data, test_size=0.2, random_state=42, target_column=None):
     mask = y.notna()
     X = X[mask]
     y = y[mask]
-    
+
     # Vérifier que X et y ne sont pas vides
     if X.empty or y.empty:
         raise ValueError(f"X ou y vide après split: X.shape={X.shape}, y.shape={y.shape}")
-    
+
     # Convertir y en numérique si possible
     try:
         y = pd.to_numeric(y, errors='coerce').dropna()
@@ -315,21 +314,21 @@ def split_data(data, test_size=0.2, random_state=42, target_column=None):
         X = X.loc[y.index]
     except Exception as e:
         logger.info(f"Attention: Conversion numérique de y échouée: {e}")
-    
+
     # Ne pas convertir X en float32 ici - laisser le preprocessing s'en occuper
     # (surtout pour AutoGluon qui gère les catégories nativement)
-    
+
     if X.empty:
         raise ValueError("X est vide après conversion")
-    
+
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, 
         test_size=test_size,
         random_state=random_state,
         stratify=None  # Pas de stratification si y est continu
     )
-    
+
     logger.info(f"Ensemble d'entraînement: {X_train.shape}")
     logger.info(f"Ensemble de test: {X_test.shape}")
-    
+
     return X_train, X_test, y_train, y_test

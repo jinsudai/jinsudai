@@ -24,7 +24,7 @@ def load_data(file_path):
     """Charge les données depuis un fichier CSV ou Parquet"""
     try:
         file_path = Path(file_path)
-        
+
         # Déterminer le format du fichier
         if file_path.suffix == '.parquet':
             data = pd.read_parquet(file_path)
@@ -34,20 +34,20 @@ def load_data(file_path):
         else:
             # Fallback: essayer CSV avec virgule
             data = pd.read_csv(file_path, encoding="utf-8", encoding_errors="replace")
-        
+
         print(f"Données chargées avec succès: {file_path}")
         print(f"Forme des données: {data.shape}")
         print(f"Colonnes: {list(data.columns)}")
         print(f"Types: {data.dtypes.to_dict()}")
         print(f"Head:\n{data.head(5)}")
-        
+
         # Vérifier les données
         if data.empty:
             print("Attention: Le fichier est vide")
 
         if data.isnull().sum().sum() > 0:
             print(f"Attention: {data.isnull().sum().sum()} valeurs manquantes détectées")
-        
+
         return data
     except FileNotFoundError:
         print(f"Erreur: Fichier non trouvé - {file_path}")
@@ -55,9 +55,6 @@ def load_data(file_path):
     except Exception as e:
         print(f"Erreur lors du chargement: {e}")
         return None
-
-
-
 
 
 def save_data(data, file_path):

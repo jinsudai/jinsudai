@@ -38,7 +38,7 @@ def fetch_weather_task(
 ) -> str:
     """
     Tâche Prefect : Récupère les données météo historiques.
-    
+
     Args:
         start_date: Date de début (YYYY-MM-DD)
         end_date: Date de fin (YYYY-MM-DD)
@@ -46,7 +46,7 @@ def fetch_weather_task(
         longitude: Longitude de la localisation
         location_name: Nom de la localisation
         hourly: Si True, récupère données horaires
-    
+
     Returns:
         str: Chemin vers le fichier Parquet temporaire
     """
@@ -55,14 +55,14 @@ def fetch_weather_task(
         longitude=longitude,
         location_name=location_name
     )
-    
+
     df = api.fetch_historical(start_date=start_date, end_date=end_date, hourly=hourly)
-    
+
     # Sauvegarder temporairement
     temp_path = Path(f"data/temp/weather_{location_name}_{start_date}_to_{end_date}.parquet")
     temp_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(temp_path)
-    
+
     logger.info(f"Données météo sauvegardées: {temp_path}")
     return str(temp_path)
 
@@ -84,7 +84,7 @@ def generate_weather_parquet_task(
 ) -> str:
     """
     Tâche Prefect : Génère un fichier Parquet avec les données météo.
-    
+
     Args:
         start_date: Date de début (YYYY-MM-DD)
         end_date: Date de fin (YYYY-MM-DD)
@@ -93,7 +93,7 @@ def generate_weather_parquet_task(
         longitude: Longitude de la localisation
         location_name: Nom de la localisation
         validate: Si True, valide les données avant sauvegarde
-    
+
     Returns:
         str: Chemin vers le fichier Parquet généré
     """
@@ -102,10 +102,10 @@ def generate_weather_parquet_task(
         longitude=longitude,
         location_name=location_name
     )
-    
+
     # Récupérer les données
     api.fetch_historical(start_date=start_date, end_date=end_date, hourly=True)
-    
+
     # Valider si demandé
     if validate:
         validation = api.validate_data()
@@ -115,10 +115,10 @@ def generate_weather_parquet_task(
                 raise ValueError(f"Validation échouée: {validation['errors']}")
         if validation["warnings"]:
             logger.info(f"Avertissements météo: {validation['warnings']}")
-    
+
     # Générer le Parquet
     api.generate_parquet(output_path=output_path)
-    
+
     logger.info(f"Fichier météo Parquet généré: {output_path}")
     return output_path
 
@@ -136,17 +136,17 @@ def generate_weather_dataframe_task(
 ) -> str:
     """
     Tâche Prefect : Génère un DataFrame météo en mémoire.
-    
+
     Utilisé lorsque le DataFrame doit être passé directement à une autre tâche
     sans sauvegarde intermédiaire.
-    
+
     Args:
         start_date: Date de début (YYYY-MM-DD)
         end_date: Date de fin (YYYY-MM-DD)
         latitude: Latitude de la localisation
         longitude: Longitude de la localisation
         location_name: Nom de la localisation
-    
+
     Returns:
         str: Chemin temporaire (pour compatibilité Prefect)
     """
@@ -155,9 +155,9 @@ def generate_weather_dataframe_task(
         longitude=longitude,
         location_name=location_name
     )
-    
+
     df = api.fetch_historical(start_date=start_date, end_date=end_date, hourly=True)
-    
+
     # Pour Prefect, on retourne un chemin temporaire
     temp_path = f"temp://weather_df_{location_name}_{start_date}_to_{end_date}"
     logger.info(f"DataFrame météo généré (en mémoire)")

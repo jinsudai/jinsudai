@@ -52,7 +52,7 @@ def process_sftp_actual_values_task(
 ) -> Dict[str, Any]:
     """
     Tâche Prefect : Traite les fichiers SFTP pour mettre à jour les valeurs réelles.
-    
+
     Cette tâche :
     1. Se connecte au serveur SFTP avec authentification PPK
     2. Liste les fichiers dans le répertoire distant
@@ -60,7 +60,7 @@ def process_sftp_actual_values_task(
     4. Fait correspondre les valeurs réelles avec les prédictions
     5. Met à jour la base de données avec les valeurs réelles
     6. Archive les fichiers traités sur le serveur SFTP
-    
+
     Args:
         sftp_host: Adresse du serveur SFTP
         sftp_username: Nom d'utilisateur SFTP
@@ -73,10 +73,10 @@ def process_sftp_actual_values_task(
         sftp_timeout: Timeout SFTP en secondes (défaut: 30)
         file_pattern: Pattern de fichiers à traiter (défaut: *.csv)
         temp_local_dir: Répertoire temporaire local (défaut: /tmp/sftp_temp)
-    
+
     Returns:
         dict: Résultats du traitement avec statistiques
-    
+
     Raises:
         Exception: Si la configuration échoue ou si une erreur critique survient
     """
@@ -91,11 +91,11 @@ def process_sftp_actual_values_task(
         sftp_port=sftp_port,
         sftp_timeout=sftp_timeout
     )
-    
+
     # Configurer le processeur
     if not processor.setup():
         raise Exception("Impossible de configurer le processeur SFTP")
-    
+
     # Traiter le répertoire
     results = processor.process_directory(
         remote_directory=remote_directory,
@@ -103,12 +103,12 @@ def process_sftp_actual_values_task(
         file_pattern=file_pattern,
         temp_local_dir=temp_local_dir
     )
-    
+
     # Générer le résumé
     summary = processor.get_processing_summary(results)
-    
+
     logger.info(f"✅ Traitement terminé: {summary}")
-    
+
     return {
         "summary": summary,
         "details": results
@@ -134,9 +134,9 @@ def process_single_sftp_file_task(
 ) -> Dict[str, Any]:
     """
     Tâche Prefect : Traite un fichier individuel depuis SFTP.
-    
+
     Utile pour traiter des fichiers spécifiques ou pour des workflows plus granulaires.
-    
+
     Args:
         sftp_host: Adresse du serveur SFTP
         sftp_username: Nom d'utilisateur SFTP
@@ -148,7 +148,7 @@ def process_single_sftp_file_task(
         sftp_port: Port SFTP (défaut: 22)
         sftp_timeout: Timeout SFTP en secondes (défaut: 30)
         temp_local_dir: Répertoire temporaire local (défaut: /tmp/sftp_temp)
-    
+
     Returns:
         dict: Résultat du traitement du fichier
     """
@@ -163,20 +163,20 @@ def process_single_sftp_file_task(
         sftp_port=sftp_port,
         sftp_timeout=sftp_timeout
     )
-    
+
     # Configurer le processeur
     if not processor.setup():
         raise Exception("Impossible de configurer le processeur SFTP")
-    
+
     # Traiter le fichier
     result = processor.process_file(
         remote_file_path=remote_file_path,
         archive_directory=archive_directory,
         temp_local_dir=temp_local_dir
     )
-    
+
     logger.info(f"✅ Fichier traité: {result}")
-    
+
     return result
 
 
@@ -198,9 +198,9 @@ def list_sftp_files_task(
 ) -> list:
     """
     Tâche Prefect : Liste les fichiers disponibles sur un serveur SFTP.
-    
+
     Utile pour vérifier les fichiers avant traitement ou pour des workflows conditionnels.
-    
+
     Args:
         sftp_host: Adresse du serveur SFTP
         sftp_username: Nom d'utilisateur SFTP
@@ -211,12 +211,12 @@ def list_sftp_files_task(
         sftp_timeout: Timeout SFTP en secondes (défaut: 30)
         file_pattern: Pattern de fichiers à filtrer (optionnel)
         recursive: Liste récursive (défaut: False)
-    
+
     Returns:
         list: Liste des informations sur les fichiers
     """
     from .sftp_connector import SFTPConnector
-    
+
     connector = SFTPConnector(
         host=sftp_host,
         username=sftp_username,
@@ -226,14 +226,14 @@ def list_sftp_files_task(
         port=sftp_port,
         timeout=sftp_timeout
     )
-    
+
     with connector:
         files = connector.list_files(
             remote_directory,
             pattern=file_pattern,
             recursive=recursive
         )
-    
+
     logger.info(f"📁 {len(files)} fichiers trouvés dans {remote_directory}")
-    
+
     return files

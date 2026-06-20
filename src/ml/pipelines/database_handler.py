@@ -185,11 +185,11 @@ class DatabaseHandler:
     def get_predictions_by_date(self, start_date, end_date):
         """
         Récupère les prédictions pour une plage de dates
-        
+
         Args:
             start_date: Date de début (datetime ou string)
             end_date: Date de fin (datetime ou string)
-            
+
         Returns:
             DataFrame des prédictions ou None
         """
@@ -219,11 +219,11 @@ class DatabaseHandler:
     def update_actual_values(self, prediction_ids, actual_values):
         """
         Met à jour les valeurs réelles pour les prédictions données
-        
+
         Args:
             prediction_ids: Liste des IDs de prédictions à mettre à jour
             actual_values: Liste des valeurs réelles correspondantes
-            
+
         Returns:
             True si succès, False sinon
         """
@@ -256,7 +256,7 @@ class DatabaseHandler:
     def add_actual_value_column(self):
         """
         Ajoute la colonne actual_value si elle n'existe pas déjà
-        
+
         Returns:
             True si succès ou colonne existe déjà, False sinon
         """
@@ -283,7 +283,7 @@ class DatabaseHandler:
     def create_drift_metrics_table(self):
         """
         Crée la table drift_metrics pour stocker les métriques de drift
-        
+
         Returns:
             True si succès, False sinon
         """
@@ -329,11 +329,11 @@ class DatabaseHandler:
     def store_drift_metrics(self, drift_results, run_id):
         """
         Stocke les métriques de drift dans la base de données
-        
+
         Args:
             drift_results: Dict avec les résultats de drift detection
             run_id: ID de la run de prédiction
-            
+
         Returns:
             True si succès, False sinon
         """
@@ -356,12 +356,12 @@ class DatabaseHandler:
         try:
             import uuid
             from datetime import datetime
-            
+
             with self._get_connection() as conn:
                 with conn.cursor() as cursor:
                     data = []
                     current_timestamp = datetime.now()
-                    
+
                     # Extraire et structurer les métriques de drift
                     for drift_type, metrics in drift_results.items():
                         if isinstance(metrics, dict):
@@ -369,13 +369,13 @@ class DatabaseHandler:
                                 # Déterminer si c'est une détection de drift
                                 drift_detected = False
                                 threshold = None
-                                
+
                                 if metric_name == 'drift_detected' and isinstance(metric_value, bool):
                                     drift_detected = metric_value
                                 elif 'drift' in metric_name.lower() and isinstance(metric_value, (int, float)):
                                     # Si c'est une valeur de drift, on peut détecter si elle dépasse un seuil
                                     pass
-                                
+
                                 data.append((
                                     str(uuid.uuid4()),
                                     run_id,
@@ -386,7 +386,7 @@ class DatabaseHandler:
                                     drift_detected,
                                     threshold
                                 ))
-                    
+
                     if data:
                         execute_batch(cursor, insert_query, data)
                         conn.commit()
@@ -401,11 +401,11 @@ class DatabaseHandler:
     def get_drift_metrics(self, run_id=None, limit=100):
         """
         Récupère les métriques de drift
-        
+
         Args:
             run_id: ID de la run spécifique (optionnel)
             limit: Nombre maximum de résultats (défaut: 100)
-            
+
         Returns:
             DataFrame des métriques ou None
         """
@@ -447,10 +447,10 @@ class DatabaseHandler:
     def get_production_data_for_retraining(self, limit=None):
         """
         Récupère les données de production avec valeurs réelles pour le retraining.
-        
+
         Args:
             limit: Nombre maximum d'enregistrements (optionnel)
-            
+
         Returns:
             DataFrame avec les colonnes prediction_date, prediction, actual_value
             ou None en cas d'erreur

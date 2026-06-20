@@ -87,13 +87,24 @@ jobs:
       - name: Run SFTP ingestion pipeline
         env:
           DATABASE_URI: ${{ secrets.DATABASE_URI }}
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
+          SFTP_PRIVATE_KEY_B64: ${{ secrets.SFTP_PRIVATE_KEY_B64 }}
+          SFTP_SSH_PRIVATE_KEY_CONTENT: ${{ secrets.SFTP_SSH_PRIVATE_KEY_CONTENT }}
+          SFTP_PASSPHRASE: ${{ secrets.SFTP_PASSPHRASE }}
+          SFTP_PORT: ${{ secrets.SFTP_PORT || '22' }}
+          SFTP_TIMEOUT: ${{ secrets.SFTP_TIMEOUT || '30' }}
+          SFTP_REMOTE_DIRECTORY: ${{ secrets.SFTP_REMOTE_DIRECTORY || '/data/incoming' }}
+          SFTP_ARCHIVE_DIRECTORY: ${{ secrets.SFTP_ARCHIVE_DIRECTORY || '/data/archived' }}
+          SFTP_FILE_PATTERN: ${{ secrets.SFTP_FILE_PATTERN || '*.csv' }}
+          SFTP_TEMP_LOCAL_DIR: ${{ secrets.SFTP_TEMP_LOCAL_DIR || '/tmp/sftp_temp' }}
         run: |
-          if [ "${{ github.event.inputs.use_env_config }}" = "true" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.use_env_config }}" = "true" ]; then
             python pipelines/sftp_ingestion/sftp_ingestion_pipeline.py \
               --use_env_config \
               --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
               ${{ github.event.inputs.db_uri && format('--db_uri "{0}"', github.event.inputs.db_uri) || '' }}
-          else
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             python pipelines/sftp_ingestion/sftp_ingestion_pipeline.py \
               --sftp_host "${{ github.event.inputs.sftp_host }}" \
               --sftp_username "${{ github.event.inputs.sftp_username }}" \
@@ -107,4 +118,8 @@ jobs:
               ${{ github.event.inputs.ssh_private_key_b64 && format('--ssh_private_key_b64 "{0}"', github.event.inputs.ssh_private_key_b64) || '' }} \
               ${{ github.event.inputs.passphrase && format('--passphrase "{0}"', github.event.inputs.passphrase) || '' }} \
               ${{ github.event.inputs.db_uri && format('--db_uri "{0}"', github.event.inputs.db_uri) || '' }}
+          else
+            python pipelines/sftp_ingestion/sftp_ingestion_pipeline.py \
+              --use_env_config \
+              --config_name "consumption"
           fi

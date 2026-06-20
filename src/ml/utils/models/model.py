@@ -95,12 +95,12 @@ def train_model(X_train, y_train, model_type="random_forest", **kwargs):
 def evaluate_model(model, X_test, y_test):
     """
     Évalue les performances du modèle
-    
+
     Args:
         model: Modèle entraîné (sklearn, Autogluon, etc.)
         X_test: Features de test
         y_test: Target de test
-    
+
     Returns:
         dict: Métriques d'évaluation
     """
@@ -138,13 +138,13 @@ def evaluate_model(model, X_test, y_test):
 
             logger.info(f"Autogluon - Métriques: {metrics}")
             return metrics
-        
+
         # ----------------------
         # SKLEARN
         # ----------------------
         predictions = model.predict(X_test)
         metrics = {}
-        
+
         # Vérifier si classification ou régression
         if hasattr(model, 'predict_proba'):  # Classification
             metrics['accuracy'] = accuracy_score(y_test, predictions)
@@ -157,7 +157,7 @@ def evaluate_model(model, X_test, y_test):
             metrics['rmse'] = metrics['mse'] ** 0.5
             metrics['r2'] = r2_score(y_test, predictions)
             logger.info(f"Régression - RMSE: {metrics['rmse']:.3f}, R²: {metrics['r2']:.3f}")
-        
+
         return metrics
     except Exception as e:
         logger.error(f"Erreur lors de l'évaluation: {e}")
@@ -171,7 +171,7 @@ def evaluate_model(model, X_test, y_test):
 def get_feature_importance(model, feature_names=None, X_train=None):
     """
     Obtient l'importance des features
-    
+
     Args:
         model: Modèle entraîné (sklearn ou AutoGluon TabularPredictor)
         feature_names: Liste des noms de features (optionnel)
@@ -191,20 +191,20 @@ def get_feature_importance(model, feature_names=None, X_train=None):
             else:
                 logger.warning("X_train requis pour calculer feature_importance avec AutoGluon")
                 return None
-        
+
         # ----------------------
         # SKLEARN
         # ----------------------
         if hasattr(model, 'feature_importances_'):
             importances = model.feature_importances_
-            
+
             if feature_names is None:
                 feature_names = [f"Feature_{i}" for i in range(len(importances))]
-            
+
             # Créer un dictionnaire trié
             importance_dict = {name: imp for name, imp in zip(feature_names, importances)}
             importance_dict = dict(sorted(importance_dict.items(), key=lambda x: x[1], reverse=True))
-            
+
             logger.info("Features importances calculées")
             return importance_dict
         else:

@@ -20,7 +20,7 @@ def upload_file_to_s3(
 ) -> dict:
     """
     Upload a file to S3.
-    
+
     Args:
         file_path: Local path to the file to upload
         bucket_name: S3 bucket name
@@ -29,7 +29,7 @@ def upload_file_to_s3(
         aws_secret_access_key: AWS secret access key (optional, uses env vars if not provided)
         aws_region: AWS region (default: us-east-1)
         endpoint_url: Custom endpoint URL (for S3-compatible services like MinIO)
-    
+
     Returns:
         dict: Contains status, s3_uri, and metadata
     """
@@ -42,22 +42,22 @@ def upload_file_to_s3(
             region_name=aws_region,
             endpoint_url=endpoint_url
         )
-        
+
         file_path_obj = Path(file_path)
         if not file_path_obj.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
-        
+
         # Upload file
         logger.info(f"Uploading {file_path} to s3://{bucket_name}/{s3_key}")
         s3_client.upload_file(str(file_path_obj), bucket_name, s3_key)
-        
+
         # Get file metadata
         file_size = file_path_obj.stat().st_size
-        
+
         s3_uri = f"s3://{bucket_name}/{s3_key}"
-        
+
         logger.info(f"✅ Successfully uploaded to {s3_uri}")
-        
+
         return {
             "status": "success",
             "s3_uri": s3_uri,
@@ -66,7 +66,7 @@ def upload_file_to_s3(
             "file_size": file_size,
             "file_name": file_path_obj.name
         }
-        
+
     except NoCredentialsError:
         logger.error("AWS credentials not found")
         return {
@@ -98,9 +98,9 @@ def upload_file_to_s3_task(
 ) -> dict:
     """
     Prefect task wrapper for S3 upload.
-    
+
     This task can be used in Prefect flows to upload files to S3.
-    
+
     Args:
         file_path: Local path to the file to upload
         bucket_name: S3 bucket name
@@ -109,7 +109,7 @@ def upload_file_to_s3_task(
         aws_secret_access_key: AWS secret access key (optional)
         aws_region: AWS region (default: us-east-1)
         endpoint_url: Custom endpoint URL (for S3-compatible services)
-    
+
     Returns:
         dict: Contains status, s3_uri, and metadata
     """

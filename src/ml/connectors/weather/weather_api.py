@@ -29,7 +29,7 @@ import requests
 class WeatherAPI:
     """
     Classe pour gérer l'accès à l'API Open-Meteo et générer des données météo.
-    
+
     Attributs:
         base_url (str): URL de base de l'API Open-Meteo
         latitude (float): Latitude du point d'intérêt
@@ -37,7 +37,7 @@ class WeatherAPI:
         location_name (str): Nom de la localisation (pour logs)
         timeout (int): Timeout en secondes pour les requêtes HTTP
     """
-    
+
     def __init__(
         self,
         latitude: float = 48.8566,  # Paris par défaut
@@ -47,7 +47,7 @@ class WeatherAPI:
     ):
         """
         Initialise le gestionnaire API météo.
-        
+
         Args:
             latitude: Latitude de la localisation (défaut: Paris)
             longitude: Longitude de la localisation (défaut: Paris)
@@ -61,7 +61,7 @@ class WeatherAPI:
         self.location_name = location_name
         self.timeout = timeout
         self.data = None
-    
+
     def fetch_historical(
         self,
         start_date: str,
@@ -70,15 +70,15 @@ class WeatherAPI:
     ) -> pd.DataFrame:
         """
         Récupère les données météo historiques de Open-Meteo.
-        
+
         Args:
             start_date: Date de début au format YYYY-MM-DD
             end_date: Date de fin au format YYYY-MM-DD
             hourly: Si True, récupère données horaires; sinon journalières
-        
+
         Returns:
             DataFrame pandas avec colonnes temporelles et météo
-        
+
         Raises:
             requests.RequestException: En cas d'erreur API
             ValueError: Si paramètres invalides
@@ -92,7 +92,7 @@ class WeatherAPI:
         except ValueError as e:
             print(f"Erreur format date : {e}")
             raise
-        
+
         # Construction des paramètres de requête
         params = {
             "latitude": self.latitude,
@@ -101,15 +101,15 @@ class WeatherAPI:
             "end_date": end_date,
             "timezone": "Europe/Paris"
         }
-        
+
         # Ajout des variables météo à récupérer
         if hourly:
             params["hourly"] = "temperature_2m,relative_humidity_2m,precipitation"
         else:
             params["daily"] = "temperature_2m_mean,relative_humidity_2m_mean,precipitation_sum"
-        
+
         print(f"[{self.location_name}] Récupération données {start_date} à {end_date}...")
-        
+
         try:
             response = requests.get(
                 self.base_url_archive,
@@ -117,21 +117,21 @@ class WeatherAPI:
                 timeout=self.timeout
             )
             response.raise_for_status()
-            
+
             data = response.json()
-            
+
             # Vérification présence données
             if "hourly" not in data and "daily" not in data:
                 raise ValueError("Aucune donnée météo reçue de l'API")
-            
+
             print(f"OK {len(data.get('hourly', {}).get('time', []))} enregistrements récupérés")
-            
+
             return self._parse_weather_data(data, hourly)
-        
+
         except requests.RequestException as e:
             print(f"Erreur API : {e}")
             raise
-    
+
     def fetch_forecast(
         self,
         forecast_days: int = 1,
@@ -139,14 +139,14 @@ class WeatherAPI:
     ) -> pd.DataFrame:
         """
         Récupère les prévisions météo de Open-Meteo.
-        
+
         Args:
             forecast_days: Nombre de jours de prévision (défaut: 1 pour le lendemain)
             hourly: Si True, récupère données horaires; sinon journalières
-        
+
         Returns:
             DataFrame pandas avec colonnes temporelles et météo
-        
+
         Raises:
             requests.RequestException: En cas d'erreur API
             ValueError: Si paramètres invalides
@@ -154,7 +154,7 @@ class WeatherAPI:
         # Validation des paramètres
         if forecast_days < 1 or forecast_days > 16:
             raise ValueError("forecast_days doit être entre 1 et 16")
-        
+
         # Construction des paramètres de requête
         params = {
             "latitude": self.latitude,
@@ -162,15 +162,15 @@ class WeatherAPI:
             "timezone": "Europe/Paris",
             "forecast_days": forecast_days
         }
-        
+
         # Ajout des variables météo à récupérer
         if hourly:
             params["hourly"] = "temperature_2m,relative_humidity_2m,precipitation"
         else:
             params["daily"] = "temperature_2m_mean,relative_humidity_2m_mean,precipitation_sum"
-        
+
         print(f"[{self.location_name}] Récupération prévisions pour {forecast_days} jour(s)...")
-        
+
         try:
             response = requests.get(
                 self.base_url_forecast,
@@ -178,36 +178,36 @@ class WeatherAPI:
                 timeout=self.timeout
             )
             response.raise_for_status()
-            
+
             data = response.json()
-            
+
             # Vérification présence données
             if "hourly" not in data and "daily" not in data:
                 raise ValueError("Aucune donnée météo reçue de l'API")
-            
+
             print(f"OK {len(data.get('hourly', {}).get('time', []))} enregistrements récupérés")
-            
+
             return self._parse_weather_data(data, hourly)
-        
+
         except requests.RequestException as e:
             print(f"Erreur API : {e}")
             raise
-    
+
     def _parse_weather_data(self, data: dict, hourly: bool = True) -> pd.DataFrame:
         """
         Parse les données météo brutes de l'API en DataFrame structuré.
-        
+
         Args:
             data: Dictionnaire réponse de l'API
             hourly: Si True, utilise données horaires; sinon journalières
-        
+
         Returns:
             DataFrame avec colonnes standardisées
         """
         if hourly:
             times = data["hourly"]["time"]
             temps = pd.to_datetime(times)
-            
+
             df = pd.DataFrame({
                 "Horodate": temps,
                 "temperature_2m_mean": np.array(data["hourly"]["temperature_2m"], dtype=float),
@@ -217,26 +217,26 @@ class WeatherAPI:
         else:
             times = data["daily"]["time"]
             temps = pd.to_datetime(times)
-            
+
             df = pd.DataFrame({
                 "Horodate": temps,
                 "temperature_2m_mean": np.array(data["daily"]["temperature_2m_mean"], dtype=float),
                 "relative_humidity_mean": np.array(data["daily"]["relative_humidity_2m_mean"], dtype=float),
                 "precipitation_sum": np.array(data["daily"]["precipitation_sum"], dtype=float)
             })
-        
+
         self.data = df
         return df
-    
+
     def validate_data(self) -> dict:
         """
         Valide la qualité des données météo récupérées.
-        
+
         Vérifications :
         - Absence de valeurs manquantes
         - Plages de valeurs normales (température, humidité)
         - Cohérence temporelle
-        
+
         Returns:
             Dictionnaire avec résultats validation :
             - is_valid (bool): True si données valides
@@ -251,16 +251,16 @@ class WeatherAPI:
                 "warnings": [],
                 "stats": {}
             }
-        
+
         errors = []
         warnings = []
-        
+
         # Vérification colonnes
         colonnes_attendues = ["Horodate", "temperature_2m_mean", "relative_humidity_mean", "precipitation_sum"]
         colonnes_manquantes = [col for col in colonnes_attendues if col not in self.data.columns]
         if colonnes_manquantes:
             errors.append(f"Colonnes manquantes : {colonnes_manquantes}")
-        
+
         # Vérification valeurs manquantes
         for col in ["temperature_2m_mean", "relative_humidity_mean", "precipitation_sum"]:
             if col in self.data.columns:
@@ -269,7 +269,7 @@ class WeatherAPI:
                     errors.append(f"{col} : {pct_null:.1f}% valeurs manquantes (max 5%)")
                 elif pct_null > 0:
                     warnings.append(f"{col} : {pct_null:.2f}% valeurs manquantes")
-        
+
         # Vérification plages de valeurs
         temp_col = "temperature_2m_mean"
         if temp_col in self.data.columns and not self.data[temp_col].isnull().all():
@@ -278,14 +278,14 @@ class WeatherAPI:
             # Plages réalistes pour France: -15 à +45°C
             if temp_min < -30 or temp_max > 50:
                 warnings.append(f"Température anormale : [{temp_min:.1f}, {temp_max:.1f}]°C")
-        
+
         hum_col = "relative_humidity_mean"
         if hum_col in self.data.columns and not self.data[hum_col].isnull().all():
             hum_min = self.data[hum_col].min()
             hum_max = self.data[hum_col].max()
             if hum_min < 0 or hum_max > 100:
                 errors.append(f"Humidité invalide : [{hum_min:.1f}, {hum_max:.1f}]% (attendu [0, 100])")
-        
+
         # Vérification cohérence temporelle
         if "Horodate" in self.data.columns and len(self.data) > 1:
             diffs = self.data["Horodate"].diff().dropna()
@@ -295,7 +295,7 @@ class WeatherAPI:
                 expected_freq = mode_diff[0]
                 if expected_freq != timedelta(hours=1) and expected_freq != timedelta(days=1):
                     warnings.append(f"Fréquence temporelle inhabituelle : {expected_freq}")
-        
+
         # Statistiques
         stats = {
             "n_records": len(self.data),
@@ -308,14 +308,14 @@ class WeatherAPI:
             },
             "precipitation_sum": float(self.data["precipitation_sum"].sum()) if "precipitation_sum" in self.data.columns else None,
         }
-        
+
         return {
             "is_valid": len(errors) == 0,
             "errors": errors,
             "warnings": warnings,
             "stats": stats
         }
-    
+
     def generate_parquet(
         self,
         output_path: Optional[str] = None,
@@ -323,38 +323,38 @@ class WeatherAPI:
     ) -> str:
         """
         Génère un fichier parquet réutilisable avec les données météo.
-        
+
         Args:
             output_path: Chemin du répertoire de sortie (défaut : data/processed/)
             filename: Nom du fichier (défaut : weather_<location>_YYYY-MM-DD.parquet)
-        
+
         Returns:
             Chemin complet du fichier généré
-        
+
         Raises:
             ValueError: Si aucune donnée disponible
             IOError: En cas d'erreur d'écriture
         """
         if self.data is None or self.data.empty:
             raise ValueError("Aucune donnée chargée. Appelez d'abord fetch_historical()")
-        
+
         # Construction du chemin de sortie
         if output_path is None:
             output_path = Path(__file__).resolve().parents[3] / "data" / "processed"
         else:
             output_path = Path(output_path)
-        
+
         # Création du répertoire s'il n'existe pas
         output_path.mkdir(parents=True, exist_ok=True)
-        
+
         # Construction du nom de fichier
         if filename is None:
             date_min = self.data["Horodate"].min().strftime("%Y-%m-%d")
             date_max = self.data["Horodate"].max().strftime("%Y-%m-%d")
             filename = f"weather_{self.location_name}_{date_min}_{date_max}.parquet"
-        
+
         filepath = output_path / filename
-        
+
         # Sauvegarde en parquet
         try:
             self.data.to_parquet(filepath, index=False, compression="snappy")
@@ -362,11 +362,11 @@ class WeatherAPI:
             print(f"  - Taille : {len(self.data)} enregistrements")
             print(f"  - Colonnes : {list(self.data.columns)}")
             return str(filepath)
-        
+
         except IOError as e:
             print(f"Erreur écriture fichier : {e}")
             raise
-    
+
     def to_csv(
         self,
         output_path: Optional[str] = None,
@@ -375,32 +375,32 @@ class WeatherAPI:
     ) -> str:
         """
         Exporte les données météo en CSV (format compatible avec template).
-        
+
         Args:
             output_path: Chemin du répertoire de sortie
             filename: Nom du fichier
             separator: Séparateur CSV (défaut : ";")
-        
+
         Returns:
             Chemin complet du fichier généré
         """
         if self.data is None or self.data.empty:
             raise ValueError("Aucune donnée chargée")
-        
+
         if output_path is None:
             output_path = Path(__file__).resolve().parents[3] / "data" / "processed"
         else:
             output_path = Path(output_path)
-        
+
         output_path.mkdir(parents=True, exist_ok=True)
-        
+
         if filename is None:
             date_min = self.data["Horodate"].min().strftime("%Y-%m-%d")
             date_max = self.data["Horodate"].max().strftime("%Y-%m-%d")
             filename = f"weather_{self.location_name}_{date_min}_{date_max}.csv"
-        
+
         filepath = output_path / filename
-        
+
         self.data.to_csv(
             filepath,
             sep=separator,
