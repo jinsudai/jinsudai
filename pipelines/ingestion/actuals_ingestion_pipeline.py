@@ -47,8 +47,8 @@ def main():
         sys.exit(1)
     
     try:
-        # Initialiser le pipeline
-        pipeline = ActualValuesPipeline(db_uri=db_uri)
+        # Initialiser le pipeline avec la configuration
+        pipeline = ActualValuesPipeline(db_uri=db_uri, config=config)
         
         # Exécuter le pipeline complet
         success, results = pipeline.run_full_pipeline()

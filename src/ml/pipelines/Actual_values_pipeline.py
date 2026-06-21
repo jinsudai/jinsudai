@@ -23,14 +23,16 @@ logger = logging.getLogger(__name__)
 class ActualValuesPipeline:
     """Pipeline pour la mise à jour quotidienne des valeurs réelles"""
 
-    def __init__(self, db_uri):
+    def __init__(self, db_uri, config=None):
         """
         Initialise le pipeline
 
         Args:
             db_uri: URI de connexion PostgreSQL
+            config: Configuration du projet (pour vérifier sftp.enabled)
         """
         self.db_uri = db_uri
+        self.config = config or {}
         self.db_handler = None
         self.previous_day_predictions = None
         self.updated_count = 0
@@ -190,6 +192,15 @@ class ActualValuesPipeline:
 
         if not predictions_result:
             return False, None
+
+        # Vérifier si le SFTP est activé avant de générer des valeurs aléatoires
+        sftp_enabled = self.config.get('sftp', {}).get('enabled', False)
+
+        if sftp_enabled:
+            logger.info("=== SFTP ACTIVÉ - PAS DE GÉNÉRATION ALÉATOIRE ===")
+            logger.warning("Le SFTP est activé dans la configuration. Les valeurs réelles doivent être récupérées depuis le SFTP.")
+            logger.info("Pipeline terminé avec succès - aucune génération aléatoire nécessaire")
+            return True, None
 
         if not self.generate_random_actual_values():
             return False, None
