@@ -1,4 +1,4 @@
-name: Daily Retraining Pipeline
+name: 6 - Retraining - Training Pipeline
 
 on:
   schedule:

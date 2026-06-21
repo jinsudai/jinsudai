@@ -1,4 +1,4 @@
-name: 4 - Inference -Prediction Pipeline
+name: 4 - Inference - Inference Pipeline
 
 on:
   workflow_dispatch:
@@ -62,7 +62,7 @@ jobs:
       - name: Run prediction pipeline
         env:
           PREDICTIONS_POSTGRES_URI: ${{ secrets.PREDICTIONS_POSTGRES_URI }}
-          Environment: ${{ github.ref == 'refs/heads/main' && 'Prod' || 'Dev' }}
+          ENVIRONMENT: ${{ secrets.ENVIRONMENT || (github.ref == 'refs/heads/main' && 'Prod' || 'Dev') }}
         run: |
           python pipelines/inference/prediction_pipeline.py \
             --model_name "${{ github.event.inputs.model_name || '' }}" \
