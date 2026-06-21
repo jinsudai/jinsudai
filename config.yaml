@@ -52,8 +52,39 @@ sftp:
   file_pattern: "*.csv"
   temp_local_dir: "/tmp/sftp_temp"
 
+# Configuration S3
+s3:
+  bucket: "data-store"  # Nom du bucket S3 par défaut
+  prefix: "weather"  # Préfixe par défaut pour les fichiers météo
+
 # Configuration de l'environnement
 environment: "dev"  # Options: "dev", "test", "prod"
+
+# Configuration des services
+services:
+  # Liste des services internes (HuggingFace Spaces)
+  names:
+    - "MLflow"
+    - "EvidentlyUI"
+    - "airflow"
+    - "docsify"
+
+  satelites:
+    - "airflow"
+  
+  # Liste des services externes
+  external:
+    - "GitHub"
+    - "Supabase"
+    - "Prefect"
+    - "Neon"
+  
+  # Liste des APIs
+  apis:
+    - "Enedis"
+    - "Vacances"
+    - "Météo"
+    - "Localisation"
 
 # Logging
 logging:

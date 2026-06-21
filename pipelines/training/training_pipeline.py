@@ -17,14 +17,16 @@ from ml.pipelines.training_pipeline import MLPipeline
 
 def main():
     parser = argparse.ArgumentParser(description='Exécute le pipeline d\'entraînement consommation')
-    parser.add_argument('--features_path', type=str, required=True, help='Chemin vers le fichier de features')
+    parser.add_argument('--features_path', type=str, default=None, help='Chemin vers le fichier de features (optionnel, télécharge depuis S3 si non fourni)')
     parser.add_argument('--config_name', type=str, default='consumption', help='Nom de la config (consumption, solar_production)')
+    parser.add_argument('--download_from_s3', action='store_true', default=True, help='Télécharger depuis S3 si le fichier n\'existe pas')
     
     args = parser.parse_args()
     
     print(f"=== Pipeline d'entraînement consommation ===")
-    print(f"Features: {args.features_path}")
+    print(f"Features: {args.features_path or 'Depuis config/S3'}")
     print(f"Config: {args.config_name}")
+    print(f"Téléchargement S3: {args.download_from_s3}")
     print()
     
     # Charger la config spécifique à l'environnement
@@ -32,8 +34,8 @@ def main():
     environment = os.getenv('Environment', 'Dev').lower()
     config_name_to_use = f"{args.config_name}.{environment}"
     
-    # Vérifier que le fichier de features existe
-    if not Path(args.features_path).exists():
+    # Vérifier que le fichier de features existe si fourni
+    if args.features_path and not Path(args.features_path).exists():
         print(f"❌ Erreur: Le fichier features n'existe pas: {args.features_path}")
         sys.exit(1)
     
@@ -42,7 +44,7 @@ def main():
         pipeline = MLPipeline(config_name=config_name_to_use)
         
         # Exécuter le pipeline complet
-        success = pipeline.run_full_pipeline(data_path=args.features_path)
+        success = pipeline.run_full_pipeline(data_path=args.features_path, download_from_s3=args.download_from_s3)
         
         if success:
             print(f"\n✅ Pipeline terminé avec succès")

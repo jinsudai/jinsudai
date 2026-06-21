@@ -1,23 +1,24 @@
 Pour Devin
 
-Config
+Config -> A tester
 - Chercher d'abord la variable d'environnement ENVIRONMENT avant de chercher à utiliser le .env
 - Renseigner ServicesNames dans le fichier de config et ne plus y faire reference dans le .env. Adapter le code dans .github.
+- J'ai ajouté la notion de satelite dans le config.yaml. il faudrait pouvoir gérer les espaces et les secrets avec un HF_Token différent en cherchant le secret SATELITENAME_HF_TOKEN en l'occurence AIRFLOW_HF_TOKEN
 
-S3
-- Pas besoin de différencier le chemin selon l'environnement
-- utiliser {date}_train.parquet à la place de consumption_features_{date}.parquet
-- Pas besoin de la copy train_consumption.parquet -> prendre toujours le fichier avec la date la plus récente
-- Le prefix weather doit servir pour stocker le fichier parquet de la meteo {date}_weather.parquet
+S3 -> A tester
+- Est-ce que parfois on a  plusieurs periodes de fichiers {start_date}_to_{end_date}_.parquet et on les combines pour former un train.parquet?
+- Pas besoin de différencier le chemin selon l'environnement -> A tester
+- utiliser {date}_train.parquet à la place de consumption_features_{date}.parquet -> A tester
+- Pas besoin de la copy train_consumption.parquet -> prendre toujours le fichier avec la date la plus récente -> A tester
+- Le prefix weather doit servir pour stocker le fichier parquet de la meteo {date}_weather.parquet -> A tester
+
 
 Prediction pipeline refinment: Problème de config
 - Le même code a été dupliqué plusieurs fois. Il faut utiliser la class config (je crois) à la place -> A tester
 
-Data Drift (Drift Detection Action)
-- Proposer une manière d'executer le réentrainement
-
-HF
-- J'ai ajouté la notion de satelite dans le .env. il faudrait pouvoir gérer les espaces et les secrets avec un HF_Token différent en cherchant le secret SATELITENAME_HF_TOKEN en l'occurence AIRFLOW_HF_TOKEN
+Data Drift (Drift Detection Action) -> En cours
+- Proposer une manière d'executer le réentrainement -> Executé
+- Je n'ai pas conserver le Dag Airflow l'idée est d'avoir un GitHub Action
 
 A faire
 - Marp

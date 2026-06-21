@@ -269,3 +269,15 @@ def get_apis_names() -> list:
     config = load_global_config()
     apis = config.get('services', {}).get('apis', [])
     return apis
+
+
+def get_satellites_names() -> list:
+    """
+    Récupère la liste des noms de satellites depuis la configuration globale.
+
+    Returns:
+        Liste des noms de satellites
+    """
+    config = load_global_config()
+    satellites = config.get('services', {}).get('satellites', [])
+    return satellites

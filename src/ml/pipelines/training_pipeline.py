@@ -21,6 +21,8 @@ Classe principale :
 import logging
 import os
 import shutil
+from pathlib import Path
+from datetime import datetime
 # Importer depuis ml.utils
 from ml.utils.data.data_loader import load_data
 from ml.utils.data.data_validator import validate_data_quality, create_data_validation_report
@@ -31,6 +33,7 @@ from ml.utils.monitoring.performance_monitor import (
     run_monitoring,
     flatten_monitoring_metrics
 )
+from ml.utils.s3_handler import S3Handler
 # Utiliser ml.config pour load_config et constantes
 from ml.config import load_config, DEFAULT_CONSUMPTION_CONFIG
 
@@ -68,13 +71,101 @@ class MLPipeline:
 
         logger.info(f"Pipeline MLOps initialisé avec model_name={self.model_name}")
 
-    def step_1_load_data(self, data_path=None):
+    def _download_train_from_s3(self, local_path: str) -> bool:
+        """
+        Télécharge le dernier fichier train (combiné ou individuel) depuis S3.
+
+        Args:
+            local_path: Chemin local de destination
+
+        Returns:
+            True si succès, False sinon
+        """
+        try:
+            # Charger la configuration S3
+            from ml.config import load_config
+            global_config = load_config('config.yaml')
+            s3_config = global_config.get('s3', {})
+
+            bucket = s3_config.get('bucket', 'data-store')
+
+            # Chercher dans le préfixe consumption pour les fichiers train
+            prefix = "consumption"
+
+            logger.info(f"Recherche sur S3: bucket={bucket}, prefix={prefix}")
+
+            # Initialiser le handler S3
+            s3_handler = S3Handler(bucket=bucket)
+
+            if not s3_handler.s3_enabled:
+                logger.warning("S3 non disponible (credentials manquants)")
+                return False
+
+            # Lister les fichiers train.parquet
+            files = s3_handler.list_files(prefix=prefix)
+
+            # Chercher d'abord les fichiers combinés (train_combined)
+            combined_files = [f for f in files if 'train_combined' in f and f.endswith('.parquet')]
+
+            if combined_files:
+                logger.info(f"Fichiers combinés trouvés: {len(combined_files)}")
+                train_files = combined_files
+            else:
+                logger.info("Aucun fichier combiné trouvé, recherche des fichiers individuels")
+                train_files = [f for f in files if 'train' in f and f.endswith('.parquet') and 'train_combined' not in f]
+
+            if not train_files:
+                logger.warning(f"Aucun fichier train.parquet trouvé dans s3://{bucket}/{prefix}/")
+                return False
+
+            # Trouver le plus récent
+            train_files_sorted = sorted(train_files, reverse=True)
+            latest_file = train_files_sorted[0]
+
+            logger.info(f"Fichier le plus récent sur S3: {latest_file}")
+
+            # Télécharger le fichier
+            local_path_obj = Path(local_path)
+            local_path_obj.parent.mkdir(parents=True, exist_ok=True)
+
+            result = s3_handler.download_file(
+                s3_key=latest_file,
+                local_path=str(local_path),
+                overwrite=True
+            )
+
+            if result["status"] == "success":
+                logger.info(f"Fichier téléchargé depuis S3: {local_path}")
+                return True
+            else:
+                logger.error(f"Erreur lors du téléchargement: {result.get('reason')}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Erreur lors du téléchargement depuis S3: {e}")
+            return False
+
+    def step_1_load_data(self, data_path=None, download_from_s3_if_missing=True):
         """Étape 1: Chargement des données"""
         logger.info("=== ÉTAPE 1: CHARGEMENT DES DONNÉES ===TE")
 
         # Utiliser le chemin depuis la config si non fourni
         if data_path is None:
             data_path = self.config.get('data', {}).get('train_path')
+
+        # Vérifier si le fichier existe, sinon essayer de le télécharger depuis S3
+        if not Path(data_path).exists():
+            logger.warning(f"Fichier de données non trouvé: {data_path}")
+
+            if download_from_s3_if_missing:
+                logger.info("Tentative de téléchargement depuis S3...")
+                success = self._download_train_from_s3(data_path)
+                if not success:
+                    logger.error("Impossible de télécharger le fichier depuis S3")
+                    return False
+            else:
+                logger.error("Fichier de données non trouvé et téléchargement S3 désactivé")
+                return False
 
         self.data = load_data(data_path)
         print(f"Data loaded: {self.data.shape if self.data is not None else 'None'}")
@@ -439,14 +530,14 @@ class MLPipeline:
             logger.error(traceback.format_exc())
             return False
 
-    def run_full_pipeline(self, data_path):
+    def run_full_pipeline(self, data_path, download_from_s3=True):
         """Exécute le pipeline complet"""
         logger.info("\n" + "=" * 50)
         logger.info("DÉMARRAGE DU PIPELINE COMPLET")
         logger.info("=" * 50 + "\n")
 
         steps = [
-            ("Chargement", lambda: self.step_1_load_data(data_path)),
+            ("Chargement", lambda: self.step_1_load_data(data_path, download_from_s3)),
             ("Validation", self.step_2_validate_data),
             ("Transformation des données", self.step_3_transform_data),
             ("Préparation et Prétraitement", self.step_3_prepare_data),

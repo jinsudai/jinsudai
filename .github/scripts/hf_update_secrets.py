@@ -20,6 +20,20 @@ def get_services():
     from ml.config.global_config import get_services_names
     return get_services_names()
 
+def get_satellites():
+    """Read satellite list from config.yaml"""
+    from ml.config.global_config import get_satellites_names
+    return get_satellites_names()
+
+def get_hf_token_for_service(service_name):
+    """Get HF_TOKEN for a specific service or satellite"""
+    # Try satellite-specific token first (e.g., AIRFLOW_HF_TOKEN)
+    satellite_token = os.getenv(f"{service_name.upper()}_HF_TOKEN")
+    if satellite_token:
+        return satellite_token
+    # Fall back to default HF_TOKEN
+    return os.getenv("HF_TOKEN")
+
 def _get_env_secret(env_var, context=""):
     """Helper to get environment variable and log warning if not found"""
     value = os.getenv(env_var)
@@ -101,17 +115,33 @@ def main():
     username = api.whoami()["name"]
     
     services = get_services()
-    if not services:
-        print("[*] No services configured in .env")
+    satellites = get_satellites()
+    all_spaces = services + satellites
+    
+    if not all_spaces:
+        print("[*] No services or satellites configured in config.yaml")
         return
     
     shared_secrets = get_shared_secrets()
     
     print("[*] Updating secrets in spaces...")
-    print("=" * 60)configyaml
+    print("=" * 60)
     
-    for service in services:
-        space_id = f"{username}/{service}"
+    for space in all_spaces:
+        # Get appropriate token for this space
+        space_token = get_hf_token_for_service(space)
+        if not space_token:
+            print(f"[WARN] No HF_TOKEN found for '{space}' (tried {space.upper()}_HF_TOKEN and HF_TOKEN)")
+            continue
+        
+        space_api = HfApi(token=space_token)
+        try:
+            space_username = space_api.whoami()["name"]
+        except Exception as e:
+            print(f"[ERR] Failed to authenticate with HuggingFace for '{space}': {str(e)}")
+            continue
+        
+        space_id = f"{space_username}/{space}"
         print(f"\n[*] Processing space: {space_id}")
         
         # Add shared AWS secrets
@@ -122,13 +152,13 @@ def main():
                 if not secret_value:
                     print(f"[WARN] {secret_name} is empty, skipping")
                 else:
-                    add_space_secret(api, space_id, secret_name, secret_value)
+                    add_space_secret(space_api, space_id, secret_name, secret_value)
         
         # Add service-specific secrets
-        service_secrets = get_service_secrets(service)
+        service_secrets = get_service_secrets(space)
         if service_secrets:
             for secret_name, secret_value in service_secrets.items():
-                add_space_secret(api, space_id, secret_name, secret_value)
+                add_space_secret(space_api, space_id, secret_name, secret_value)
     
     print("\n" + "=" * 60)
     print("[OK] Secrets update completed")

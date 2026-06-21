@@ -132,7 +132,7 @@ class DriftDetectionPipeline:
         """
         try:
             # Charger la configuration S3
-            global_config = load_config('src/configs/config.yaml')
+            global_config = load_config('config.yaml')
             s3_config = global_config.get('s3', {})
 
             bucket = s3_config.get('bucket', 'data-store')
@@ -151,7 +151,16 @@ class DriftDetectionPipeline:
 
             # Lister les fichiers train.parquet
             files = s3_handler.list_files(prefix=prefix)
-            train_files = [f for f in files if 'train' in f and f.endswith('.parquet')]
+            
+            # Chercher d'abord les fichiers combinés (train_combined)
+            combined_files = [f for f in files if 'train_combined' in f and f.endswith('.parquet')]
+            
+            if combined_files:
+                logger.info(f"Fichiers combinés trouvés: {len(combined_files)}")
+                train_files = combined_files
+            else:
+                logger.info("Aucun fichier combiné trouvé, recherche des fichiers individuels")
+                train_files = [f for f in files if 'train' in f and f.endswith('.parquet') and 'train_combined' not in f]
 
             if not train_files:
                 logger.warning(f"Aucun fichier train.parquet trouvé dans s3://{bucket}/{prefix}/")

@@ -41,7 +41,7 @@ def download_latest_train_from_s3(
     print(f"Environnement: {environment}")
     
     # Charger la configuration
-    config = load_config('src/configs/config.yaml')
+    config = load_config('config.yaml')
     s3_config = config.get('s3', {})
     
     # Utiliser les paramètres fournis ou ceux de la config

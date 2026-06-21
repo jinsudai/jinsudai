@@ -19,6 +19,8 @@ import argparse
 import sys
 from pathlib import Path
 import logging
+from datetime import datetime, timedelta
+import pandas as pd
 
 # Ajouter le répertoire src au path
 project_root = Path(__file__).parent.parent.parent
@@ -34,6 +36,136 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def combine_train_files_from_s3(
+    end_date: str,
+    window_years: int,
+    s3_bucket: str,
+    output_path: str
+) -> dict:
+    """
+    Combine les fichiers train des X dernières années depuis S3.
+
+    Args:
+        end_date: Date de fin de la fenêtre (YYYY-MM-DD)
+        window_years: Nombre d'années à inclure
+        s3_bucket: Nom du bucket S3
+        output_path: Chemin local de sortie pour le fichier combiné
+
+    Returns:
+        dict: Résultat avec status et chemins
+    """
+    try:
+        logger.info(f"\n[COMBINAISON] Combinaison des fichiers train sur {window_years} ans")
+        
+        # Calculer la date de début de la fenêtre
+        end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
+        start_date_obj = end_date_obj - timedelta(days=window_years * 365)
+        
+        logger.info(f"Fenêtre temporelle: {start_date_obj.strftime('%Y-%m-%d')} à {end_date}")
+        
+        # Initialiser le handler S3
+        s3_handler = S3Handler(bucket=s3_bucket)
+        
+        if not s3_handler.s3_enabled:
+            logger.warning("S3 non disponible, impossible de combiner les fichiers")
+            return {
+                "status": "error",
+                "reason": "S3 not available"
+            }
+        
+        # Lister tous les fichiers train dans consumption/
+        files = s3_handler.list_files(prefix="consumption")
+        train_files = [f for f in files if 'train' in f and f.endswith('.parquet')]
+        
+        if not train_files:
+            logger.warning("Aucun fichier train trouvé sur S3")
+            return {
+                "status": "error",
+                "reason": "No train files found on S3"
+            }
+        
+        logger.info(f"{len(train_files)} fichiers train trouvés sur S3")
+        
+        # Télécharger et combiner les fichiers dans la fenêtre temporelle
+        combined_dfs = []
+        downloaded_files = []
+        
+        for s3_key in train_files:
+            try:
+                # Télécharger le fichier temporairement
+                temp_path = Path(f"/tmp/{Path(s3_key).name}")
+                result = s3_handler.download_file(
+                    s3_key=s3_key,
+                    local_path=str(temp_path),
+                    overwrite=True
+                )
+                
+                if result["status"] == "success":
+                    df = pd.read_parquet(temp_path)
+                    
+                    # Vérifier si le fichier est dans la fenêtre temporelle
+                    if 'Horodate' in df.columns:
+                        df['Horodate'] = pd.to_datetime(df['Horodate'])
+                        file_start = df['Horodate'].min()
+                        file_end = df['Horodate'].max()
+                        
+                        # Vérifier si le fichier chevauche la fenêtre temporelle
+                        if file_end >= start_date_obj and file_start <= end_date_obj:
+                            combined_dfs.append(df)
+                            downloaded_files.append(s3_key)
+                            logger.info(f"  ✓ {s3_key} ({file_start.date()} à {file_end.date()})")
+                        else:
+                            logger.info(f"  ✗ {s3_key} (hors fenêtre temporelle)")
+                    else:
+                        logger.warning(f"  ⚠ {s3_key} (pas de colonne Horodate)")
+                    
+                    # Supprimer le fichier temporaire
+                    temp_path.unlink()
+                    
+            except Exception as e:
+                logger.warning(f"  ⚠ Erreur avec {s3_key}: {e}")
+        
+        if not combined_dfs:
+            logger.warning("Aucun fichier dans la fenêtre temporelle")
+            return {
+                "status": "error",
+                "reason": "No files in time window"
+            }
+        
+        # Combiner les DataFrames
+        combined_df = pd.concat(combined_dfs, ignore_index=True)
+        
+        # Supprimer les doublons basés sur Horodate
+        if 'Horodate' in combined_df.columns:
+            combined_df = combined_df.drop_duplicates(subset=['Horodate'], keep='last')
+            combined_df = combined_df.sort_values('Horodate')
+        
+        # Sauvegarder le fichier combiné
+        output_path_obj = Path(output_path)
+        output_path_obj.parent.mkdir(parents=True, exist_ok=True)
+        combined_df.to_parquet(output_path_obj)
+        
+        logger.info(f"✅ Fichier combiné créé: {output_path}")
+        logger.info(f"   Taille: {len(combined_df)} enregistrements")
+        logger.info(f"   Période: {combined_df['Horodate'].min()} à {combined_df['Horodate'].max()}")
+        
+        return {
+            "status": "success",
+            "output_path": str(output_path),
+            "record_count": len(combined_df),
+            "source_files": downloaded_files
+        }
+        
+    except Exception as e:
+        logger.error(f"Erreur lors de la combinaison: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return {
+            "status": "error",
+            "reason": str(e)
+        }
+
+
 def prepare_consumption_features_pipeline(
     start_date: str,
     end_date: str,
@@ -41,7 +173,8 @@ def prepare_consumption_features_pipeline(
     output_dir: str = "data/processed/",
     upload_to_s3: bool = True,
     s3_bucket: str = None,
-    s3_prefix: str = "consumption/features/"
+    s3_prefix: str = "consumption/features/",
+    window_years: int = 3
 ) -> dict:
     """
     Pipeline complet pour préparer les features consommation.
@@ -54,6 +187,7 @@ def prepare_consumption_features_pipeline(
         upload_to_s3: Si True, upload sur S3
         s3_bucket: Nom du bucket S3 (défaut: depuis env)
         s3_prefix: Préfixe S3 pour les fichiers
+        window_years: Nombre d'années de données à combiner pour le fichier train (défaut: 3)
         
     Returns:
         dict: Résultat du pipeline avec chemins locaux et S3
@@ -208,15 +342,67 @@ def prepare_consumption_features_pipeline(
             logger.error(f"  ❌ Erreur upload S3: {e}")
             s3_result = {"status": "error", "error": str(e)}
     
+    # 5. Combinaison des fichiers train sur X années
+    combined_result = None
+    if upload_to_s3 and s3_bucket:
+        logger.info(f"\n[5/5] Combinaison des fichiers train sur {window_years} ans...")
+        try:
+            # Calculer les dates de la fenêtre combinée
+            end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
+            start_date_obj = end_date_obj - timedelta(days=window_years * 365)
+            
+            # Nom du fichier combiné
+            combined_train_path = output_dir / f"{start_date_obj.strftime('%Y-%m-%d')}_to_{end_date}_train_combined.parquet"
+            
+            # Combiner les fichiers depuis S3
+            combined_result = combine_train_files_from_s3(
+                end_date=end_date,
+                window_years=window_years,
+                s3_bucket=s3_bucket,
+                output_path=str(combined_train_path)
+            )
+            
+            if combined_result["status"] == "success":
+                logger.info(f"  ✅ Combinaison réussie: {combined_train_path}")
+                
+                # Upload du fichier combiné sur S3
+                s3_handler = S3Handler(bucket=s3_bucket)
+                s3_key_combined = f"consumption/{start_date_obj.strftime('%Y-%m-%d')}_to_{end_date}_train_combined.parquet"
+                s3_result_combined = s3_handler.upload_file(
+                    local_path=str(combined_train_path),
+                    s3_key=s3_key_combined,
+                    metadata={
+                        "start_date": start_date_obj.strftime('%Y-%m-%d'),
+                        "end_date": end_date,
+                        "window_years": window_years,
+                        "source": "prepare_consumption_pipeline",
+                        "type": "train_combined"
+                    }
+                )
+                
+                if s3_result_combined["status"] == "success":
+                    logger.info(f"  ✅ Upload S3 combiné réussi: {s3_result_combined['s3_uri']}")
+                    combined_result["s3"] = s3_result_combined
+                else:
+                    logger.warning(f"  ⚠️ Upload S3 combiné échoué: {s3_result_combined.get('reason')}")
+            else:
+                logger.warning(f"  ⚠️ Combinaison échouée: {combined_result.get('reason')}")
+                
+        except Exception as e:
+            logger.error(f"  ❌ Erreur lors de la combinaison: {e}")
+            combined_result = {"status": "error", "error": str(e)}
+    
     # Résultat final
     result = {
         "status": "success",
         "local_paths": {
             "weather": str(weather_path),
             "holidays": str(holidays_path) if holidays_path else None,
-            "train": str(train_path)
+            "train": str(train_path),
+            "train_combined": str(combined_train_path) if combined_result and combined_result.get("status") == "success" else None
         },
         "s3": s3_result,
+        "combined": combined_result,
         "dates": {
             "start": start_date,
             "end": end_date
@@ -226,9 +412,14 @@ def prepare_consumption_features_pipeline(
     logger.info("\n" + "=" * 60)
     logger.info("PIPELINE TERMINÉ AVEC SUCCÈS")
     logger.info("=" * 60)
-    logger.info(f"\nFichier features local: {features_path}")
+    logger.info(f"\nFichier train local: {train_path}")
+    if combined_result and combined_result.get("status") == "success":
+        logger.info(f"Fichier train combiné local: {combined_result['output_path']}")
     if s3_result and s3_result.get("status") == "success":
-        logger.info(f"Fichier features S3: {s3_result['s3_uri']}")
+        if 'weather' in s3_result:
+            logger.info(f"Fichier weather S3: {s3_result['weather'].get('s3_uri')}")
+        if 'train' in s3_result:
+            logger.info(f"Fichier train S3: {s3_result['train'].get('s3_uri')}")
     
     return result
 
