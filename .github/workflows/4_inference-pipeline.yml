@@ -1,4 +1,4 @@
-name: 6 - Inference -Prediction Pipeline
+name: 4 - Inference -Prediction Pipeline
 
 on:
   workflow_dispatch:

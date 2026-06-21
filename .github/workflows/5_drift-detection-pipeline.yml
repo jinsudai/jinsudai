@@ -1,4 +1,4 @@
-name: Drift Detection Pipeline
+name: 5 - Monitoring - Drift Detection Pipeline
 
 on:
   workflow_dispatch:

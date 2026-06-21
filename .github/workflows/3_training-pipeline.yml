@@ -1,4 +1,4 @@
-name: 5 -Training Pipeline
+name: 3 -Training Pipeline
 
 on:
   workflow_dispatch:

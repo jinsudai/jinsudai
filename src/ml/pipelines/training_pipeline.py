@@ -22,7 +22,6 @@ import logging
 import os
 import shutil
 from pathlib import Path
-from datetime import datetime
 # Importer depuis ml.utils
 from ml.utils.data.data_loader import load_data
 from ml.utils.data.data_validator import validate_data_quality, create_data_validation_report
@@ -103,16 +102,7 @@ class MLPipeline:
 
             # Lister les fichiers train.parquet
             files = s3_handler.list_files(prefix=prefix)
-
-            # Chercher d'abord les fichiers combinés (train_combined)
-            combined_files = [f for f in files if 'train_combined' in f and f.endswith('.parquet')]
-
-            if combined_files:
-                logger.info(f"Fichiers combinés trouvés: {len(combined_files)}")
-                train_files = combined_files
-            else:
-                logger.info("Aucun fichier combiné trouvé, recherche des fichiers individuels")
-                train_files = [f for f in files if 'train' in f and f.endswith('.parquet') and 'train_combined' not in f]
+            train_files = [f for f in files if 'train' in f and f.endswith('.parquet')]
 
             if not train_files:
                 logger.warning(f"Aucun fichier train.parquet trouvé dans s3://{bucket}/{prefix}/")

@@ -1,4 +1,4 @@
-name: 3 - Ingestion - SFTP Ingestion Pipeline
+name: 1 - Ingestion - Actuals Ingestion Pipeline
 
 on:
   workflow_dispatch:

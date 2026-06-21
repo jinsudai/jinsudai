@@ -19,9 +19,9 @@ import time
 import os
 
 # Configuration GitHub (variables d'environnement)
-GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
-GITHUB_REPO = os.environ.get('GITHUB_REPO', 'owner/repo')
-GITHUB_BRANCH = os.environ.get('GITHUB_BRANCH', 'main')
+GITHUB_TOKEN = os.environ.get('GH_TOKEN')
+GITHUB_REPO = os.environ.get('GH_REPO', 'owner/repo')
+GITHUB_BRANCH = os.environ.get('GH_BRANCH', 'main')
 
 def trigger_github_action(github_workflow, **context):
     """

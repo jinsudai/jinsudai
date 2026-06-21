@@ -27,7 +27,6 @@ def main():
     parser.add_argument('--no_upload_s3', action='store_true', help='Désactiver l\'upload S3')
     parser.add_argument('--s3_bucket', type=str, help='Nom du bucket S3 (défaut: depuis env AWS_BUCKET)')
     parser.add_argument('--s3_prefix', type=str, default='consumption/features/', help='Préfixe S3')
-    parser.add_argument('--window_years', type=int, default=3, help='Nombre d\'années de données à combiner pour le fichier train (défaut: 3)')
     
     args = parser.parse_args()
     
@@ -36,7 +35,6 @@ def main():
     print(f"Fichier brut: {args.raw_path}")
     print(f"Répertoire sortie: {args.output_dir}")
     print(f"Upload S3: {not args.no_upload_s3}")
-    print(f"Fenêtre combinaison: {args.window_years} ans")
     print()
     
     # Vérifier que le fichier brut existe
@@ -52,8 +50,7 @@ def main():
             output_dir=args.output_dir,
             upload_to_s3=not args.no_upload_s3,
             s3_bucket=args.s3_bucket,
-            s3_prefix=args.s3_prefix,
-            window_years=args.window_years
+            s3_prefix=args.s3_prefix
         )
         
         print(f"\n=== Résultat ===")
@@ -64,8 +61,6 @@ def main():
             print(f"Weather: {result['local_paths']['weather']}")
             print(f"Holidays: {result['local_paths']['holidays']}")
             print(f"Train: {result['local_paths']['train']}")
-            if result['local_paths'].get('train_combined'):
-                print(f"Train combiné: {result['local_paths']['train_combined']}")
             
             if result['s3'] and result['s3'].get('status') == 'success':
                 print(f"\n✅ Upload S3 réussi")
@@ -76,15 +71,8 @@ def main():
             elif result['s3'] and result['s3'].get('status') == 'skipped':
                 print(f"\nℹ️ Upload S3 ignoré: {result['s3']['reason']}")
             
-            if result['combined'] and result['combined'].get('status') == 'success':
-                print(f"\n✅ Combinaison réussie")
-                print(f"Enregistrements combinés: {result['combined'].get('record_count')}")
-                if result['combined'].get('s3'):
-                    print(f"S3 Train combiné: {result['combined']['s3'].get('s3_uri')}")
-            
             print(f"\nVous pouvez maintenant lancer le training avec:")
-            train_path = result['local_paths'].get('train_combined') or result['local_paths']['train']
-            print(f"python scripts/run_training_pipeline.py --features_path {train_path}")
+            print(f"python scripts/run_training_pipeline.py --features_path {result['local_paths']['train']}")
         else:
             print(f"\n❌ Erreur lors du pipeline: {result.get('error')}")
             sys.exit(1)
