@@ -16,6 +16,7 @@ sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
 from ml.pipelines.drift_detection_pipeline import DriftDetectionPipeline
+from ml.config.global_config import load_config_with_environment
 
 def main():
     parser = argparse.ArgumentParser(description='Exécute le pipeline de détection de drift')
@@ -44,8 +45,13 @@ def main():
     
     args = parser.parse_args()
     
+    # Charger la config spécifique à l'environnement
+    import os
+    environment = os.getenv('Environment', 'Dev').lower()
+    config_name_to_use = f"{args.config_name}.{environment}"
+    
     print(f"=== Pipeline de détection de drift ===")
-    print(f"Config: {args.config_name}")
+    print(f"Config: {config_name_to_use}")
     print(f"Données référence: {args.reference_path or 'Depuis config/S3'}")
     print(f"Données courantes: {args.current_data_path or 'Base de données'}")
     print(f"Limite données courantes: {args.current_data_limit}")
@@ -60,7 +66,7 @@ def main():
     try:
         # Initialiser le pipeline
         pipeline = DriftDetectionPipeline(
-            config_name=args.config_name,
+            config_name=config_name_to_use,
             db_uri=args.db_uri
         )
         

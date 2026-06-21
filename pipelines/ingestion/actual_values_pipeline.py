@@ -15,7 +15,7 @@ sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
 from ml.pipelines.Actual_values_pipeline import ActualValuesPipeline
-from ml.config import load_config
+from ml.config.global_config import load_config_with_environment
 
 def main():
     parser = argparse.ArgumentParser(description='Exécute le pipeline de mise à jour des valeurs réelles')
@@ -28,11 +28,8 @@ def main():
     print(f"Config: {args.config_name}")
     print()
     
-    # Charger la config pour les valeurs par défaut
-    # Charger d'abord la config globale, puis fusionner avec la config spécifique
-    global_config = load_config(config_name="config")
-    specific_config = load_config(config_name=args.config_name)
-    config = {**global_config, **specific_config}
+    # Charger la config pour les valeurs par défaut (avec environnement)
+    config = load_config_with_environment(args.config_name)
     
     # Priorité : argument CLI > variable d'environnement > config
     if args.db_uri is not None:

@@ -20,7 +20,7 @@ sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
 from ml.pipelines.Prediction_pipeline import PredictionPipeline
-from ml.config import load_config
+from ml.config.global_config import load_config_with_environment
 
 def main():
     parser = argparse.ArgumentParser(description='Exécute le pipeline de prédiction')
@@ -33,8 +33,8 @@ def main():
     
     args = parser.parse_args()
     
-    # Charger la config pour les valeurs par défaut
-    config = load_config(config_name=args.config_name)
+    # Charger la config pour les valeurs par défaut (avec environnement)
+    config = load_config_with_environment(args.config_name)
     
     # Utiliser le nom du modèle depuis la config si non fourni
     if args.model_name is None:

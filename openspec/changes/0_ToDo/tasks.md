@@ -1,6 +1,19 @@
+Pour Devin
 
+Prediction pipeline refinment: Problème de config
+- Le même code a été dupliqué plusieurs fois. Il faut utiliser la class config (je crois) à la place -> To commit
+- Faire marcher la detection de drift avec S3 -> To commit
+
+Data Drift (Drift Detection Action)
+
+- Proposer une manière d'executer le réentrainement
+
+HF
+- Il semble que 
+- J'ai ajouté la notion de satelite dans le .env. il faudrait pouvoir gérer les espaces et les secrets avec un HF_Token différent en cherchant le secret SATELITENAME_HF_TOKEN en l'occurence AIRFLOW_HF_TOKEN
 
 A faire
+- Marp
 - Connexion à S3
 - Ordonnancement dans GitHub ou via Airflow?
 - Utilisation de FastAPI par Streamlit -> A tester
@@ -8,6 +21,7 @@ A faire
 - grafana
 
 A tester
+
 Evidently 
 Streamlit
 deployement
@@ -16,6 +30,7 @@ A vérifier
 - prepare consumption pipelines
 
 A faire (later)
+- J'ai ajouté la notion de satelite externe...
 - sortir le .env
 - Réparer base de donnée neon jinsudai
 - airflow peut orchestrer Github via des pushs git
@@ -23,7 +38,7 @@ A faire (later)
 - Faire en sorte que chaque pipeline soit un service -> Sauvegarder le projet
 - Evidently -> Il faut stocker aussi les données météo pour le data drift -> Idealement oui
 - Loki pour collecter les logs ?
-- pb de Secret Database non poussé avec Airflow?
+- pb de URI Database non poussé avec Airflow?
 
 
 Idées

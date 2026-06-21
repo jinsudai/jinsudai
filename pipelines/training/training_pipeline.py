@@ -14,6 +14,7 @@ sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
 from ml.pipelines.training_pipeline import MLPipeline
+from ml.config.global_config import load_config_with_environment
 
 def main():
     parser = argparse.ArgumentParser(description='Exécute le pipeline d\'entraînement consommation')
@@ -27,14 +28,19 @@ def main():
     print(f"Config: {args.config_name}")
     print()
     
+    # Charger la config spécifique à l'environnement
+    import os
+    environment = os.getenv('Environment', 'Dev').lower()
+    config_name_to_use = f"{args.config_name}.{environment}"
+    
     # Vérifier que le fichier de features existe
     if not Path(args.features_path).exists():
         print(f"❌ Erreur: Le fichier features n'existe pas: {args.features_path}")
         sys.exit(1)
     
     try:
-        # Initialiser le pipeline
-        pipeline = MLPipeline(config_name=args.config_name)
+        # Initialiser le pipeline avec la config spécifique à l'environnement
+        pipeline = MLPipeline(config_name=config_name_to_use)
         
         # Exécuter le pipeline complet
         success = pipeline.run_full_pipeline(data_path=args.features_path)

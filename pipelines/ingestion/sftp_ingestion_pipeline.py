@@ -14,7 +14,7 @@ sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
 from ml.pipelines.sftp_ingestion_pipeline import run_sftp_ingestion_pipeline, load_sftp_config
-from ml.config import load_config
+from ml.config.global_config import load_config_with_environment
 
 def main():
     parser = argparse.ArgumentParser(description='Exécute le pipeline d\'ingestion SFTP')
@@ -65,8 +65,8 @@ def main():
                 print(f"❌ Erreur: sftp_host et sftp_username sont requis si use_env_config n'est pas activé")
                 sys.exit(1)
             
-            # Charger la config pour les valeurs par défaut
-            config = load_config(config_name=args.config_name)
+            # Charger la config pour les valeurs par défaut (avec environnement)
+            config = load_config_with_environment(args.config_name)
             
             if args.db_uri is None:
                 db_uri = config.get('database', {}).get('uri')

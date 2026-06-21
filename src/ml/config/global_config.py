@@ -202,3 +202,32 @@ def get_resend_api_key(config_path: Optional[Path] = None) -> Optional[str]:
         api_key = resend_config.get("api_key")
 
     return api_key
+
+
+def load_config_with_environment(config_name: str) -> Dict[str, Any]:
+    """
+    Charge la configuration en fusionnant la config de base avec la config spécifique à l'environnement.
+
+    Args:
+        config_name: Nom de la configuration (ex: 'consumption', 'solar_production')
+
+    Returns:
+        Dictionnaire avec la configuration fusionnée
+    """
+    from ml.config import load_config
+    
+    # Charger la config de base
+    base_config = load_config(config_name=config_name)
+    
+    # Charger la config spécifique à l'environnement si elle existe
+    environment = os.getenv('Environment', 'Dev').lower()
+    env_config_name = f"{config_name}.{environment}"
+    
+    try:
+        env_config = load_config(config_name=env_config_name)
+        config = {**base_config, **env_config}
+        logger.info(f"Config chargée: {config_name} + {env_config_name}")
+        return config
+    except Exception:
+        logger.info(f"Config chargée: {config_name} (pas de config spécifique pour {environment})")
+        return base_config
