@@ -19,15 +19,20 @@ import time
 import os
 
 # Configuration GitHub (variables d'environnement)
-GITHUB_TOKEN = os.environ.get('GH_TOKEN')
-GITHUB_REPO = os.environ.get('GH_REPO', 'owner/repo')
-GITHUB_BRANCH = os.environ.get('GH_BRANCH', 'main')
+GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
+GITHUB_REPO = os.environ.get('GITHUB_REPO', 'owner/repo')
+GITHUB_BRANCH = os.environ.get('GITHUB_BRANCH', 'main')
 
 def trigger_github_action(github_workflow, **context):
     """
     Déclenche un workflow GitHub Action via l'API GitHub.
     """
     url = f"https://api.github.com/repos/{GITHUB_REPO}/actions/workflows/{github_workflow}/dispatches"
+    
+    print(f"🔗 URL de l'API GitHub: {url}")
+    print(f"📦 Repo: {GITHUB_REPO}")
+    print(f"📄 Workflow: {github_workflow}")
+    print(f"🌿 Branch: {GITHUB_BRANCH}")
     
     headers = {
         'Authorization': f'token {GITHUB_TOKEN}',
