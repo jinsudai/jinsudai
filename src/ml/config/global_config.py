@@ -230,7 +230,13 @@ def load_config_with_environment(config_name: str) -> Dict[str, Any]:
     
     try:
         env_config = load_config(config_name=env_config_name)
-        config = {**base_config, **env_config}
+        # Deep merge for nested dictionaries (especially mlflow section)
+        config = {**base_config}
+        for key, value in env_config.items():
+            if key in config and isinstance(config[key], dict) and isinstance(value, dict):
+                config[key] = {**config[key], **value}
+            else:
+                config[key] = value
         logger.info(f"Config chargée: {config_name} + {env_config_name}")
         return config
     except Exception:
