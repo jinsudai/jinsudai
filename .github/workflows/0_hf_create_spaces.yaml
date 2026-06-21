@@ -1,4 +1,4 @@
-name: Create HF Spaces
+name: 0 - Infra - Create HF Spaces
 
 on:
   push:

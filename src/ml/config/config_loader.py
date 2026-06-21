@@ -17,7 +17,7 @@ from pathlib import Path
 
 import yaml
 
-DEFAULT_CONFIG_DIR = Path(__file__).resolve().parents[1] / "configs"
+DEFAULT_CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
 # Chemins par défaut pour chaque domaine
 DEFAULT_CONSUMPTION_CONFIG = "consumption"
@@ -35,18 +35,19 @@ def _deep_merge(base: dict, override: dict) -> dict:
     return result
 
 
-def load_config(config_path: str = None, config_name: str = None) -> dict:
+def load_config(config_name: str = None, config_path: str = None) -> dict:
     """
     Charge la configuration YAML avec support des environnements.
 
     Utilisation flexible :
+    - load_config("consumption") → charge consumption.yaml + consumption.{ENV}.yaml
     - load_config(config_name="consumption") → charge consumption.yaml + consumption.{ENV}.yaml
     - load_config(config_path="/abs/path/file.yaml") → charge le fichier spécifique
     - load_config() → charge config.yaml + config.{ENV}.yaml (défaut)
 
     Args:
-        config_path: Chemin absolu vers un fichier YAML (ignore config_name et ENV si fourni)
         config_name: Nom de la config sans extension (ex: "consumption" → consumption.yaml)
+        config_path: Chemin absolu vers un fichier YAML (ignore config_name et ENV si fourni)
 
     Returns:
         dict: Configuration fusionnée (base + env-specific + env vars override)
@@ -68,7 +69,7 @@ def load_config(config_path: str = None, config_name: str = None) -> dict:
     config_base_name = config_name or "config"
 
     # Déterminer l'environnement (défaut: dev)
-    env = os.getenv("ENV", "dev").lower()
+    env = os.getenv("ENVIRONMENT", "dev").lower()
 
     # Charger config base
     base_path = DEFAULT_CONFIG_DIR / f"{config_base_name}.yaml"

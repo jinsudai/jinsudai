@@ -2,6 +2,7 @@
 # Merge avec consumption.yaml (base)
 model:
   test_size: 0.3  # Plus de données test en dev
+  random_state: 42  # Seed pour reproductibilité
   time_limit: 600  # Plus rapide en dev
 
 training:

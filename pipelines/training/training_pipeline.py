@@ -31,8 +31,9 @@ def main():
     
     # Charger la config spécifique à l'environnement
     import os
-    environment = os.getenv('Environment', 'Dev').lower()
-    config_name_to_use = f"{args.config_name}.{environment}"
+    environment = os.getenv('ENVIRONMENT', 'dev').lower()
+    # Le config loader gère déjà le suffixe d'environnement, donc on passe juste le nom de base
+    config_name_to_use = args.config_name
     
     # Vérifier que le fichier de features existe si fourni
     if args.features_path and not Path(args.features_path).exists():

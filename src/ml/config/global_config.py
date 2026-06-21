@@ -281,3 +281,11 @@ def get_satellites_names() -> list:
     config = load_global_config()
     satellites = config.get('services', {}).get('satellites', [])
     return satellites
+
+
+# Import load_config from config_loader.py
+from .config_loader import (
+    load_config,
+    DEFAULT_CONSUMPTION_CONFIG,
+    get_nested,
+)
