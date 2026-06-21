@@ -136,19 +136,11 @@ class DriftDetectionPipeline:
             s3_config = global_config.get('s3', {})
 
             bucket = s3_config.get('bucket', 'data-store')
-            prefix = s3_config.get('prefix', 'weather')
 
-            # Déterminer l'environnement depuis le chemin local
-            if 'prod' in str(local_path):
-                environment = 'prod'
-            elif 'test' in str(local_path):
-                environment = 'test'
-            else:
-                environment = 'dev'
+            # Chercher dans le préfixe consumption pour les fichiers train
+            prefix = "consumption"
 
-            env_prefix = f"{prefix}/{environment}"
-
-            logger.info(f"Recherche sur S3: bucket={bucket}, prefix={env_prefix}")
+            logger.info(f"Recherche sur S3: bucket={bucket}, prefix={prefix}")
 
             # Initialiser le handler S3
             s3_handler = S3Handler(bucket=bucket)
@@ -158,11 +150,11 @@ class DriftDetectionPipeline:
                 return False
 
             # Lister les fichiers train.parquet
-            files = s3_handler.list_files(prefix=env_prefix)
+            files = s3_handler.list_files(prefix=prefix)
             train_files = [f for f in files if 'train' in f and f.endswith('.parquet')]
 
             if not train_files:
-                logger.warning(f"Aucun fichier train.parquet trouvé dans s3://{bucket}/{env_prefix}/")
+                logger.warning(f"Aucun fichier train.parquet trouvé dans s3://{bucket}/{prefix}/")
                 return False
 
             # Trouver le plus récent

@@ -133,12 +133,7 @@ def prepare_consumption_features_pipeline(
     
     # 3. Préparer les features consommation
     logger.info("\n[3/4] Préparation des features consommation...")
-    features_path = output_dir / f"consumption_features_{start_date}_to_{end_date}.parquet"
-    
-    # Déterminer le chemin du fichier train_consumption.parquet selon l'environnement
-    import os
-    environment = os.getenv('Environment', 'dev').lower()
-    train_path = Path(f"data/{environment}/train_consumption.parquet")
+    train_path = output_dir / f"{start_date}_to_{end_date}_train.parquet"
     
     try:
         preparer = ConsumptionDataPreparer()
@@ -146,12 +141,9 @@ def prepare_consumption_features_pipeline(
             raw_path=raw_path,
             weather_path=str(weather_path),
             holidays_path=str(holidays_path) if holidays_path else None,
-            output_path=str(train_path)  # Sauvegarder comme train_consumption.parquet
+            output_path=str(train_path)
         )
-        # Copier aussi comme consumption_features pour compatibilité
-        features_df.to_parquet(features_path)
         logger.info(f"  ✅ Features préparées: {train_path}")
-        logger.info(f"  ✅ Features copiées: {features_path}")
         logger.info(f"  ℹ️ Shape: {features_df.shape}")
     except Exception as e:
         logger.error(f"  ❌ Erreur préparation features: {e}")
@@ -166,21 +158,21 @@ def prepare_consumption_features_pipeline(
         try:
             s3_handler = S3Handler(bucket=s3_bucket)
             
-            # Upload du fichier consumption_features
-            s3_key_features = f"{s3_prefix}consumption_features_{start_date}_to_{end_date}.parquet"
-            s3_result_features = s3_handler.upload_file(
-                local_path=str(features_path),
-                s3_key=s3_key_features,
+            # Upload du fichier weather avec le préfixe weather
+            s3_key_weather = f"weather/{start_date}_to_{end_date}_weather.parquet"
+            s3_result_weather = s3_handler.upload_file(
+                local_path=str(weather_path),
+                s3_key=s3_key_weather,
                 metadata={
                     "start_date": start_date,
                     "end_date": end_date,
                     "source": "prepare_consumption_pipeline",
-                    "type": "features"
+                    "type": "weather"
                 }
             )
             
-            # Upload du fichier train_consumption.parquet
-            s3_key_train = f"consumption/{environment}/train_consumption_{start_date}_to_{end_date}.parquet"
+            # Upload du fichier train avec le préfixe consumption
+            s3_key_train = f"consumption/{start_date}_to_{end_date}_train.parquet"
             s3_result_train = s3_handler.upload_file(
                 local_path=str(train_path),
                 s3_key=s3_key_train,
@@ -188,24 +180,23 @@ def prepare_consumption_features_pipeline(
                     "start_date": start_date,
                     "end_date": end_date,
                     "source": "prepare_consumption_pipeline",
-                    "type": "train",
-                    "environment": environment
+                    "type": "train"
                 }
             )
             
             # Combiner les résultats
             s3_result = {
                 "status": "success",
-                "features": s3_result_features,
+                "weather": s3_result_weather,
                 "train": s3_result_train
             }
             
-            if s3_result_features["status"] == "success":
-                logger.info(f"  ✅ Upload S3 features réussi: {s3_result_features['s3_uri']}")
-            elif s3_result_features["status"] == "skipped":
-                logger.info(f"  ℹ️ Upload S3 features ignoré: {s3_result_features['reason']}")
+            if s3_result_weather["status"] == "success":
+                logger.info(f"  ✅ Upload S3 weather réussi: {s3_result_weather['s3_uri']}")
+            elif s3_result_weather["status"] == "skipped":
+                logger.info(f"  ℹ️ Upload S3 weather ignoré: {s3_result_weather['reason']}")
             else:
-                logger.warning(f"  ⚠️ Upload S3 features échoué: {s3_result_features['reason']}")
+                logger.warning(f"  ⚠️ Upload S3 weather échoué: {s3_result_weather['reason']}")
             
             if s3_result_train["status"] == "success":
                 logger.info(f"  ✅ Upload S3 train réussi: {s3_result_train['s3_uri']}")
@@ -223,7 +214,6 @@ def prepare_consumption_features_pipeline(
         "local_paths": {
             "weather": str(weather_path),
             "holidays": str(holidays_path) if holidays_path else None,
-            "features": str(features_path),
             "train": str(train_path)
         },
         "s3": s3_result,

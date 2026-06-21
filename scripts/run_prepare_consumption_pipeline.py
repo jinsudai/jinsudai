@@ -60,13 +60,12 @@ def main():
             print(f"\n✅ Pipeline terminé avec succès")
             print(f"Weather: {result['local_paths']['weather']}")
             print(f"Holidays: {result['local_paths']['holidays']}")
-            print(f"Features: {result['local_paths']['features']}")
             print(f"Train: {result['local_paths']['train']}")
             
             if result['s3'] and result['s3'].get('status') == 'success':
                 print(f"\n✅ Upload S3 réussi")
-                if 'features' in result['s3']:
-                    print(f"S3 Features: {result['s3']['features'].get('s3_uri')}")
+                if 'weather' in result['s3']:
+                    print(f"S3 Weather: {result['s3']['weather'].get('s3_uri')}")
                 if 'train' in result['s3']:
                     print(f"S3 Train: {result['s3']['train'].get('s3_uri')}")
             elif result['s3'] and result['s3'].get('status') == 'skipped':

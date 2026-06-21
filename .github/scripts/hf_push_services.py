@@ -16,18 +16,12 @@ from huggingface_hub import HfApi
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'src'))
 
 def get_services():
-    """Read service list from .env ServicesNames variable"""
-    env_path = Path(__file__).parent.parent.parent / ".env"
-    load_dotenv(env_path)
-    
-    services_str = os.getenv("ServicesNames", "")
-    if not services_str:
-        print("[ERR] ServicesNames not defined in .env")
-        return []
-    
-    return [s.strip() for s in services_str.split(",") if s.strip()]
+    """Read service list from config.yaml"""
+    from ml.config.global_config import get_services_names
+    return get_services_names()
 
 def has_changes(path):
     """Check if there are changes between HEAD~1 and HEAD in a path"""
@@ -134,7 +128,7 @@ def main():
     
     services = get_services()
     if not services:
-        print("[*] No services configured in .env")
+        print("[*] No services configured in config.yaml")
         return
     
     # Check for changes in Services directory or .env

@@ -1,0 +1,79 @@
+name: Daily Retraining Pipeline
+
+on:
+  schedule:
+    # Exécution tous les jours à 2h UTC (4h heure française en hiver, 5h en été)
+    - cron: '0 2 * * *'
+  workflow_dispatch:  # Permet le déclenchement manuel depuis l'interface GitHub
+    inputs:
+      config:
+        description: 'Configuration à utiliser (consumption, solar_production)'
+        required: false
+        default: 'consumption'
+        type: choice
+        options:
+          - consumption
+          - solar_production
+      force:
+        description: 'Force le réentraînement sans vérifier les conditions'
+        required: false
+        default: false
+        type: boolean
+      dry_run:
+        description: 'Mode dry-run (vérifie les conditions sans exécuter)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  retraining:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Configure environment
+        run: |
+          echo "Environment=Prod" >> $GITHUB_ENV
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+          echo "AWS_REGION=${{ secrets.AWS_REGION || 'eu-west-3' }}" >> $GITHUB_ENV
+          echo "AWS_BUCKET=${{ secrets.AWS_BUCKET || 'data-store' }}" >> $GITHUB_ENV
+          echo "PREDICTIONS_POSTGRES_URI=${{ secrets.PREDICTIONS_POSTGRES_URI }}" >> $GITHUB_ENV
+
+      - name: Run retraining (scheduled)
+        if: github.event_name == 'schedule'
+        run: |
+          python scripts/run_retraining.py \
+            --config consumption \
+            --max-days 3 \
+            --drift-hours 24
+
+      - name: Run retraining (manual)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          python scripts/run_retraining.py \
+            --config ${{ github.event.inputs.config }} \
+            ${{ github.event.inputs.force == 'true' && '--force' || '' }} \
+            ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: retraining-logs
+          path: |
+            *.log
+            logs/
+          retention-days: 7

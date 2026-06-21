@@ -1,8 +1,17 @@
 Pour Devin
 
-Prediction pipeline refinment: Problème de config
-- Le même code a été dupliqué plusieurs fois. Il faut utiliser la class config (je crois) à la place -> To commit
+Config
+- Chercher d'abord la variable d'environnement ENVIRONMENT avant de chercher à utiliser le .env
+- Renseigner ServicesNames dans le fichier de config et ne plus y faire reference dans le .env. Adapter le code dans .github.
 
+S3
+- Pas besoin de différencier le chemin selon l'environnement
+- utiliser {date}_train.parquet à la place de consumption_features_{date}.parquet
+- Pas besoin de la copy train_consumption.parquet -> prendre toujours le fichier avec la date la plus récente
+- Le prefix weather doit servir pour stocker le fichier parquet de la meteo {date}_weather.parquet
+
+Prediction pipeline refinment: Problème de config
+- Le même code a été dupliqué plusieurs fois. Il faut utiliser la class config (je crois) à la place -> A tester
 
 Data Drift (Drift Detection Action)
 - Proposer une manière d'executer le réentrainement
@@ -30,7 +39,6 @@ A vérifier
 
 A faire (later)
 - J'ai ajouté la notion de satelite externe...
-- sortir le .env
 - Réparer base de donnée neon jinsudai
 - airflow peut orchestrer Github via des pushs git
 - Faire fonctionner prefect en local

@@ -13,18 +13,12 @@ from huggingface_hub import HfApi
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'src'))
 
 def get_services():
-    """Read service list from .env ServicesNames variable"""
-    env_path = Path(__file__).parent.parent.parent / ".env"
-    load_dotenv(env_path)
-    
-    services_str = os.getenv("ServicesNames", "")
-    if not services_str:
-        print("[ERR] ServicesNames not defined in .env")
-        return []
-    
-    return [s.strip() for s in services_str.split(",") if s.strip()]
+    """Read service list from config.yaml"""
+    from ml.config.global_config import get_services_names
+    return get_services_names()
 
 def _get_env_secret(env_var, context=""):
     """Helper to get environment variable and log warning if not found"""
@@ -114,7 +108,7 @@ def main():
     shared_secrets = get_shared_secrets()
     
     print("[*] Updating secrets in spaces...")
-    print("=" * 60)
+    print("=" * 60)configyaml
     
     for service in services:
         space_id = f"{username}/{service}"

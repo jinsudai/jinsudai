@@ -220,7 +220,9 @@ def load_config_with_environment(config_name: str) -> Dict[str, Any]:
     base_config = load_config(config_name=config_name)
     
     # Charger la config spécifique à l'environnement si elle existe
-    environment = os.getenv('Environment', 'Dev').lower()
+    # Priorité: variable d'environnement ENVIRONMENT (majuscules) > Environment (premier caractère majuscule) > Dev par défaut
+    environment = os.getenv('ENVIRONMENT') or os.getenv('Environment', 'Dev')
+    environment = environment.lower()
     env_config_name = f"{config_name}.{environment}"
     
     try:
@@ -231,3 +233,39 @@ def load_config_with_environment(config_name: str) -> Dict[str, Any]:
     except Exception:
         logger.info(f"Config chargée: {config_name} (pas de config spécifique pour {environment})")
         return base_config
+
+
+def get_services_names() -> list:
+    """
+    Récupère la liste des noms de services depuis la configuration globale.
+
+    Returns:
+        Liste des noms de services
+    """
+    config = load_global_config()
+    services = config.get('services', {}).get('names', [])
+    return services
+
+
+def get_external_services_names() -> list:
+    """
+    Récupère la liste des noms de services externes depuis la configuration globale.
+
+    Returns:
+        Liste des noms de services externes
+    """
+    config = load_global_config()
+    services = config.get('services', {}).get('external', [])
+    return services
+
+
+def get_apis_names() -> list:
+    """
+    Récupère la liste des noms d'APIs depuis la configuration globale.
+
+    Returns:
+        Liste des noms d'APIs
+    """
+    config = load_global_config()
+    apis = config.get('services', {}).get('apis', [])
+    return apis
