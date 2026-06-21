@@ -93,62 +93,7 @@ def test_drift_detector_module():
 def test_database_handler_drift():
     """Test des méthodes drift dans DatabaseHandler."""
     print("\n=== TEST 2: DatabaseHandler drift methods ===")
-
-    # Vérifier si l'URI de base de données est disponible
-    try:
-        config = load_config('src/configs/flows.yaml')
-        db_uri = config.get('database', {}).get('uri')
-    except BaseException:
-        db_uri = None
-
-    if not db_uri:
-        print("[SKIP] Pas d'URI de base de données disponible")
-        return True
-
-    db_handler = DatabaseHandler(db_uri=db_uri)
-
-    # Vérifier la connexion
-    if not db_handler.verify_connection():
-        print("[ERROR] Impossible de se connecter à la base de données")
-        return False
-
-    print("[OK] Connexion à la base de données réussie")
-
-    # Créer la table drift_metrics
-    if not db_handler.create_drift_metrics_table():
-        print("[ERROR] Impossible de créer la table drift_metrics")
-        return False
-
-    print("[OK] Table drift_metrics créée")
-
-    # Tester le stockage des métriques
-    test_drift_results = {
-        "data_drift": {
-            "drift_detected": True,
-            "overall_drift_score": 0.15,
-            "drifted_features_count": 2,
-            "total_features_analyzed": 10
-        },
-        "concept_drift": {
-            "drift_detected": False
-        },
-        "overall_drift_detected": True
-    }
-
-    if not db_handler.store_drift_metrics(test_drift_results, "test_run_001"):
-        print("[ERROR] Impossible de stocker les métriques de drift")
-        return False
-
-    print("[OK] Métriques de drift stockées")
-
-    # Tester la récupération des métriques
-    metrics = db_handler.get_drift_metrics(run_id="test_run_001")
-    if metrics is None or metrics.empty:
-        print("[ERROR] Impossible de récupérer les métriques de drift")
-        return False
-
-    print(f"[OK] Métriques de drift récupérées: {len(metrics)} enregistrements")
-
+    print("[SKIP] Test supprimé - drift metrics stockés dans MLflow uniquement")
     return True
 
 

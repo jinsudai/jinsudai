@@ -350,23 +350,10 @@ class DriftDetectionPipeline:
             )
             if success:
                 logger.info("Métriques stockées dans MLflow")
-
-        # Stocker dans PostgreSQL si disponible
-        if self.db_uri and self.db_handler is None:
-            self.db_handler = DatabaseHandler(db_uri=self.db_uri)
-
-        if self.db_handler is not None and self.db_handler.verify_connection():
-            # Créer la table si nécessaire
-            self.db_handler.create_drift_metrics_table()
-
-            # Stocker les métriques
-            run_id_to_use = run_id or f"drift_run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            success = self.db_handler.store_drift_metrics(self.drift_results, run_id_to_use)
-
-            if success:
-                logger.info("Métriques stockées dans PostgreSQL")
             else:
-                logger.warning("Impossible de stocker les métriques dans PostgreSQL")
+                logger.warning("Impossible de stocker les métriques dans MLflow")
+        else:
+            logger.warning("Rapport Evidently non disponible pour le stockage MLflow")
 
         return True
 
