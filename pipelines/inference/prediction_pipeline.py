@@ -61,7 +61,8 @@ def main():
         pipeline = PredictionPipeline(
             mlflow_uri=mlflow_uri,
             experiment_name=experiment_name,
-            db_uri=db_uri
+            db_uri=db_uri,
+            config=config
         )
         
         # Exécuter le pipeline complet

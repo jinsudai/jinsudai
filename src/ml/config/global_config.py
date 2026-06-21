@@ -109,16 +109,19 @@ def get_sftp_config(config_path: Optional[Path] = None) -> Dict[str, Any]:
     return config.get("sftp", {})
 
 
-def get_mlflow_config(config_path: Optional[Path] = None) -> Dict[str, Any]:
+def get_mlflow_config(config_path: Optional[Path] = None, config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Récupère uniquement la configuration MLflow.
 
     Args:
         config_path: Chemin vers le fichier de configuration (optionnel)
+        config: Dictionnaire de configuration déjà chargé (optionnel, priorité sur config_path)
 
     Returns:
         Dictionnaire avec la configuration MLflow
     """
+    if config is not None:
+        return config.get("mlflow", {})
     config = load_global_config(config_path)
     return config.get("mlflow", {})
 

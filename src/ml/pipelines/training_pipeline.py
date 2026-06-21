@@ -379,6 +379,76 @@ class MLPipeline:
             logger.error(f"Erreur lors du nettoyage: {e}")
             return False
 
+    def step_8_upload_trained_data_to_s3(self):
+        """
+        Étape 8: Upload du fichier train.parquet vers S3 après entraînement.
+
+        Upload le fichier de données utilisé pour l'entraînement vers le prefix
+        /consumption/trained/ sur S3 pour être utilisé par le retraining.
+
+        Returns:
+            True si succès, False sinon
+        """
+        logger.info("=== ÉTAPE 8: UPLOAD DES DONNÉES ENTRAÎNÉES VERS S3 ===")
+
+        try:
+            # Charger la configuration S3
+            global_config = load_config('config.yaml')
+            s3_config = global_config.get('s3', {})
+
+            bucket = s3_config.get('bucket', 'data-store')
+            prefix = "consumption/trained/"
+
+            logger.info(f"Upload vers S3: bucket={bucket}, prefix={prefix}")
+
+            # Initialiser le handler S3
+            s3_handler = S3Handler(bucket=bucket)
+
+            if not s3_handler.s3_enabled:
+                logger.warning("S3 non disponible (credentials manquants)")
+                return False
+
+            # Récupérer le chemin du fichier train utilisé
+            train_path = self.config.get('data', {}).get('train_path')
+            if not train_path or not Path(train_path).exists():
+                logger.warning(f"Fichier train non trouvé: {train_path}")
+                return False
+
+            # Générer le nom de fichier avec la date actuelle
+            from datetime import datetime
+            timestamp = datetime.now().strftime('%Y-%m-%d')
+            s3_key = f"{prefix}{timestamp}_train.parquet"
+
+            logger.info(f"Upload du fichier: {train_path}")
+            logger.info(f"Vers: s3://{bucket}/{s3_key}")
+
+            # Upload le fichier
+            result = s3_handler.upload_file(
+                local_path=train_path,
+                s3_key=s3_key,
+                metadata={
+                    "timestamp": timestamp,
+                    "source": "training_pipeline",
+                    "type": "trained_data"
+                }
+            )
+
+            if result["status"] == "success":
+                logger.info(f"✅ Fichier uploadé avec succès: {result['s3_uri']}")
+                return True
+            elif result["status"] == "skipped":
+                logger.info(f"ℹ️ Upload ignoré: {result['reason']}")
+                return True
+            else:
+                logger.error(f"❌ Erreur lors de l'upload: {result.get('reason')}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Erreur lors de l'upload vers S3: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return False
+
     def step_9_manage_model_stages(self, metric_keys=None, min_improvement=0.0):
         """
         Étape 8: Gestion des Aliases du modèle (Staging -> Production)
@@ -535,6 +605,7 @@ class MLPipeline:
             ("Évaluation", self.step_5_evaluate_model),
             ("Monitoring", self.step_6_monitor_performance),
             ("MLflow Logging", self.step_7_log_with_mlflow),
+            ("Upload des données entraînées vers S3", self.step_8_upload_trained_data_to_s3),
             ("Nettoyage du modèle", self.step_8_cleanup_model),
             ("Gestion des Stages", self.step_9_manage_model_stages),
         ]

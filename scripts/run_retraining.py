@@ -27,6 +27,7 @@ from ml.config import load_config
 from ml.pipelines.drift_detection_pipeline import DriftDetectionPipeline
 from ml.pipelines.training_pipeline import MLPipeline
 from ml.pipelines.database_handler import DatabaseHandler
+from ml.utils.s3_handler import S3Handler
 import mlflow
 
 
@@ -104,18 +105,90 @@ def check_drift_detected(db_handler: DatabaseHandler, hours: int = 24) -> bool:
         return False
 
 
-def prepare_retraining_data(db_handler: DatabaseHandler, limit: int = 10000) -> Optional[str]:
+def prepare_retraining_data(
+    db_handler: DatabaseHandler = None,
+    limit: int = 10000,
+    use_s3: bool = True,
+    s3_bucket: str = None,
+    s3_prefix: str = "consumption/trained/"
+) -> Optional[str]:
     """
     Prépare les données de production pour le réentraînement.
 
+    Priorité:
+    1. Télécharge le fichier le plus récent depuis S3 (prefix /consumption/trained/)
+    2. Fallback sur la base de données si S3 non disponible
+
     Args:
-        db_handler: Instance de DatabaseHandler
-        limit: Nombre maximum d'enregistrements
+        db_handler: Instance de DatabaseHandler (optionnel, fallback)
+        limit: Nombre maximum d'enregistrements (pour fallback DB)
+        use_s3: Si True, essaie d'abord S3
+        s3_bucket: Nom du bucket S3 (optionnel, utilise config par défaut)
+        s3_prefix: Préfixe S3 pour les fichiers trained (défaut: consumption/trained/)
 
     Returns:
         Chemin vers le fichier de données préparé ou None
     """
     try:
+        # 1. Essayer de télécharger depuis S3
+        if use_s3:
+            print("📥 Tentative de téléchargement depuis S3...")
+            try:
+                config = load_config('config.yaml')
+                s3_config = config.get('s3', {})
+                
+                bucket = s3_bucket or s3_config.get('bucket', 'data-store')
+                prefix = s3_prefix
+                
+                print(f"   Bucket S3: {bucket}")
+                print(f"   Préfixe S3: {prefix}")
+                
+                s3_handler = S3Handler(bucket=bucket)
+                
+                if s3_handler.s3_enabled:
+                    # Lister les fichiers dans le prefix consumption/trained/
+                    files = s3_handler.list_files(prefix=prefix)
+                    
+                    # Filtrer les fichiers train.parquet
+                    train_files = [f for f in files if 'train' in f and f.endswith('.parquet')]
+                    
+                    if train_files:
+                        # Trouver le plus récent
+                        train_files_sorted = sorted(train_files, reverse=True)
+                        latest_file = train_files_sorted[0]
+                        
+                        print(f"   📂 Fichier le plus récent trouvé: {latest_file}")
+                        
+                        # Télécharger le fichier
+                        data_dir = project_root / 'data' / 'processed'
+                        data_dir.mkdir(parents=True, exist_ok=True)
+                        
+                        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                        local_path = data_dir / f'retraining_data_{timestamp}.parquet'
+                        
+                        result = s3_handler.download_file(
+                            s3_key=latest_file,
+                            local_path=str(local_path),
+                            overwrite=True
+                        )
+                        
+                        if result["status"] == "success":
+                            print(f"✅ Données de réentraînement téléchargées depuis S3")
+                            print(f"   Source: {latest_file}")
+                            print(f"   Destination: {local_path}")
+                            print(f"   Taille: {local_path.stat().st_size / 1024 / 1024:.2f} MB")
+                            return str(local_path)
+                        else:
+                            print(f"⚠️ Échec du téléchargement S3: {result.get('reason')}")
+                    else:
+                        print(f"⚠️ Aucun fichier train.parquet trouvé dans s3://{bucket}/{prefix}")
+                else:
+                    print("⚠️ S3 non disponible (credentials manquants)")
+            except Exception as e:
+                print(f"⚠️ Erreur lors du téléchargement S3: {e}")
+        
+        # 2. Fallback sur la base de données
+        print("📊 Fallback sur la base de données...")
         if not db_handler or not db_handler.verify_connection():
             print("⚠️ Base de données non disponible")
             return None
@@ -135,12 +208,14 @@ def prepare_retraining_data(db_handler: DatabaseHandler, limit: int = 10000) -> 
         data_path = data_dir / f'retraining_data_{timestamp}.parquet'
 
         production_data.to_parquet(data_path, index=False)
-        print(f"✅ Données de réentraînement préparées: {len(production_data)} enregistrements")
+        print(f"✅ Données de réentraînement préparées depuis la base de données: {len(production_data)} enregistrements")
         print(f"   Sauvegardées dans: {data_path}")
 
         return str(data_path)
     except Exception as e:
         print(f"❌ Erreur lors de la préparation des données: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
@@ -283,8 +358,13 @@ def main():
             print("🔍 MODE DRY-RUN - Réentraînement non exécuté")
             sys.exit(0)
 
-        # Préparer les données
-        data_path = prepare_retraining_data(db_handler, limit=args.data_limit)
+        # Préparer les données (priorité S3 /consumption/trained/)
+        data_path = prepare_retraining_data(
+            db_handler=db_handler,
+            limit=args.data_limit,
+            use_s3=True,
+            s3_prefix="consumption/trained/"
+        )
         if not data_path:
             print("❌ Impossible de préparer les données de réentraînement")
             sys.exit(1)

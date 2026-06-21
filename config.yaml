@@ -65,26 +65,12 @@ services:
   # Liste des services internes (HuggingFace Spaces)
   names:
     - "MLflow"
-    - "EvidentlyUI"
     - "airflow"
     - "docsify"
 
   satelites:
     - "airflow"
-  
-  # Liste des services externes
-  external:
-    - "GitHub"
-    - "Supabase"
-    - "Prefect"
-    - "Neon"
-  
-  # Liste des APIs
-  apis:
-    - "Enedis"
-    - "Vacances"
-    - "Météo"
-    - "Localisation"
+    - "marp"
 
 # Logging
 logging:

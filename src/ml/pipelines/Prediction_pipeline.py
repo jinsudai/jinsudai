@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 class PredictionPipeline:
     """Pipeline complet pour l'inférence et le stockage des prédictions"""
 
-    def __init__(self, mlflow_uri, experiment_name, db_uri):
+    def __init__(self, mlflow_uri, experiment_name, db_uri, config=None):
         """
         Initialise le pipeline
 
@@ -42,10 +42,12 @@ class PredictionPipeline:
             mlflow_uri: URI du serveur MLflow
             experiment_name: Nom de l'expérience MLflow
             db_uri: URI de connexion PostgreSQL
+            config: Dictionnaire de configuration (optionnel)
         """
         self.mlflow_uri = mlflow_uri
         self.experiment_name = experiment_name
         self.db_uri = db_uri
+        self.config = config
 
         self.inference_model = None
         self.db_handler = None
@@ -59,7 +61,7 @@ class PredictionPipeline:
         logger.info("=== ÉTAPE 1: CONFIGURATION ===")
 
         # Initialiser MLflow
-        self.inference_model = InferenceModel(self.mlflow_uri, self.experiment_name)
+        self.inference_model = InferenceModel(self.mlflow_uri, self.experiment_name, config=self.config)
         logger.info("MLflow configuré")
 
         # Initialiser BD si l'URI est fournie

@@ -33,6 +33,7 @@ class InferenceModel:
         mlflow_tracking_uri=None,
         experiment_name=None,
         config_path=None,
+        config=None,
     ):
         """
         Initialise la connexion MLflow en utilisant la configuration.
@@ -41,9 +42,10 @@ class InferenceModel:
             mlflow_tracking_uri: URI du serveur MLflow (optionnel)
             experiment_name: Nom de l'expérience MLflow (optionnel)
             config_path: Chemin vers le fichier de configuration YAML (optionnel)
+            config: Dictionnaire de configuration déjà chargé (optionnel, priorité sur config_path)
         """
 
-        mlflow_config = get_mlflow_config(config_path=config_path)
+        mlflow_config = get_mlflow_config(config_path=config_path, config=config)
 
         self.mlflow_tracking_uri = mlflow_tracking_uri or mlflow_config.get("tracking_uri")
         self.experiment_name = experiment_name or mlflow_config.get("experiment_name")
