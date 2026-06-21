@@ -108,7 +108,7 @@ with DAG(
     tags=['github', 'action', 'trigger'],
     params={
         'github_workflow': Param(
-            default='1_sftp-ingestion-pipeline.yml',
+            default='1_actuals_ingestion_pipeline.yml',
             type='string',
             description='Nom du fichier workflow GitHub à déclencher'
         ),

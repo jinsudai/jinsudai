@@ -18,8 +18,8 @@ training:
 
 # MLflow prod
 mlflow:
-  experiment_name: "energy_consumption"
-  model_name: "consumption_model"
+  experiment_name: "energy_consumption_prod"
+  model_name: "consumption_model_prod"
 
 # Monitoring plus strict en prod
 monitoring:
