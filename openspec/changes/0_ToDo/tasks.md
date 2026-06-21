@@ -1,31 +1,36 @@
 Pour Devin
 
+Quand tu peux enlève les commentaire "sans prefect" qui sont dans plusieurs fichiers
+
 Pipelines
 1_actuals_ingestion_pipeline (Daily)
-- Peux tu me confirmer que si le ftp n'est pas activé, les donnnées sont générée aléatoirement?
+- Peux tu me confirmer que si le ftp n'est pas activé, les donnnées sont générée aléatoirement? -> A tester
+- Peux tu me confirmer que la base de donnée est bien actualisée avec les données réelles? -> A tester
 
 2_preparation_pipeline (Daily)
-- Est-ce qu'il determine la date du dernier entrainement automatiquement?
-- Est-ce que les nouvelles données de meteo sont bien sauvegarder dans un {date}_weather.parquet?
-- Est-ce qu'il récupère bien les valeurs depuis la base de donnée et génère bien le fichier {date}_train.parquet du jour est bien enregistré sur s3 sous le prefix /consumption/train/
+- Est-ce qu'il determine la date du dernier entrainement automatiquement? oui  -> A tester
+- Est-ce que les nouvelles données de meteo sont bien sauvegarder dans un {date}_weather.parquet? oui  -> A tester
+- Est-ce qu'il récupère bien les valeurs depuis la base de donnée et génère bien le fichier {date}_train.parquet du jour  enregistré sur s3 sous le prefix /consumption/train/ oui -> A tester
 
 3_training-pipeline (3 jours)
 - Est-ce qu'une fois l'entrainement terminé (model chargé sur mlflow), le fichier {date}_train.parquet est bien transférer sur s3 dans le prefix "/consumption/trained/"
 
+6_retraining (Daily)
+- Est-ce que le fichier source est bien le fichier /consumption/trained/{date}_train.parquet" le plus recent
+
 Config -> A tester
-- J'ai ajouté la notion de satelite dans le config.yaml. il faudrait pouvoir gérer les espaces et les secrets avec un HF_Token différent en cherchant le secret SATELITENAME_HF_TOKEN en l'occurence AIRFLOW_HF_TOKEN
+- J'ai ajouté la notion de satelite dans le config.yaml. il faudrait pouvoir gérer les espaces et les secrets avec un HF_Token différent en cherchant le secret SATELITENAME_HF_TOKEN en l'occurence AIRFLOW_HF_TOKEN -> A tester
 - Il y a confusion entre les deux fichier config.yaml. Je pense qu'il est mieux d'avoir seulement celui à la racine du projet. -> A tester
 - Chercher d'abord la variable d'environnement ENVIRONMENT avant de chercher à utiliser le .env -> A tester
 - Renseigner ServicesNames dans le fichier de config et ne plus y faire reference dans le .env. Adapter le code dans .github. -> A tester
 
+
 Db:
 - Quels informations sont stockée en base de données? Quels pipelines utilise la base de données predictions?
-- Il faut que le pipeline actual s
+- Il y a t'il un documentation pour documenter les interraction avec la table prediction?
 
 
 S3 -> A demander
-- Je ne suis pas d'accord avec "Priorité aux fichiers combinés train_combined, sinon fichiers individuels train". Je pense que le mieux est si le combiné n'existe pas, il faut généré le fichier combiné et l'uploader. -> A demander
-- Oui je veux qu'a chaque entrainement on créé un fichier combiné {start_date}_to_{end_date}_train.parquet. avec une fenêtre temporelle par defaut de 3 ans. -> A tester
 - Est-ce que parfois on a  plusieurs periodes de fichiers {start_date}_to_{end_date}_.parquet et on les combines pour former un train.parquet -> oui courant
 - Pas besoin de différencier le chemin selon l'environnement -> A tester
 - utiliser {date}_train.parquet à la place de consumption_features_{date}.parquet -> A tester

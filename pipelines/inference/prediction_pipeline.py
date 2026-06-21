@@ -37,9 +37,6 @@ def main():
     from ml.config.global_config import load_config_with_environment
     config = load_config_with_environment(args.config_name)
     
-    # Debug: afficher la config mlflow
-    print(f"DEBUG - Config mlflow: {config.get('mlflow', {})}")
-    
     # Utiliser le nom du modèle depuis la config si non fourni
     if args.model_name is None:
         args.model_name = config.get('mlflow', {}).get('model_name', 'model')
