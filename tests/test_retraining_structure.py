@@ -86,9 +86,7 @@ def test_retrain_task_parameters():
     print("\n=== TEST 5: Paramètres de retrain_model_task ===")
 
     file_path = Path("src/ml/workflows/prediction_tasks.py")
-    if not file_path.exists():
-        print(f"[ERROR] Fichier {file_path} non trouvé")
-        return False
+    assert file_path.exists(), f"Fichier {file_path} non trouvé"
 
     content = file_path.read_text(encoding='utf-8')
 
@@ -102,7 +100,7 @@ def test_retrain_task_parameters():
             print(f"[ERROR] Paramètre {param} non trouvé")
             all_found = False
 
-    return all_found
+    assert all_found, "Certains paramètres manquent"
 
 
 def test_retrain_task_logic():
@@ -110,9 +108,7 @@ def test_retrain_task_logic():
     print("\n=== TEST 6: Logique de déclenchement ===")
 
     file_path = Path("src/ml/workflows/prediction_tasks.py")
-    if not file_path.exists():
-        print(f"[ERROR] Fichier {file_path} non trouvé")
-        return False
+    assert file_path.exists(), f"Fichier {file_path} non trouvé"
 
     content = file_path.read_text(encoding='utf-8')
 
@@ -132,7 +128,7 @@ def test_retrain_task_logic():
             print(f"[ERROR] {description} non trouvé")
             all_found = False
 
-    return all_found
+    assert all_found, "Certains éléments de logique manquent"
 
 
 if __name__ == "__main__":

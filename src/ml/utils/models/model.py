@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 def train_model(X_train, y_train, model_type="random_forest", **kwargs):
     try:
+        logger.info(f"Training model with type: {model_type}")
         logger.info(f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
 
         if X_train.shape[0] == 0 or len(y_train) == 0:

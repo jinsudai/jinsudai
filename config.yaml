@@ -68,7 +68,7 @@ services:
     - "airflow"
     - "docsify"
 
-  satelites:
+  satellite:
     - "airflow"
     - "marp"
 
