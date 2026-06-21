@@ -14,7 +14,7 @@ sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
 from ml.pipelines.sftp_ingestion_pipeline import run_sftp_ingestion_pipeline, load_sftp_config
-from ml.config.global_config import load_config_with_environment
+from ml.config import load_config
 
 def main():
     parser = argparse.ArgumentParser(description='Exécute le pipeline d\'ingestion SFTP')
@@ -66,6 +66,7 @@ def main():
                 sys.exit(1)
             
             # Charger la config pour les valeurs par défaut (avec environnement)
+            from ml.config.global_config import load_config_with_environment
             config = load_config_with_environment(args.config_name)
             
             if args.db_uri is None:

@@ -34,6 +34,7 @@ def main():
     args = parser.parse_args()
     
     # Charger la config pour les valeurs par défaut (avec environnement)
+    from ml.config.global_config import load_config_with_environment
     config = load_config_with_environment(args.config_name)
     
     # Utiliser le nom du modèle depuis la config si non fourni

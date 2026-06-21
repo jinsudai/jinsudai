@@ -14,7 +14,6 @@ sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
 from ml.pipelines.training_pipeline import MLPipeline
-from ml.config.global_config import load_config_with_environment
 
 def main():
     parser = argparse.ArgumentParser(description='Exécute le pipeline d\'entraînement consommation')

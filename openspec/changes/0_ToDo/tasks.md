@@ -2,14 +2,12 @@ Pour Devin
 
 Prediction pipeline refinment: Problème de config
 - Le même code a été dupliqué plusieurs fois. Il faut utiliser la class config (je crois) à la place -> To commit
-- Faire marcher la detection de drift avec S3 -> To commit
+
 
 Data Drift (Drift Detection Action)
-
 - Proposer une manière d'executer le réentrainement
 
 HF
-- Il semble que 
 - J'ai ajouté la notion de satelite dans le .env. il faudrait pouvoir gérer les espaces et les secrets avec un HF_Token différent en cherchant le secret SATELITENAME_HF_TOKEN en l'occurence AIRFLOW_HF_TOKEN
 
 A faire
@@ -21,7 +19,8 @@ A faire
 - grafana
 
 A tester
-
+- Tester le passage des secrets airflow
+- Faire marcher la detection de drift avec S3
 Evidently 
 Streamlit
 deployement
