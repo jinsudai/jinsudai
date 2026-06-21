@@ -1,0 +1,309 @@
+"""
+Script de réentraînement conditionnel quotidien.
+
+Logique:
+- Chaque jour, vérifie:
+  1. Si un drift a été détecté (métriques stockées)
+  2. Si le dernier réentraînement date de > 3 jours
+- Si l'une des conditions est remplie, lance le réentraînement
+
+Usage:
+    python scripts/run_retraining.py --config consumption
+    python scripts/run_retraining.py --config consumption --force
+    python scripts/run_retraining.py --config consumption --dry-run
+"""
+import sys
+import argparse
+from pathlib import Path
+from datetime import datetime, timedelta
+from typing import Optional, Dict, Any
+
+# Ajouter le répertoire src au path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(project_root / 'src'))
+
+from ml.config import load_config
+from ml.pipelines.drift_detection_pipeline import DriftDetectionPipeline
+from ml.pipelines.training_pipeline import MLPipeline
+from ml.pipelines.database_handler import DatabaseHandler
+import mlflow
+
+
+def check_last_retraining_date(model_name: str, tracking_uri: str) -> Optional[datetime]:
+    """
+    Vérifie la date du dernier réentraînement via MLflow.
+
+    Args:
+        model_name: Nom du modèle dans MLflow
+        tracking_uri: URI de tracking MLflow
+
+    Returns:
+        Date du dernier réentraînement ou None si pas trouvé
+    """
+    try:
+        mlflow.set_tracking_uri(tracking_uri)
+        client = mlflow.tracking.MlflowClient()
+
+        # Chercher le modèle avec l'alias 'prod'
+        try:
+            model_version = client.get_model_version(model_name, "prod")
+            last_run = client.get_run(model_version.run_id)
+            last_retraining_date = datetime.fromtimestamp(last_run.info.start_time / 1000)
+            return last_retraining_date
+        except Exception:
+            # Pas de modèle en prod, chercher la dernière run
+            experiment = client.get_experiment_by_name(f"{model_name}_experiment")
+            if experiment:
+                runs = client.search_runs(
+                    experiment_ids=[experiment.experiment_id],
+                    max_results=1,
+                    order_by=["start_time DESC"]
+                )
+                if runs:
+                    last_run = runs[0]
+                    last_retraining_date = datetime.fromtimestamp(last_run.info.start_time / 1000)
+                    return last_retraining_date
+
+        return None
+    except Exception as e:
+        print(f"⚠️ Erreur lors de la vérification du dernier réentraînement: {e}")
+        return None
+
+
+def check_drift_detected(db_handler: DatabaseHandler, hours: int = 24) -> bool:
+    """
+    Vérifie si un drift a été détecté dans les dernières X heures.
+
+    Args:
+        db_handler: Instance de DatabaseHandler
+        hours: Nombre d'heures à regarder en arrière
+
+    Returns:
+        True si drift détecté, False sinon
+    """
+    try:
+        if not db_handler or not db_handler.verify_connection():
+            print("⚠️ Base de données non disponible, vérification drift impossible")
+            return False
+
+        # Récupérer les métriques de drift récentes
+        drift_metrics = db_handler.get_recent_drift_metrics(hours=hours)
+
+        if drift_metrics and len(drift_metrics) > 0:
+            # Vérifier si au moins un drift a été détecté
+            for metric in drift_metrics:
+                if metric.get('overall_drift_detected', False):
+                    print(f"✅ Drift détecté le {metric.get('timestamp')}")
+                    return True
+
+        print("ℹ️ Aucun drift détecté récemment")
+        return False
+    except Exception as e:
+        print(f"⚠️ Erreur lors de la vérification du drift: {e}")
+        return False
+
+
+def prepare_retraining_data(db_handler: DatabaseHandler, limit: int = 10000) -> Optional[str]:
+    """
+    Prépare les données de production pour le réentraînement.
+
+    Args:
+        db_handler: Instance de DatabaseHandler
+        limit: Nombre maximum d'enregistrements
+
+    Returns:
+        Chemin vers le fichier de données préparé ou None
+    """
+    try:
+        if not db_handler or not db_handler.verify_connection():
+            print("⚠️ Base de données non disponible")
+            return None
+
+        # Récupérer les données de production avec valeurs réelles
+        production_data = db_handler.get_production_data_for_retraining(limit=limit)
+
+        if production_data is None or len(production_data) == 0:
+            print("⚠️ Pas de données de production disponibles pour le réentraînement")
+            return None
+
+        # Sauvegarder les données dans un fichier temporaire
+        data_dir = project_root / 'data' / 'processed'
+        data_dir.mkdir(parents=True, exist_ok=True)
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        data_path = data_dir / f'retraining_data_{timestamp}.parquet'
+
+        production_data.to_parquet(data_path, index=False)
+        print(f"✅ Données de réentraînement préparées: {len(production_data)} enregistrements")
+        print(f"   Sauvegardées dans: {data_path}")
+
+        return str(data_path)
+    except Exception as e:
+        print(f"❌ Erreur lors de la préparation des données: {e}")
+        return None
+
+
+def run_retraining(
+    config_name: str,
+    data_path: str,
+    force: bool = False
+) -> bool:
+    """
+    Lance le réentraînement du modèle.
+
+    Args:
+        config_name: Nom de la configuration
+        data_path: Chemin vers les données d'entraînement
+        force: Force le réentraînement même sans amélioration
+
+    Returns:
+        True si succès, False sinon
+    """
+    try:
+        # Charger la config spécifique à l'environnement
+        import os
+        environment = os.getenv('Environment', 'Dev').lower()
+        config_name_to_use = f"{config_name}.{environment}"
+
+        print(f"=== LANCEMENT DU RÉENTRAÎNEMENT ===")
+        print(f"Config: {config_name_to_use}")
+        print(f"Données: {data_path}")
+        print()
+
+        # Initialiser le pipeline
+        pipeline = MLPipeline(config_name=config_name_to_use)
+
+        # Exécuter le pipeline complet
+        success = pipeline.run_full_pipeline(data_path=data_path)
+
+        if success:
+            print(f"\n✅ Réentraînement terminé avec succès")
+            print(f"Métriques: {pipeline.metrics}")
+
+            # Vérifier le résultat de la promotion
+            if hasattr(pipeline, 'promotion_result') and pipeline.promotion_result:
+                if pipeline.promotion_result['success']:
+                    print(f"✅ Modèle promu en production")
+                else:
+                    print(f"ℹ️ Modèle non promu: {pipeline.promotion_result['reason']}")
+        else:
+            print(f"\n❌ Erreur lors du réentraînement")
+            return False
+
+        return success
+    except Exception as e:
+        print(f"❌ Erreur lors du réentraînement: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Script de réentraînement conditionnel quotidien')
+    parser.add_argument('--config', type=str, default='consumption',
+                        help='Nom de la configuration (consumption, solar_production)')
+    parser.add_argument('--force', action='store_true',
+                        help='Force le réentraînement sans vérifier les conditions')
+    parser.add_argument('--dry-run', action='store_true',
+                        help='Vérifie les conditions sans lancer le réentraînement')
+    parser.add_argument('--max-days', type=int, default=3,
+                        help='Nombre maximum de jours sans réentraînement (défaut: 3)')
+    parser.add_argument('--drift-hours', type=int, default=24,
+                        help='Nombre d\'heures à regarder pour le drift (défaut: 24)')
+    parser.add_argument('--data-limit', type=int, default=10000,
+                        help='Limite d\'enregistrements pour les données de réentraînement')
+
+    args = parser.parse_args()
+
+    print(f"=== SCRIPT DE RÉENTRAÎNEMENT CONDITIONNEL ===")
+    print(f"Config: {args.config}")
+    print(f"Force: {args.force}")
+    print(f"Dry-run: {args.dry_run}")
+    print(f"Max jours sans réentraînement: {args.max_days}")
+    print(f"Drift heures: {args.drift_hours}")
+    print()
+
+    # Charger la configuration
+    config = load_config(config_name=args.config)
+    model_name = config.get('mlflow', {}).get('model_name', 'model')
+    tracking_uri = config.get('mlflow', {}).get('tracking_uri')
+    db_uri = config.get('database', {}).get('uri')
+
+    # Initialiser le handler de base de données
+    db_handler = None
+    if db_uri:
+        try:
+            db_handler = DatabaseHandler(db_uri=db_uri)
+            print(f"✅ Base de données connectée")
+        except Exception as e:
+            print(f"⚠️ Impossible de se connecter à la base de données: {e}")
+
+    # Vérifier les conditions
+    should_retrain = False
+    retrain_reason = []
+
+    # Condition 1: Force
+    if args.force:
+        should_retrain = True
+        retrain_reason.append("Force manuel")
+
+    # Condition 2: Drift détecté
+    if not should_retrain and db_handler:
+        drift_detected = check_drift_detected(db_handler, hours=args.drift_hours)
+        if drift_detected:
+            should_retrain = True
+            retrain_reason.append("Drift détecté")
+
+    # Condition 3: Dernier réentraînement > X jours
+    if not should_retrain:
+        last_retraining = check_last_retraining_date(model_name, tracking_uri)
+        if last_retraining:
+            days_since_retraining = (datetime.now() - last_retraining).days
+            print(f"ℹ️ Dernier réentraînement: {last_retraining.strftime('%Y-%m-%d %H:%M:%S')}")
+            print(f"ℹ️ Jours depuis le dernier réentraînement: {days_since_retraining}")
+
+            if days_since_retraining > args.max_days:
+                should_retrain = True
+                retrain_reason.append(f"Dernier réentraînement > {args.max_days} jours ({days_since_retraining} jours)")
+        else:
+            print("ℹ️ Aucun réentraînement précédent trouvé")
+            should_retrain = True
+            retrain_reason.append("Premier réentraînement")
+
+    # Décision
+    print()
+    print("=" * 60)
+    if should_retrain:
+        print(f"✅ RÉENTRAÎNEMENT REQUIS")
+        print(f"Raison(s): {', '.join(retrain_reason)}")
+        print("=" * 60)
+
+        if args.dry_run:
+            print("🔍 MODE DRY-RUN - Réentraînement non exécuté")
+            sys.exit(0)
+
+        # Préparer les données
+        data_path = prepare_retraining_data(db_handler, limit=args.data_limit)
+        if not data_path:
+            print("❌ Impossible de préparer les données de réentraînement")
+            sys.exit(1)
+
+        # Lancer le réentraînement
+        success = run_retraining(args.config, data_path, force=args.force)
+
+        if success:
+            print("\n✅ RÉENTRAÎNEMENT TERMINÉ AVEC SUCCÈS")
+            sys.exit(0)
+        else:
+            print("\n❌ RÉENTRAÎNEMENT ÉCHOUÉ")
+            sys.exit(1)
+    else:
+        print(f"ℹ️ PAS DE RÉENTRAÎNEMENT REQUIS")
+        print(f"Conditions non remplies")
+        print("=" * 60)
+        sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

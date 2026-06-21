@@ -50,7 +50,7 @@ sftp:
 # Configuration S3
 s3:
   bucket: "data-store"  # Nom du bucket S3 par défaut
-  prefix: "weather"  # Préfixe par défaut pour les fichiers météo
+  prefix: "consumption"  # Préfixe par défaut pour les fichiers consommation
 
 # Configuration de l'environnement
 environment: "dev"  # Options: "dev", "test", "prod"

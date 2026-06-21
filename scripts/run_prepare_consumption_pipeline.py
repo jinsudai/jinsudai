@@ -61,15 +61,19 @@ def main():
             print(f"Weather: {result['local_paths']['weather']}")
             print(f"Holidays: {result['local_paths']['holidays']}")
             print(f"Features: {result['local_paths']['features']}")
+            print(f"Train: {result['local_paths']['train']}")
             
             if result['s3'] and result['s3'].get('status') == 'success':
                 print(f"\n✅ Upload S3 réussi")
-                print(f"S3 URI: {result['s3']['s3_uri']}")
+                if 'features' in result['s3']:
+                    print(f"S3 Features: {result['s3']['features'].get('s3_uri')}")
+                if 'train' in result['s3']:
+                    print(f"S3 Train: {result['s3']['train'].get('s3_uri')}")
             elif result['s3'] and result['s3'].get('status') == 'skipped':
                 print(f"\nℹ️ Upload S3 ignoré: {result['s3']['reason']}")
             
             print(f"\nVous pouvez maintenant lancer le training avec:")
-            print(f"python scripts/run_training_pipeline.py --features_path {result['local_paths']['features']}")
+            print(f"python scripts/run_training_pipeline.py --features_path {result['local_paths']['train']}")
         else:
             print(f"\n❌ Erreur lors du pipeline: {result.get('error')}")
             sys.exit(1)

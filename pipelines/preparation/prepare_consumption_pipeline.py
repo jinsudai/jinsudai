@@ -135,15 +135,23 @@ def prepare_consumption_features_pipeline(
     logger.info("\n[3/4] Préparation des features consommation...")
     features_path = output_dir / f"consumption_features_{start_date}_to_{end_date}.parquet"
     
+    # Déterminer le chemin du fichier train_consumption.parquet selon l'environnement
+    import os
+    environment = os.getenv('Environment', 'dev').lower()
+    train_path = Path(f"data/{environment}/train_consumption.parquet")
+    
     try:
         preparer = ConsumptionDataPreparer()
         features_df = preparer.prepare(
             raw_path=raw_path,
             weather_path=str(weather_path),
             holidays_path=str(holidays_path) if holidays_path else None,
-            output_path=str(features_path)
+            output_path=str(train_path)  # Sauvegarder comme train_consumption.parquet
         )
-        logger.info(f"  ✅ Features préparées: {features_path}")
+        # Copier aussi comme consumption_features pour compatibilité
+        features_df.to_parquet(features_path)
+        logger.info(f"  ✅ Features préparées: {train_path}")
+        logger.info(f"  ✅ Features copiées: {features_path}")
         logger.info(f"  ℹ️ Shape: {features_df.shape}")
     except Exception as e:
         logger.error(f"  ❌ Erreur préparation features: {e}")
@@ -157,23 +165,54 @@ def prepare_consumption_features_pipeline(
         logger.info("\n[4/4] Upload sur S3...")
         try:
             s3_handler = S3Handler(bucket=s3_bucket)
-            s3_key = f"{s3_prefix}consumption_features_{start_date}_to_{end_date}.parquet"
-            s3_result = s3_handler.upload_file(
+            
+            # Upload du fichier consumption_features
+            s3_key_features = f"{s3_prefix}consumption_features_{start_date}_to_{end_date}.parquet"
+            s3_result_features = s3_handler.upload_file(
                 local_path=str(features_path),
-                s3_key=s3_key,
+                s3_key=s3_key_features,
                 metadata={
                     "start_date": start_date,
                     "end_date": end_date,
-                    "source": "prepare_consumption_pipeline"
+                    "source": "prepare_consumption_pipeline",
+                    "type": "features"
                 }
             )
             
-            if s3_result["status"] == "success":
-                logger.info(f"  ✅ Upload S3 réussi: {s3_result['s3_uri']}")
-            elif s3_result["status"] == "skipped":
-                logger.info(f"  ℹ️ Upload S3 ignoré: {s3_result['reason']}")
+            # Upload du fichier train_consumption.parquet
+            s3_key_train = f"consumption/{environment}/train_consumption_{start_date}_to_{end_date}.parquet"
+            s3_result_train = s3_handler.upload_file(
+                local_path=str(train_path),
+                s3_key=s3_key_train,
+                metadata={
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "source": "prepare_consumption_pipeline",
+                    "type": "train",
+                    "environment": environment
+                }
+            )
+            
+            # Combiner les résultats
+            s3_result = {
+                "status": "success",
+                "features": s3_result_features,
+                "train": s3_result_train
+            }
+            
+            if s3_result_features["status"] == "success":
+                logger.info(f"  ✅ Upload S3 features réussi: {s3_result_features['s3_uri']}")
+            elif s3_result_features["status"] == "skipped":
+                logger.info(f"  ℹ️ Upload S3 features ignoré: {s3_result_features['reason']}")
             else:
-                logger.warning(f"  ⚠️ Upload S3 échoué: {s3_result['reason']}")
+                logger.warning(f"  ⚠️ Upload S3 features échoué: {s3_result_features['reason']}")
+            
+            if s3_result_train["status"] == "success":
+                logger.info(f"  ✅ Upload S3 train réussi: {s3_result_train['s3_uri']}")
+            elif s3_result_train["status"] == "skipped":
+                logger.info(f"  ℹ️ Upload S3 train ignoré: {s3_result_train['reason']}")
+            else:
+                logger.warning(f"  ⚠️ Upload S3 train échoué: {s3_result_train['reason']}")
         except Exception as e:
             logger.error(f"  ❌ Erreur upload S3: {e}")
             s3_result = {"status": "error", "error": str(e)}
@@ -184,7 +223,8 @@ def prepare_consumption_features_pipeline(
         "local_paths": {
             "weather": str(weather_path),
             "holidays": str(holidays_path) if holidays_path else None,
-            "features": str(features_path)
+            "features": str(features_path),
+            "train": str(train_path)
         },
         "s3": s3_result,
         "dates": {
