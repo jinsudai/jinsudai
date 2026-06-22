@@ -240,11 +240,11 @@ class InferenceModel:
             X_data: Features pour la prédiction (DataFrame ou array)
 
         Returns:
-            Prédictions et scores de confiance
+            Prédictions
         """
         if self.model is None:
             logger.error("Modèle non chargé")
-            return None, None
+            return None
 
         try:
             expected_features = None
@@ -268,35 +268,12 @@ class InferenceModel:
 
             predictions = self.model.predict(X_data)
 
-            confidence_scores = None
-            if hasattr(self.model, 'predict_proba'):
-                try:
-                    proba = self.model.predict_proba(X_data)
-                    if isinstance(proba, pd.DataFrame):
-                        confidence_scores = (
-                            proba[1].values if 1 in proba.columns else proba.iloc[:, 1].values
-                        )
-                    elif isinstance(proba, np.ndarray):
-                        if proba.ndim == 2:
-                            confidence_scores = proba[:, 1]
-                        else:
-                            confidence_scores = proba
-                    else:
-                        confidence_scores = np.asarray(proba)
-                        if confidence_scores.ndim == 2:
-                            confidence_scores = confidence_scores[:, 1]
-                except (IndexError, KeyError, TypeError) as e:
-                    logger.warning(f"Erreur accès predict_proba format: {e}, fallback sur prédictions")
-                    confidence_scores = None
-            elif hasattr(self.model, 'decision_function'):
-                confidence_scores = np.abs(self.model.decision_function(X_data))
-
             logger.info(f"Prédictions générées pour {len(X_data)} échantillons")
-            return predictions, confidence_scores
+            return predictions
 
         except Exception as e:
             logger.error(f"Erreur lors de la prédiction: {str(e)}")
-            return None, None
+            return None
 
     def get_model_info(self):
         """Retourne les informations du modèle chargé"""

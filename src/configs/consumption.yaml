@@ -81,7 +81,7 @@ drift_detection:
   data_drift_threshold: 0.1  # Seuil pour Population Stability Index (PSI)
   concept_drift_threshold: 0.15  # Seuil pour drift de performance
   feature_drift_threshold: 0.2  # Seuil pour drift par feature
-  reference_data_path: "../data/dev/train_consumption.parquet"  # Chemin vers les données de référence
+  reference_data_path: "../data/processed/2024-01-01_to_2024-01-31_train.parquet"  # Chemin vers les données de référence (format: {date_debut}_{date_fin}_train.parquet)
   min_samples_for_detection: 100  # Nombre minimum d'échantillons pour détecter le drift
 
 # Configuration de la base de données

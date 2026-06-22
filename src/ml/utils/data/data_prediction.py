@@ -136,13 +136,10 @@ def generate_inference_data(
     return df_inference
 
 
-def add_predictions_to_data(df_inference, predictions, confidence_scores=None):
+def add_predictions_to_data(df_inference, predictions):
     """Ajoute les prédictions au DataFrame d'inférence."""
     df_result = df_inference.copy()
     df_result["prediction"] = predictions
-
-    if confidence_scores is not None:
-        df_result["confidence"] = confidence_scores
 
     logger.info(f"Prédictions ajoutées au DataFrame: {df_result.shape}")
     return df_result

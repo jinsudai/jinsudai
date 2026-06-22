@@ -154,7 +154,7 @@ Orchestration centralisée, réentraînement automatique, monitoring continu.
 - 🔴 **Critical** : R² < 0.88 → Réentraînement immédiat
 
 ### Données à logger
-- Chaque prediction : timestamp, features, output, confidence
+- Chaque prediction : timestamp, features, output
 - Chaque entraînement : métriques, hyperparams, données utilisées
 - Chaque drift : date, metrique affectée, magnitude
 

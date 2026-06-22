@@ -142,8 +142,8 @@ class DriftDetectionPipeline:
 
             bucket = s3_config.get('bucket', 'data-store')
 
-            # Chercher dans le préfixe consumption pour les fichiers train
-            prefix = "consumption"
+            # Chercher dans le préfixe consumption/trained pour les fichiers train
+            prefix = "consumption/trained"
 
             logger.info(f"Recherche sur S3: bucket={bucket}, prefix={prefix}")
 
@@ -375,7 +375,7 @@ class DriftDetectionPipeline:
 
                 success = save_evidently_report_to_s3(
                     report=report,
-                    s3_bucket=self.s3_config.get('bucket', 'data-store'),
+                    s3_bucket=self.evidently_config.get('s3_bucket', 'evidently-reports'),
                     s3_prefix=self.evidently_config.get('s3_prefix', 'evidently_reports'),
                     metadata=metadata
                 )

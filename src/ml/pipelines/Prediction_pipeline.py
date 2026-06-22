@@ -182,7 +182,7 @@ class PredictionPipeline:
         #    return False
 
         # Générer les prédictions
-        predictions, confidence_scores = self.inference_model.predict(self.df_inference)
+        predictions = self.inference_model.predict(self.df_inference)
 
         if predictions is None:
             logger.error("Impossible de générer les prédictions")
@@ -191,8 +191,7 @@ class PredictionPipeline:
         # Ajouter les prédictions aux données
         self.df_predictions = add_predictions_to_data(
             self.df_inference,
-            predictions,
-            confidence_scores
+            predictions
         )
 
         logger.info(f"Prédictions générées: {len(self.df_predictions)} échantillons")

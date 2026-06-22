@@ -1,6 +1,6 @@
 # Guide d'Utilisation - Evidently UI
 
-Guide complet pour utiliser l'interface native d'EvidentlyAI pour visualiser les rapports de monitoring ML.
+Guide complet pour utiliser l'interface native d'EvidentlyAI pour visualiser les rapports de monitoring ML avec stockage S3.
 
 ## 📋 Table des matières
 
@@ -20,8 +20,9 @@ Guide complet pour utiliser l'interface native d'EvidentlyAI pour visualiser les
 ### Prérequis
 
 - Python 3.11+
-- Docker (optionnel, recommandé)
-- Accès au workspace Evidently (local ou distant)
+- Docker (recommandé)
+- Accès S3 configuré (credentials dans `.env.secrets`)
+- Bucket S3 `evidently-reports` créé
 
 ### Architecture
 
@@ -36,12 +37,13 @@ Guide complet pour utiliser l'interface native d'EvidentlyAI pour visualiser les
 │  Drift Detector         │
 │  (drift_detector.py)   │
 │  - Génération rapport   │
-│  - Sauvegarde workspace│
+│  - Sauvegarde S3        │
 └────────┬────────────────┘
          │
          ▼
 ┌─────────────────────────┐
 │  Evidently Workspace    │
+│  (S3: evidently-reports)│
 │  - Stockage rapports    │
 │  - Métadonnées          │
 │  - Tags                 │
@@ -50,7 +52,7 @@ Guide complet pour utiliser l'interface native d'EvidentlyAI pour visualiser les
          ▼
 ┌─────────────────────────┐
 │  Evidently UI           │
-│  - Visualisation        │
+│  - Visualisation S3     │
 │  - Comparaison          │
 │  - Dashboards           │
 └─────────────────────────┘
@@ -69,28 +71,27 @@ cd Services/EvidentlyUI
 # Construire l'image Docker
 docker build -t evidently-ui .
 
-# Lancer le container avec volume pour le workspace
+# Lancer le container avec credentials S3
 docker run -d \
-  -p 8000:8000 \
-  -v $(pwd)/workspace:/app/workspace \
+  -p 7860:7860 \
+  --env-file ../../.env.secrets \
   --name evidently-ui \
   evidently-ui
 ```
 
-**Variables d'environnement Docker :**
+**Variables d'environnement requises :**
 
-```bash
-docker run -d \
-  -p 8000:8000 \
-  -v $(pwd)/workspace:/app/workspace \
-  -e EVIDENTLY_WORKSPACE_PATH=/app/workspace \
-  -e EVIDENTLY_HOST=0.0.0.0 \
-  -e EVIDENTLY_PORT=8000 \
-  --name evidently-ui \
-  evidently-ui
-```
+Les credentials S3 doivent être configurés dans `.env.secrets` :
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION`
+- `AWS_ENDPOINT_URL` (optionnel, pour S3 compatible non-AWS)
 
-### Option 2 : Python local (Pour développement)
+### Option 2 : Déploiement HuggingFace Spaces
+
+Le service est déployé sur HuggingFace Spaces avec les secrets configurés dans les settings du Space.
+
+### Option 3 : Python local (Pour développement avec S3)
 
 ```bash
 # Créer un environnement virtuel
@@ -98,40 +99,15 @@ python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
 # Installer les dépendances
-pip install -r requirements.txt
+pip install evidently boto3 s3fs
 
-# Créer le dossier workspace
-mkdir -p workspace
+# Configurer les variables d'environnement S3
+export AWS_ACCESS_KEY_ID=your_key
+export AWS_SECRET_ACCESS_KEY=your_secret
+export AWS_REGION=eu-west-3
 
-# Lancer le serveur
-python main.py
-```
-
-### Option 3 : Docker Compose (Pour déploiement complet)
-
-Créer un fichier `docker-compose.yml` :
-
-```yaml
-version: '3.8'
-
-services:
-  evidently-ui:
-    build: ./Services/EvidentlyUI
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./Services/EvidentlyUI/workspace:/app/workspace
-    environment:
-      - EVIDENTLY_WORKSPACE_PATH=/app/workspace
-      - EVIDENTLY_HOST=0.0.0.0
-      - EVIDENTLY_PORT=8000
-    restart: unless-stopped
-```
-
-Lancer avec :
-
-```bash
-docker-compose up -d
+# Lancer le serveur avec workspace S3
+evidently ui --workspace s3://evidently-reports/workspace --port 7860
 ```
 
 ### Vérification du démarrage
@@ -150,23 +126,26 @@ curl http://localhost:8000
 
 ### 1. Configuration YAML
 
-Modifier le fichier de configuration `src/configs/consumption.{env}.yaml` :
+Modifier le fichier de configuration `config.yaml` :
+
+```yaml
+evidently:
+  enabled: true
+  workspace_path: "s3://evidently-reports/workspace"  # Workspace S3
+  save_to_workspace: true  # Sauvegarder dans le workspace S3
+  save_to_s3: true  # Sauvegarder les rapports sur S3
+  s3_bucket: "evidently-reports"  # Bucket S3 pour les rapports
+  s3_prefix: "evidently_reports"  # Préfixe S3 pour les rapports
+```
+
+Modifier `src/configs/consumption.{env}.yaml` :
 
 ```yaml
 drift_detection:
   enabled: true
   data_drift_threshold: 0.1
   concept_drift_threshold: 0.15
-  feature_columns:
-    - Température
-    - Humidité
-    - Consommation
-  target_column: "Valeur"
-  
-  # Configuration Evidently UI
-  save_to_workspace: true
-  evidently_workspace_path: "/app/workspace"
-  evidently_project_name: "energy_consumption"
+  reference_data_path: "../data/dev/train_consumption.parquet"  # Ou téléchargé depuis S3
 ```
 
 ### 2. Utilisation dans le code
@@ -182,7 +161,7 @@ from src.ml.utils.monitoring.drift_detector import (
 config = {
     "data_drift_threshold": 0.1,
     "concept_drift_threshold": 0.15,
-    "evidently_workspace_path": "/app/workspace",
+    "evidently_workspace_path": "s3://evidently-reports/workspace",
     "evidently_project_name": "energy_consumption"
 }
 
@@ -197,14 +176,15 @@ current_data = load_production_data(
     limit=1000
 )
 
-# Exécuter la détection avec sauvegarde dans le workspace
+# Exécuter la détection avec sauvegarde sur S3
 results = run_evidently_drift_detection(
     reference_data=reference_data,
     current_data=current_data,
     config=config,
     save_to_mlflow=True,  # Optionnel : aussi sauvegarder dans MLflow
-    save_to_workspace=True,  # Sauvegarder dans Evidently UI
-    workspace_path="/app/workspace",
+    save_to_workspace=True,  # Sauvegarder dans Evidently UI (S3)
+    save_to_s3=True,  # Sauvegarder sur S3
+    workspace_path="s3://evidently-reports/workspace",
     project_name="energy_consumption"
 )
 ```
@@ -223,12 +203,12 @@ report, report_dict = generate_evidently_report(
     current_data=current_data
 )
 
-# Sauvegarder dans le workspace avec métadonnées personnalisées
+# Sauvegarder dans le workspace S3 avec métadonnées personnalisées
 save_evidently_report_to_workspace(
     report=report,
     project_name="energy_consumption",
     report_name="custom_report_2024-01-15",
-    workspace_path="/app/workspace",
+    workspace_path="s3://evidently-reports/workspace",
     metadata={
         "model_version": "v1.2.0",
         "data_source": "production",
@@ -300,7 +280,7 @@ Le dashboard du projet inclut :
 from evidently.ui.workspace import Workspace
 from evidently.ui.dashboards import DashboardPanelPlot, ReportFilter
 
-workspace = Workspace.create("/app/workspace")
+workspace = Workspace.create("s3://evidently-reports/workspace")
 project = workspace.get_project("energy_consumption")
 
 # Ajouter un panel personnalisé
@@ -452,7 +432,7 @@ metadata = {
 from evidently.ui.workspace import Workspace
 from datetime import datetime, timedelta
 
-workspace = Workspace.create("/app/workspace")
+workspace = Workspace.create("s3://evidently-reports/workspace")
 project = workspace.get_project("energy_consumption")
 
 # Supprimer les rapports de plus de 90 jours
@@ -500,14 +480,17 @@ taskkill /PID <PID> /F  # Windows
 **Solutions :**
 
 ```bash
-# Vérifier le contenu du workspace
-ls -la workspace/
+# Vérifier les credentials S3
+cat .env.secrets | grep AWS
 
 # Vérifier les logs du pipeline
-# Chercher "Rapport Evidently sauvegardé dans le workspace"
+# Chercher "Rapport Evidently sauvegardé sur S3"
 
 # Vérifier la configuration
-cat src/configs/consumption.dev.yaml | grep evidently
+cat config.yaml | grep evidently
+
+# Vérifier l'accès S3
+aws s3 ls s3://evidently-reports/workspace/
 ```
 
 ### Problème : Erreur de permission
@@ -517,17 +500,18 @@ cat src/configs/consumption.dev.yaml | grep evidently
 **Solutions :**
 
 ```bash
-# Donner les permissions au dossier workspace
-chmod -R 755 workspace/
+# Vérifier les credentials S3 dans .env.secrets
+# Vérifier que le bucket evidently-reports existe
+aws s3 mb s3://evidently-reports
 
-# Ou changer le propriétaire
-chown -R $USER:$USER workspace/
+# Vérifier les permissions S3
+aws s3 ls s3://evidently-reports/
 
-# Vérifier avec Docker
+# Redémarrer le service avec les bons credentials
 docker run -d \
-  -p 8000:8000 \
-  -v $(pwd)/workspace:/app/workspace \
-  --user $(id -u):$(id -g) \
+  -p 7860:7860 \
+  --env-file ../../.env.secrets \
+  --name evidently-ui \
   evidently-ui
 ```
 
@@ -541,7 +525,7 @@ docker run -d \
 # Supprimer le rapport corrompu
 from evidently.ui.workspace import Workspace
 
-workspace = Workspace.create("/app/workspace")
+workspace = Workspace.create("s3://evidently-reports/workspace")
 project = workspace.get_project("energy_consumption")
 
 # Lister les rapports

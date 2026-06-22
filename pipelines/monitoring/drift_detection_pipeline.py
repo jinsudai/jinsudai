@@ -41,9 +41,9 @@ def main():
                         help='ID de la run MLflow (optionnel)')
     parser.add_argument('--download_from_s3', action='store_true', default=True, 
                         help='Télécharger depuis S3 si le fichier de référence n\'existe pas')
-    parser.add_argument('--save_to_workspace', action='store_true', default=False, 
-                        help='Sauvegarder le rapport dans le workspace Evidently UI local')
-    parser.add_argument('--save_to_s3', action='store_true', default=False, 
+    parser.add_argument('--save_to_workspace', action='store_true', default=True, 
+                        help='Sauvegarder le rapport dans le workspace Evidently UI (S3)')
+    parser.add_argument('--save_to_s3', action='store_true', default=True, 
                         help='Sauvegarder le rapport sur S3')
     
     args = parser.parse_args()

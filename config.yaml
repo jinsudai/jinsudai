@@ -54,7 +54,7 @@ sftp:
 
 # Configuration S3
 s3:
-  bucket: "data-store"  # Nom du bucket S3 par défaut
+  bucket: "data-store"  # Nom du bucket S3 par défaut pour les données
   prefix: "weather"  # Préfixe par défaut pour les fichiers météo
 
 # Configuration de l'environnement
@@ -65,8 +65,8 @@ services:
   # Liste des services internes (HuggingFace Spaces)
   names:
     - "MLflow"
-    - "airflow"
     - "docsify"
+    - "evidentlyUI"
 
   satellites:
     - "airflow"
@@ -80,11 +80,12 @@ logging:
 # Configuration Evidently AI
 evidently:
   enabled: true  # Activer/désactiver Evidently
-  workspace_path: "./evidently_workspace"  # Chemin du workspace Evidently (pour UI locale)
+  workspace_path: "s3://evidently-reports/workspace"  # Chemin du workspace Evidently (S3 pour UI déployée)
   report_path: "./evidently_reports"  # Chemin pour sauvegarder les rapports
   use_native_reports: true  # Utiliser les rapports natifs Evidently (recommandé)
   save_to_mlflow: true  # Sauvegarder les rapports dans MLflow
   mlflow_artifact_path: "evidently_reports"  # Chemin des artefacts dans MLflow
-  save_to_workspace: false  # Sauvegarder dans le workspace Evidently UI local
-  save_to_s3: false  # Sauvegarder les rapports sur S3
+  save_to_workspace: true  # Sauvegarder dans le workspace Evidently UI (S3)
+  save_to_s3: true  # Sauvegarder les rapports sur S3
+  s3_bucket: "evidently-reports"  # Bucket S3 pour les rapports
   s3_prefix: "evidently_reports"  # Préfixe S3 pour les rapports
