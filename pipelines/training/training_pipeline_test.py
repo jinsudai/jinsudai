@@ -1,5 +1,5 @@
 """
-Script simple pour exécuter le pipeline d'entraînement consommation (sans Prefect).
+Script simple pour exécuter le pipeline d'entraînement consommation.
 
 Usage:
     python scripts/run_training_pipeline_simple.py --features_path data/processed/consumption_features.parquet
@@ -25,7 +25,7 @@ def main():
     
     args = parser.parse_args()
     
-    print(f"=== Pipeline d'entraînement consommation (sans Prefect) ===")
+    print(f"=== Pipeline d'entraînement consommation ===")
     print(f"Features: {args.features_path}")
     print(f"Config: {args.config_path}")
     print()

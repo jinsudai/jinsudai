@@ -1,5 +1,5 @@
 """
-Script simple pour exécuter le pipeline de prédiction (sans Prefect).
+Script simple pour exécuter le pipeline de prédiction.
 
 Usage:
     python scripts/run_prediction_pipeline.py --model_name consumption_model_dev --n_days 3
@@ -27,7 +27,7 @@ def main():
     
     args = parser.parse_args()
     
-    print(f"=== Pipeline de prédiction (sans Prefect) ===")
+    print(f"=== Pipeline de prédiction ===")
     print(f"Modèle: {args.model_name}")
     print(f"Config: {args.config_name}")
     print(f"Jours: {args.n_days}")

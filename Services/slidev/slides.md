@@ -173,6 +173,39 @@ graph LR
 
 ---
 
+# Base de Données - PostgreSQL
+
+## Table `predictions_pipeline`
+
+| Colonne | Type | Description |
+|---------|------|-------------|
+| `prediction_id` | UUID | Identifiant unique (clé primaire) |
+| `prediction_timestamp` | TIMESTAMP | Timestamp de la prédiction |
+| `prediction` | DOUBLE | Valeur prédite en kWh |
+| `model_version` | TEXT | Version du modèle |
+| `entity_id` | TEXT | Identifiant entité (client/site) |
+| `run_id` | TEXT | ID du run MLflow |
+| `actual_value` | DOUBLE | Valeur réelle observée |
+
+**Index** : timestamp, entity_id, run_id
+
+---
+
+# Interactions avec la Base de Données
+
+## Classe `DatabaseHandler`
+
+- `create_tables()` : Création table + index
+- `store_predictions()` : Stockage des prédictions
+- `get_recent_predictions()` : Récupération récentes
+- `get_predictions_by_date()` : Récupération par plage
+- `update_actual_values()` : Mise à jour valeurs réelles
+- `get_production_data_for_retraining()` : Données pour retraining
+
+**Documentation détaillée** : `docs/DATABASE_SCHEMA.md`
+
+---
+
 # Pipeline CI/CD
 
 ```mermaid

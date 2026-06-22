@@ -1,5 +1,5 @@
 """
-Script simple pour exécuter le pipeline d'ingestion SFTP (sans Prefect).
+Script simple pour exécuter le pipeline d'ingestion SFTP.
 
 Usage:
     python pipelines/sftp_ingestion/sftp_ingestion_pipeline.py --sftp_host example.com --sftp_username user
@@ -35,7 +35,7 @@ def main():
     
     args = parser.parse_args()
     
-    print(f"=== Pipeline d'ingestion SFTP (sans Prefect) ===")
+    print(f"=== Pipeline d'ingestion SFTP ===")
     print(f"Config: {args.config_name}")
     print()
     

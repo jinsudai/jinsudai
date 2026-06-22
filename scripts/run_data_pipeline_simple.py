@@ -1,5 +1,5 @@
 """
-Script simple pour exécuter le pipeline de génération de données consommation (sans Prefect).
+Script simple pour exécuter le pipeline de génération de données consommation.
 
 Usage:
     python scripts/run_data_pipeline_simple.py --start_date 2024-01-01 --end_date 2024-01-31
@@ -26,7 +26,7 @@ def main():
     
     args = parser.parse_args()
     
-    print(f"=== Pipeline de données consommation (sans Prefect) ===")
+    print(f"=== Pipeline de données consommation ===")
     print(f"Période: {args.start_date} à {args.end_date}")
     print(f"Fichier brut: {args.raw_path}")
     print(f"Répertoire sortie: {args.output_dir}")

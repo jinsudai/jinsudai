@@ -33,6 +33,7 @@ from ml.utils.monitoring.drift_detector import (
     save_evidently_report_to_mlflow
 )
 from ml.config import load_config
+from ml.config.global_config import get_database_uri
 from .database_handler import DatabaseHandler
 from ml.utils.s3_handler import S3Handler
 
@@ -52,7 +53,7 @@ class DriftDetectionPipeline:
             db_uri: URI de connexion PostgreSQL (optionnel)
         """
         self.config = load_config(config_name=config_name)
-        self.db_uri = db_uri or self.config.get('database', {}).get('uri')
+        self.db_uri = db_uri or get_database_uri()
 
         # Charger la configuration globale pour Evidently et S3
         global_config = load_config('config.yaml')

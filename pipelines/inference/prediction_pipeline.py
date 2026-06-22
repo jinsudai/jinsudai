@@ -1,5 +1,5 @@
 """
-Script simple pour exécuter le pipeline de prédiction (sans Prefect).
+Script simple pour exécuter le pipeline de prédiction.
 
 Usage:
     python pipelines/prediction/prediction_pipeline.py --n_days 3
@@ -41,7 +41,7 @@ def main():
     if args.model_name is None:
         args.model_name = config.get('mlflow', {}).get('model_name', 'model')
     
-    print(f"=== Pipeline de prédiction (sans Prefect) ===")
+    print(f"=== Pipeline de prédiction ===")
     print(f"Modèle: {args.model_name}")
     print(f"Config: {args.config_name}")
     print(f"Jours: {args.n_days}")

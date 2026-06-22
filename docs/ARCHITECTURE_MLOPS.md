@@ -48,6 +48,10 @@ graph TB
         L[PostgreSQL<br/>Prédictions]
         M[S3<br/>Artefacts MLflow]
     end
+
+    subgraph "Documentation"
+        N[DATABASE_SCHEMA.md<br/>Schéma BD]
+    end
     
     A --> D
     B --> D
@@ -734,9 +738,40 @@ graph TB
 
 ---
 
-## 10. Résumé des Flows Principaux
+## 10. Schéma de Base de Données
 
-### 10.1 Flows Prefect disponibles
+### 10.1 Table `predictions_pipeline`
+
+La table `predictions_pipeline` stocke toutes les prédictions générées par les modèles en production.
+
+**Structure principale :**
+- `prediction_id` : UUID unique (clé primaire)
+- `prediction_timestamp` : Timestamp de la prédiction
+- `prediction` : Valeur prédite en kWh
+- `model_version` : Version du modèle utilisé
+- `entity_id` : Identifiant de l'entité (client/site)
+- `run_id` : ID du run MLflow
+- `actual_value` : Valeur réelle observée (pour monitoring)
+
+**Documentation détaillée :**
+Pour plus de détails sur la structure complète, les index, et les méthodes d'interaction, voir [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md).
+
+### 10.2 Interactions avec la base de données
+
+La classe `DatabaseHandler` (`src/ml/pipelines/database_handler.py`) fournit les méthodes suivantes :
+
+- `create_tables()` : Création de la table et des index
+- `store_predictions()` : Stockage des prédictions
+- `get_recent_predictions()` : Récupération des prédictions récentes
+- `get_predictions_by_date()` : Récupération par plage de dates
+- `update_actual_values()` : Mise à jour des valeurs réelles
+- `get_production_data_for_retraining()` : Récupération pour retraining
+
+Voir [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) pour la documentation complète avec exemples d'utilisation.
+
+---
+
+## 11. Résumé des Flows Principaux
 
 ```mermaid
 mindmap
@@ -781,7 +816,7 @@ mindmap
 
 ---
 
-## Conclusion
+## 12. Conclusion
 
 Cette architecture MLOps complète respecte l'intégralité du cahier des charges en :
 

@@ -1,5 +1,5 @@
 """
-Script simple pour exécuter le pipeline de mise à jour des valeurs réelles (sans Prefect).
+Script simple pour exécuter le pipeline de mise à jour des valeurs réelles.
 
 Usage:
     python pipelines/actual_values/actual_values_pipeline.py --db_uri postgresql://user:password@host:port/database
@@ -24,7 +24,7 @@ def main():
     
     args = parser.parse_args()
     
-    print(f"=== Pipeline de mise à jour des valeurs réelles (sans Prefect) ===")
+    print(f"=== Pipeline de mise à jour des valeurs réelles ===")
     print(f"Config: {args.config_name}")
     print()
     
