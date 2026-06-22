@@ -33,12 +33,12 @@ try:
 except Exception as e:
     print(f"[FAIL] holidays_tasks: {e}")
 
-# Test 5: weather_tasks
-try:
-    from ml.connectors.weather.weather_tasks import generate_weather_parquet_task
-    print("[OK] weather_tasks")
-except Exception as e:
-    print(f"[FAIL] weather_tasks: {e}")
+# Test 5: weather_tasks (désactivé - fichier déplacé vers _disabled)
+# try:
+#     from ml.connectors.weather.weather_tasks import generate_weather_parquet_task
+#     print("[OK] weather_tasks")
+# except Exception as e:
+#     print(f"[FAIL] weather_tasks: {e}")
 
 # Test 6: workflows
 try:

@@ -4,7 +4,8 @@ on:
   push:
     paths:
       - '.github/scripts/hf_create_spaces.py'
-      - '.env'
+      - '.github/workflows/0_hf_create_spaces.yaml'
+      - 'config.yaml'
   workflow_dispatch:
 
 jobs:

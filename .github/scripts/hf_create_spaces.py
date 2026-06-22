@@ -77,8 +77,9 @@ def create_space(api, space_name, private=False):
         # Check if space already exists
 
         try:
-
-            api.space_info(f"{api.whoami()['name']}/{space_name}")
+            
+            apiName=api.whoami()['name']
+            api.space_info(f"{apiName}/{space_name}")
 
             print(f"[*] Space '{space_name}' already exists")
 
