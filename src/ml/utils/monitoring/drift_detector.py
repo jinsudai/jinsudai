@@ -575,6 +575,86 @@ def save_evidently_report_to_workspace(
         return False
 
 
+def save_evidently_report_to_s3(
+    report: Report,
+    s3_bucket: str,
+    s3_prefix: str = "evidently_reports",
+    report_name: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None
+) -> bool:
+    """
+    Sauvegarde le rapport Evidently sur S3.
+
+    Args:
+        report: Rapport Evidently
+        s3_bucket: Nom du bucket S3
+        s3_prefix: Préfixe S3 pour les rapports
+        report_name: Nom du rapport (optionnel, généré automatiquement si None)
+        metadata: Métadonnées à attacher au rapport
+
+    Returns:
+        bool: True si succès, False sinon
+    """
+    try:
+        from ml.utils.s3_handler import S3Handler
+
+        # Générer le nom du rapport si non fourni
+        if report_name is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            report_name = f"drift_report_{timestamp}.html"
+        elif not report_name.endswith('.html'):
+            report_name = f"{report_name}.html"
+
+        # Sauvegarder le rapport en HTML temporairement
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as f:
+            temp_path = f.name
+            report.save_html(temp_path)
+
+        # Initialiser le handler S3
+        s3_handler = S3Handler(bucket=s3_bucket)
+
+        if not s3_handler.s3_enabled:
+            logger.warning("S3 non configuré, impossible de sauvegarder sur S3")
+            Path(temp_path).unlink()
+            return False
+
+        # Préparer la clé S3
+        s3_key = f"{s3_prefix}/{report_name}"
+
+        # Préparer les métadonnées S3
+        s3_metadata = {}
+        if metadata:
+            for key, value in metadata.items():
+                # S3 metadata ne supporte que les strings
+                s3_metadata[key] = str(value)
+
+        # Upload sur S3
+        result = s3_handler.upload_file(
+            local_path=temp_path,
+            s3_key=s3_key,
+            metadata=s3_metadata
+        )
+
+        # Nettoyer le fichier temporaire
+        Path(temp_path).unlink()
+
+        if result.get("status") == "success":
+            logger.info(f"Rapport Evidently sauvegardé sur S3: {result.get('s3_uri')}")
+            return True
+        else:
+            logger.warning(f"Échec de la sauvegarde sur S3: {result.get('reason')}")
+            return False
+
+    except ImportError:
+        logger.warning("S3Handler n'est pas disponible, impossible de sauvegarder sur S3")
+        return False
+    except Exception as e:
+        logger.error(f"Erreur lors de la sauvegarde du rapport sur S3: {e}")
+        return False
+
+
+
+
 def run_evidently_drift_detection(
     reference_data: pd.DataFrame,
     current_data: pd.DataFrame,
@@ -583,7 +663,10 @@ def run_evidently_drift_detection(
     mlflow_run_id: Optional[str] = None,
     save_to_workspace: bool = False,
     workspace_path: Optional[str] = None,
-    project_name: str = "energy_consumption"
+    project_name: str = "energy_consumption",
+    save_to_s3: bool = False,
+    s3_bucket: Optional[str] = None,
+    s3_prefix: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Exécute la détection de drift complète avec Evidently (rapports natifs).
@@ -594,9 +677,12 @@ def run_evidently_drift_detection(
         config: Configuration avec les seuils
         save_to_mlflow: Sauvegarder le rapport dans MLflow
         mlflow_run_id: ID de la run MLflow (optionnel)
-        save_to_workspace: Sauvegarder le rapport dans le workspace Evidently UI
+        save_to_workspace: Sauvegarder le rapport dans le workspace Evidently UI local
         workspace_path: Chemin du workspace Evidently (optionnel)
         project_name: Nom du projet dans le workspace
+        save_to_s3: Sauvegarder le rapport sur S3
+        s3_bucket: Nom du bucket S3
+        s3_prefix: Préfixe S3 pour les rapports
 
     Returns:
         Dict avec tous les résultats de drift detection
@@ -661,6 +747,25 @@ def run_evidently_drift_detection(
                 workspace_path=ws_path,
                 metadata=metadata,
                 tags=tags
+            )
+
+        # Sauvegarder sur S3 si demandé
+        if save_to_s3 and report is not None:
+            bucket = s3_bucket or config.get("s3_bucket", "data-store")
+            prefix = s3_prefix or config.get("s3_prefix", "evidently_reports")
+
+            # Préparer les métadonnées
+            metadata = {
+                "timestamp": datetime.now().isoformat(),
+                "data_drift_threshold": config.get("data_drift_threshold", 0.1),
+                "concept_drift_threshold": config.get("concept_drift_threshold", 0.15)
+            }
+
+            save_evidently_report_to_s3(
+                report=report,
+                s3_bucket=bucket,
+                s3_prefix=prefix,
+                metadata=metadata
             )
 
         return results

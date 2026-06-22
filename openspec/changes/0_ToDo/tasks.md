@@ -3,28 +3,24 @@
 # Tâches de fond:
 Quand tu peux enlève les commentaire "sans prefect" qui sont dans plusieurs fichiers
 
+Evidently
+- Installation service evidently Evidently Cloud plus fonctionnel
+- Evidently -> Il faut stocker aussi les données météo pour le data drift -> Idealement oui
+
 Db -> En cours
 - Quels informations sont stockée en base de données? Quels pipelines utilise la base de données predictions?
 - Il y a t'il un documentation pour documenter les interraction avec la table prediction?
 
-
-
-
-Data Drift (Drift Detection Action) -> En cours
-- Proposer une manière d'executer le réentrainement -> Executé
+Data Drift (Drift Detection Action) -> A documenter
 
 A faire
 - Marp
-- Connexion à S3
 - Ordonnancement dans GitHub ou via Airflow?
 - Utilisation de FastAPI par Streamlit -> A tester
-
 - grafana
 
 A tester
-- Tester le passage des secrets airflow
 - Faire marcher la detection de drift avec S3
-Evidently 
 Streamlit
 deployement
 
@@ -33,11 +29,10 @@ A vérifier
 
 A faire (later)
 - J'ai ajouté la notion de satelite externe...
-- Réparer base de donnée neon jinsudai
+- Réparer base de donnée neon jinsudai (->airflow satelite)
 - airflow peut orchestrer Github via des pushs git
 - Faire fonctionner prefect en local
 - Faire en sorte que chaque pipeline soit un service -> Sauvegarder le projet
-- Evidently -> Il faut stocker aussi les données météo pour le data drift -> Idealement oui
 - Loki pour collecter les logs ?
 - pb de URI Database non poussé avec Airflow?
 

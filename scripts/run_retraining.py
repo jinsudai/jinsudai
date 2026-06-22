@@ -249,9 +249,8 @@ def prepare_retraining_data(
             production_data.rename(columns={'prediction_timestamp': 'Horodate'}, inplace=True)
             production_data.to_parquet(raw_path, index=False)
 
-            # Préparer les features
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            train_path = data_dir / f'retraining_data_{timestamp}.parquet'
+            # Préparer les features avec le même format que le pipeline de preparation
+            train_path = data_dir / f'{start_date}_to_{end_date}_train.parquet'
 
             features_df = preparer.prepare(
                 raw_path=str(raw_path),

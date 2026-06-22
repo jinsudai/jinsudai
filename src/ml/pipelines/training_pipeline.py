@@ -417,14 +417,12 @@ class MLPipeline:
             # Récupérer le chemin du fichier train utilisé (actual path, not config path)
             train_path = self.actual_data_path or self.config.get('data', {}).get('train_path')
             if not train_path or not Path(train_path).exists():
-                logger.warning(f"Fichier train non trouvé: {train_path}")
-                logger.info("Upload S3 ignoré - fichier non disponible")
-                return True  # Don't fail the pipeline if file doesn't exist
+                logger.error(f"Fichier train non trouvé: {train_path}")
+                return False
 
-            # Générer le nom de fichier avec la date actuelle
-            from datetime import datetime
-            timestamp = datetime.now().strftime('%Y-%m-%d')
-            s3_key = f"{prefix}{timestamp}_train.parquet"
+            # Utiliser le nom de fichier original (format: {start_date}_to_{end_date}_train.parquet)
+            train_filename = Path(train_path).name
+            s3_key = f"{prefix}{train_filename}"
 
             logger.info(f"Upload du fichier: {train_path}")
             logger.info(f"Vers: s3://{bucket}/{s3_key}")
@@ -434,7 +432,7 @@ class MLPipeline:
                 local_path=train_path,
                 s3_key=s3_key,
                 metadata={
-                    "timestamp": timestamp,
+                    "filename": train_filename,
                     "source": "training_pipeline",
                     "type": "trained_data"
                 }

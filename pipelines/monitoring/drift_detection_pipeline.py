@@ -41,6 +41,10 @@ def main():
                         help='ID de la run MLflow (optionnel)')
     parser.add_argument('--download_from_s3', action='store_true', default=True, 
                         help='Télécharger depuis S3 si le fichier de référence n\'existe pas')
+    parser.add_argument('--save_to_workspace', action='store_true', default=False, 
+                        help='Sauvegarder le rapport dans le workspace Evidently UI local')
+    parser.add_argument('--save_to_s3', action='store_true', default=False, 
+                        help='Sauvegarder le rapport sur S3')
     
     args = parser.parse_args()
     
@@ -79,7 +83,9 @@ def main():
             store_metrics=args.store_metrics,
             send_notifications=args.send_notifications,
             mlflow_run_id=args.mlflow_run_id,
-            download_from_s3=args.download_from_s3
+            download_from_s3=args.download_from_s3,
+            save_to_workspace=args.save_to_workspace,
+            save_to_s3=args.save_to_s3
         )
         
         if results["success"]:

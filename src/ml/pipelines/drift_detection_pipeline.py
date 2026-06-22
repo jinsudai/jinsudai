@@ -54,6 +54,11 @@ class DriftDetectionPipeline:
         self.config = load_config(config_name=config_name)
         self.db_uri = db_uri or self.config.get('database', {}).get('uri')
 
+        # Charger la configuration globale pour Evidently et S3
+        global_config = load_config('config.yaml')
+        self.evidently_config = global_config.get('evidently', {})
+        self.s3_config = global_config.get('s3', {})
+
         self.reference_data = None
         self.current_data = None
         self.db_handler = None
@@ -292,12 +297,14 @@ class DriftDetectionPipeline:
 
         return True
 
-    def step_4_generate_evidently_report(self, output_path: Optional[str] = None) -> bool:
+    def step_4_generate_evidently_report(self, output_path: Optional[str] = None, save_to_workspace: bool = False, save_to_s3: bool = False) -> bool:
         """
         Étape 4: Génération du rapport Evidently.
 
         Args:
             output_path: Chemin pour sauvegarder le rapport HTML (optionnel)
+            save_to_workspace: Sauvegarder le rapport dans le workspace Evidently UI local
+            save_to_s3: Sauvegarder le rapport sur S3
 
         Returns:
             True si succès, False sinon
@@ -322,6 +329,64 @@ class DriftDetectionPipeline:
 
         self.evidently_report = report
         logger.info("Rapport Evidently généré avec succès")
+
+        # Sauvegarder dans le workspace Evidently UI local si demandé
+        if save_to_workspace and self.evidently_config.get('save_to_workspace', False):
+            try:
+                from ml.utils.monitoring.drift_detector import save_evidently_report_to_workspace
+
+                # Préparer les métadonnées
+                metadata = {
+                    "timestamp": datetime.now().isoformat(),
+                    "config_name": self.config.get('name', 'unknown')
+                }
+
+                # Tags
+                tags = ["drift_detection"]
+                if self.drift_results and self.drift_results.get('overall_drift_detected', False):
+                    tags.append("drift_detected")
+
+                success = save_evidently_report_to_workspace(
+                    report=report,
+                    project_name="energy_consumption",
+                    workspace_path=self.evidently_config.get('workspace_path', './evidently_workspace'),
+                    metadata=metadata,
+                    tags=tags
+                )
+
+                if success:
+                    logger.info("Rapport sauvegardé dans le workspace Evidently UI")
+                else:
+                    logger.warning("Échec de la sauvegarde dans le workspace Evidently UI")
+
+            except Exception as e:
+                logger.error(f"Erreur lors de la sauvegarde dans le workspace Evidently UI: {e}")
+
+        # Sauvegarder sur S3 si demandé
+        if save_to_s3 and self.evidently_config.get('save_to_s3', False):
+            try:
+                from ml.utils.monitoring.drift_detector import save_evidently_report_to_s3
+
+                # Préparer les métadonnées
+                metadata = {
+                    "timestamp": datetime.now().isoformat(),
+                    "config_name": self.config.get('name', 'unknown')
+                }
+
+                success = save_evidently_report_to_s3(
+                    report=report,
+                    s3_bucket=self.s3_config.get('bucket', 'data-store'),
+                    s3_prefix=self.evidently_config.get('s3_prefix', 'evidently_reports'),
+                    metadata=metadata
+                )
+
+                if success:
+                    logger.info("Rapport sauvegardé sur S3")
+                else:
+                    logger.warning("Échec de la sauvegarde sur S3")
+
+            except Exception as e:
+                logger.error(f"Erreur lors de la sauvegarde sur S3: {e}")
 
         return True
 
@@ -412,7 +477,9 @@ class DriftDetectionPipeline:
                           store_metrics: bool = True,
                           send_notifications: bool = True,
                           mlflow_run_id: Optional[str] = None,
-                          download_from_s3: bool = True) -> Dict[str, Any]:
+                          download_from_s3: bool = True,
+                          save_to_workspace: bool = False,
+                          save_to_s3: bool = False) -> Dict[str, Any]:
         """
         Exécute le pipeline complet de détection de drift.
 
@@ -426,6 +493,8 @@ class DriftDetectionPipeline:
             send_notifications: Envoyer les notifications
             mlflow_run_id: ID de la run MLflow
             download_from_s3: Télécharger depuis S3 si le fichier de référence n'existe pas
+            save_to_workspace: Sauvegarder le rapport dans le workspace Evidently UI local
+            save_to_s3: Sauvegarder le rapport sur S3
 
         Returns:
             Dict avec les résultats du pipeline
@@ -461,7 +530,7 @@ class DriftDetectionPipeline:
 
             # Étape 4: Génération rapport Evidently
             if generate_report:
-                if not self.step_4_generate_evidently_report(report_output_path):
+                if not self.step_4_generate_evidently_report(report_output_path, save_to_workspace, save_to_s3):
                     logger.warning("Échec de la génération du rapport Evidently")
                 else:
                     results["steps_completed"].append("generate_evidently_report")
