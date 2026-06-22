@@ -68,6 +68,9 @@ class MLPipeline:
         self.version_staging = None
         self.promotion_result = None
 
+        # Track the actual data path used for training
+        self.actual_data_path = None
+
         logger.info(f"Pipeline MLOps initialisé avec model_name={self.model_name}")
 
     def _download_train_from_s3(self, local_path: str) -> bool:
@@ -156,6 +159,9 @@ class MLPipeline:
             else:
                 logger.error("Fichier de données non trouvé et téléchargement S3 désactivé")
                 return False
+
+        # Store the actual path used
+        self.actual_data_path = data_path
 
         self.data = load_data(data_path)
         print(f"Data loaded: {self.data.shape if self.data is not None else 'None'}")
@@ -408,11 +414,12 @@ class MLPipeline:
                 logger.warning("S3 non disponible (credentials manquants)")
                 return False
 
-            # Récupérer le chemin du fichier train utilisé
-            train_path = self.config.get('data', {}).get('train_path')
+            # Récupérer le chemin du fichier train utilisé (actual path, not config path)
+            train_path = self.actual_data_path or self.config.get('data', {}).get('train_path')
             if not train_path or not Path(train_path).exists():
                 logger.warning(f"Fichier train non trouvé: {train_path}")
-                return False
+                logger.info("Upload S3 ignoré - fichier non disponible")
+                return True  # Don't fail the pipeline if file doesn't exist
 
             # Générer le nom de fichier avec la date actuelle
             from datetime import datetime

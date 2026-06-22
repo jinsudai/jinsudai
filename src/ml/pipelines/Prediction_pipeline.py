@@ -223,11 +223,6 @@ class PredictionPipeline:
                 logger.warning("Aucune colonne de timestamp valide trouvée pour le stockage, utilisation de l'heure actuelle")
                 self.df_predictions['prediction_timestamp'] = datetime.now()
 
-        if 'prediction_date' not in self.df_predictions.columns:
-            self.df_predictions['prediction_date'] = pd.to_datetime(self.df_predictions['prediction_timestamp']).dt.floor('30min')
-        else:
-            self.df_predictions['prediction_date'] = pd.to_datetime(self.df_predictions['prediction_date'])
-
         if 'prediction_index' not in self.df_predictions.columns:
             self.df_predictions = self.df_predictions.reset_index(drop=True)
             self.df_predictions['prediction_index'] = self.df_predictions.index + 1

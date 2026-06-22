@@ -17,6 +17,7 @@ import argparse
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
+import pandas as pd
 
 # Ajouter le répertoire src au path
 project_root = Path(__file__).parent.parent
@@ -117,7 +118,7 @@ def prepare_retraining_data(
 
     Priorité:
     1. Télécharge le fichier le plus récent depuis S3 (prefix /consumption/trained/)
-    2. Fallback sur la base de données si S3 non disponible
+    2. Fallback sur la base de données + preparation pipeline (comme entraînement initial)
 
     Args:
         db_handler: Instance de DatabaseHandler (optionnel, fallback)
@@ -136,42 +137,42 @@ def prepare_retraining_data(
             try:
                 config = load_config('config.yaml')
                 s3_config = config.get('s3', {})
-                
+
                 bucket = s3_bucket or s3_config.get('bucket', 'data-store')
                 prefix = s3_prefix
-                
+
                 print(f"   Bucket S3: {bucket}")
                 print(f"   Préfixe S3: {prefix}")
-                
+
                 s3_handler = S3Handler(bucket=bucket)
-                
+
                 if s3_handler.s3_enabled:
                     # Lister les fichiers dans le prefix consumption/trained/
                     files = s3_handler.list_files(prefix=prefix)
-                    
+
                     # Filtrer les fichiers train.parquet
                     train_files = [f for f in files if 'train' in f and f.endswith('.parquet')]
-                    
+
                     if train_files:
                         # Trouver le plus récent
                         train_files_sorted = sorted(train_files, reverse=True)
                         latest_file = train_files_sorted[0]
-                        
+
                         print(f"   📂 Fichier le plus récent trouvé: {latest_file}")
-                        
+
                         # Télécharger le fichier
                         data_dir = project_root / 'data' / 'processed'
                         data_dir.mkdir(parents=True, exist_ok=True)
-                        
+
                         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                         local_path = data_dir / f'retraining_data_{timestamp}.parquet'
-                        
+
                         result = s3_handler.download_file(
                             s3_key=latest_file,
                             local_path=str(local_path),
                             overwrite=True
                         )
-                        
+
                         if result["status"] == "success":
                             print(f"✅ Données de réentraînement téléchargées depuis S3")
                             print(f"   Source: {latest_file}")
@@ -186,9 +187,9 @@ def prepare_retraining_data(
                     print("⚠️ S3 non disponible (credentials manquants)")
             except Exception as e:
                 print(f"⚠️ Erreur lors du téléchargement S3: {e}")
-        
-        # 2. Fallback sur la base de données
-        print("📊 Fallback sur la base de données...")
+
+        # 2. Fallback sur la base de données + preparation pipeline
+        print("📊 Fallback sur la base de données + preparation pipeline...")
         if not db_handler or not db_handler.verify_connection():
             print("⚠️ Base de données non disponible")
             return None
@@ -200,18 +201,79 @@ def prepare_retraining_data(
             print("⚠️ Pas de données de production disponibles pour le réentraînement")
             return None
 
-        # Sauvegarder les données dans un fichier temporaire
-        data_dir = project_root / 'data' / 'processed'
-        data_dir.mkdir(parents=True, exist_ok=True)
+        print(f"   📊 {len(production_data)} enregistrements récupérés depuis la base")
 
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        data_path = data_dir / f'retraining_data_{timestamp}.parquet'
+        # Utiliser le même preparation pipeline que l'entraînement initial
+        try:
+            from ml.consumption.consumption_preparer import ConsumptionDataPreparer
+            from ml.connectors.weather.weather_api import WeatherAPI
+            from ml.connectors.holidays.holidays_api import HolidaysCombinedAPI
 
-        production_data.to_parquet(data_path, index=False)
-        print(f"✅ Données de réentraînement préparées depuis la base de données: {len(production_data)} enregistrements")
-        print(f"   Sauvegardées dans: {data_path}")
+            # Déterminer la plage de dates
+            production_data['prediction_timestamp'] = pd.to_datetime(production_data['prediction_timestamp'])
+            start_date = production_data['prediction_timestamp'].min().strftime('%Y-%m-%d')
+            end_date = production_data['prediction_timestamp'].max().strftime('%Y-%m-%d')
 
-        return str(data_path)
+            print(f"   📅 Plage de dates: {start_date} à {end_date}")
+
+            # Créer les fichiers météo et vacances
+            data_dir = project_root / 'data' / 'processed'
+            data_dir.mkdir(parents=True, exist_ok=True)
+
+            weather_path = data_dir / f"weather_{start_date}_to_{end_date}.parquet"
+            holidays_path = data_dir / f"holidays_{start_date}_to_{end_date}.parquet"
+
+            # Générer météo
+            print("   🌤️  Génération des données météo...")
+            weather_api = WeatherAPI(latitude=43.5297, longitude=5.4474, location_name="Aix en Provence")
+            weather_df = weather_api.fetch_historical(start_date=start_date, end_date=end_date, hourly=True)
+            if 'Horodate' not in weather_df.columns:
+                weather_df['Horodate'] = pd.to_datetime(weather_df.index)
+            weather_df.to_parquet(weather_path)
+            print(f"   ✅ Météo générée: {weather_path}")
+
+            # Générer vacances
+            print("   🏖️  Génération des données vacances...")
+            holidays_api = HolidaysCombinedAPI(zone="C")
+            holidays_df = holidays_api.generate_holidays_dataframe(start_date, end_date)
+            holidays_df.to_parquet(holidays_path)
+            print(f"   ✅ Vacances générées: {holidays_path}")
+
+            # Préparer les features avec ConsumptionDataPreparer
+            print("   🔧 Préparation des features...")
+            preparer = ConsumptionDataPreparer()
+
+            # Créer un fichier raw temporaire avec les données de production
+            raw_path = data_dir / f"raw_production_{timestamp}.parquet"
+            production_data.rename(columns={'prediction': 'Valeur'}, inplace=True)
+            production_data.rename(columns={'prediction_timestamp': 'Horodate'}, inplace=True)
+            production_data.to_parquet(raw_path, index=False)
+
+            # Préparer les features
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            train_path = data_dir / f'retraining_data_{timestamp}.parquet'
+
+            features_df = preparer.prepare(
+                raw_path=str(raw_path),
+                weather_path=str(weather_path),
+                holidays_path=str(holidays_path),
+                output_path=str(train_path)
+            )
+
+            print(f"✅ Données de réentraînement préparées: {len(features_df)} enregistrements")
+            print(f"   Sauvegardées dans: {train_path}")
+
+            # Nettoyer les fichiers temporaires
+            raw_path.unlink(missing_ok=True)
+
+            return str(train_path)
+
+        except Exception as e:
+            print(f"❌ Erreur lors de la préparation des features: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+
     except Exception as e:
         print(f"❌ Erreur lors de la préparation des données: {e}")
         import traceback

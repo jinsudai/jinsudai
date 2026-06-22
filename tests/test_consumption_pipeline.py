@@ -4,17 +4,17 @@ Test du pipeline consommation avec données de test.
 import sys
 sys.path.insert(0, 'src')
 
-from prefect import flow, task
+import pandas as pd
 from ml.consumption.consumption_tasks import prepare_consumption_features_task
 from ml.consumption.training_tasks import (
     train_consumption_model_task,
     evaluate_consumption_model_task,
     monitor_consumption_model_task,
-    stage_and_log_consumption_model_task
 )
+from ml.utils.data.data_preparation import split_data
+from ml.config import load_config
 
 
-@flow(name="test-consumption-pipeline")
 def test_consumption_pipeline():
     """Test du pipeline avec fichiers de test existants."""
 
@@ -23,8 +23,8 @@ def test_consumption_pipeline():
     holidays_path = 'data/processed/holidays.parquet'
     raw_path = 'data/templates/test_raw_consumption.csv'
 
-    # 1. Préparer les features
-    features_path = prepare_consumption_features_task(
+    # 1. Préparer les features (call function directly, not as Prefect task)
+    features_path = prepare_consumption_features_task.fn(
         raw_path=raw_path,
         weather_path=weather_path,
         holidays_path=holidays_path,
@@ -33,20 +33,17 @@ def test_consumption_pipeline():
 
     print(f"[OK] Features prepared: {features_path}")
 
-    # 2. Entraîner le modèle
-    train_result = train_consumption_model_task(
+    # 2. Entraîner le modèle (call function directly, not as Prefect task)
+    # Use a test config with faster model for CI
+    train_result = train_consumption_model_task.fn(
         features_path=features_path,
-        config_path='src/configs/consumption.yaml'
+        config_path='src/configs/consumption.test.yaml'
     )
 
     print(f"[OK] Model trained: {train_result['config']['model_type']}")
     print(f"   Metrics: {train_result['metrics']}")
 
     # 3. Évaluer le modèle
-    import pandas as pd
-    from ml.utils.data.data_preparation import split_data
-    from ml.config import load_config
-
     config = load_config(config_name="consumption")
     features_df = pd.read_parquet(features_path)
     target_column = config.get('data', {}).get('target_column', 'Valeur')
@@ -58,7 +55,7 @@ def test_consumption_pipeline():
         target_column=target_column
     )
 
-    eval_result = evaluate_consumption_model_task(
+    eval_result = evaluate_consumption_model_task.fn(
         model=train_result["model"],
         X_test=X_test,
         y_test=y_test,
@@ -72,7 +69,7 @@ def test_consumption_pipeline():
     X_train_full = features_df.drop(columns=[target_column])
     y_train_full = features_df[target_column]
 
-    monitor_result = monitor_consumption_model_task(
+    monitor_result = monitor_consumption_model_task.fn(
         model=train_result["model"],
         X_train=X_train_full,
         X_test=X_test,

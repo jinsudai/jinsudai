@@ -42,7 +42,6 @@ class DatabaseHandler:
         CREATE TABLE IF NOT EXISTS predictions_pipeline (
             prediction_id UUID PRIMARY KEY,
             prediction_timestamp TIMESTAMP NOT NULL,
-            prediction_date TIMESTAMP NOT NULL,
             prediction_index INTEGER NOT NULL,
             prediction DOUBLE PRECISION NOT NULL,
             confidence DOUBLE PRECISION,
@@ -59,7 +58,7 @@ class DatabaseHandler:
                 with conn.cursor() as cursor:
                     cursor.execute(create_query)
                     cursor.execute(
-                        "CREATE INDEX IF NOT EXISTS idx_predictions_pipeline_prediction_date ON predictions_pipeline (prediction_date);"
+                        "CREATE INDEX IF NOT EXISTS idx_predictions_pipeline_prediction_timestamp ON predictions_pipeline (prediction_timestamp);"
                     )
                     cursor.execute(
                         "CREATE INDEX IF NOT EXISTS idx_predictions_pipeline_prediction_index ON predictions_pipeline (prediction_index);"
@@ -102,19 +101,14 @@ class DatabaseHandler:
             else:
                 df['prediction_timestamp'] = pd.Timestamp.now()
 
-        if 'prediction_date' not in df.columns:
-            df['prediction_date'] = pd.to_datetime(df['prediction_timestamp']).dt.floor('30min')
-        else:
-            df['prediction_date'] = pd.to_datetime(df['prediction_date'])
-
         if 'prediction_index' not in df.columns:
             df = df.reset_index(drop=True)
             df['prediction_index'] = df.index + 1
 
         insert_query = """
         INSERT INTO predictions_pipeline (
-            prediction_id, prediction_timestamp, prediction_date, prediction_index, prediction, confidence, model_version, entity_id, run_id
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            prediction_id, prediction_timestamp, prediction_index, prediction, confidence, model_version, entity_id, run_id
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (prediction_id) DO NOTHING;
         """
 
@@ -125,7 +119,6 @@ class DatabaseHandler:
                         (
                             str(uuid.uuid4()),
                             row.get("prediction_timestamp"),
-                            row.get("prediction_date"),
                             int(row.get("prediction_index", 0)),
                             float(row.get("prediction")),
                             float(row.get("confidence")) if row.get("confidence") is not None else None,
@@ -198,10 +191,10 @@ class DatabaseHandler:
             return None
 
         query = """
-        SELECT prediction_id, prediction_timestamp, prediction_date, prediction_index,
+        SELECT prediction_id, prediction_timestamp, prediction_index,
                prediction, confidence, model_version, entity_id, run_id, actual_value
         FROM predictions_pipeline
-        WHERE prediction_date >= %s AND prediction_date <= %s
+        WHERE prediction_timestamp >= %s AND prediction_timestamp <= %s
         ORDER BY prediction_timestamp DESC
         """
 
@@ -291,7 +284,7 @@ class DatabaseHandler:
             limit: Nombre maximum d'enregistrements (optionnel)
 
         Returns:
-            DataFrame avec les colonnes prediction_date, prediction, actual_value
+            DataFrame avec les colonnes prediction_timestamp, prediction, actual_value
             ou None en cas d'erreur
         """
         if not self.db_uri:
@@ -300,19 +293,19 @@ class DatabaseHandler:
 
         if limit:
             query = """
-            SELECT prediction_date, prediction, actual_value
+            SELECT prediction_timestamp, prediction, actual_value
             FROM predictions_pipeline
             WHERE actual_value IS NOT NULL
-            ORDER BY prediction_date DESC
+            ORDER BY prediction_timestamp DESC
             LIMIT %s
             """
             params = (limit,)
         else:
             query = """
-            SELECT prediction_date, prediction, actual_value
+            SELECT prediction_timestamp, prediction, actual_value
             FROM predictions_pipeline
             WHERE actual_value IS NOT NULL
-            ORDER BY prediction_date DESC
+            ORDER BY prediction_timestamp DESC
             """
             params = ()
 
