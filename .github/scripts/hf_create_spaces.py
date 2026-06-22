@@ -78,10 +78,11 @@ def create_space(api, space_name, private=False):
 
         try:
             
-            apiName=api.whoami()['name']
-            api.space_info(f"{apiName}/{space_name}")
+            api_name=api.whoami()['name']
+            space_path_name = f"{api_name}/{space_name}"
+            api.space_info(f"{space_path_name}")
 
-            print(f"[*] Space '{space_name}' already exists")
+            print(f"[*] Space '{space_path_name}' already exists")
 
             return True
 
