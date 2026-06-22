@@ -31,5 +31,7 @@ jobs:
       - name: Create spaces
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          AIRFLOW_HF_TOKEN: ${{ secrets.AIRFLOW_HF_TOKEN }}
+          MARP_HF_TOKEN: ${{ secrets.MARP_HF_TOKEN }}
         run: |
           python .github/scripts/hf_create_spaces.py

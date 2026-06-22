@@ -32,6 +32,8 @@ jobs:
       - name: Push services to HF
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          AIRFLOW_HF_TOKEN: ${{ secrets.AIRFLOW_HF_TOKEN }}
+          MARP_HF_TOKEN: ${{ secrets.MARP_HF_TOKEN }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             python .github/scripts/hf_push_services.py --force-push
