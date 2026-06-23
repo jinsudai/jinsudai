@@ -52,7 +52,7 @@ with DAG(
         wait_for_completion=True,
         poke_interval=30,
         allowed_states=['success'],
-        failed_states=['failed', 'skipped'],
+        failed_states=['failed'],
     )
     
     # 2. Déclencher la préparation
@@ -62,7 +62,7 @@ with DAG(
         wait_for_completion=True,
         poke_interval=30,
         allowed_states=['success'],
-        failed_states=['failed', 'skipped'],
+        failed_states=['failed'],
     )
     
     # 3. Déclencher le monitoring
@@ -72,7 +72,7 @@ with DAG(
         wait_for_completion=True,
         poke_interval=30,
         allowed_states=['success'],
-        failed_states=['failed', 'skipped'],
+        failed_states=['failed'],
     )
     
     # 4. Déclencher l'inférence (indépendant du training)
@@ -82,7 +82,7 @@ with DAG(
         wait_for_completion=True,
         poke_interval=30,
         allowed_states=['success'],
-        failed_states=['failed', 'skipped'],
+        failed_states=['failed'],
     )
     
     # 5. Vérifier si le training est nécessaire
@@ -98,7 +98,7 @@ with DAG(
         wait_for_completion=True,
         poke_interval=30,
         allowed_states=['success'],
-        failed_states=['failed', 'skipped'],
+        failed_states=['failed'],
     )
     
     # Point de fin pour le branch skip
