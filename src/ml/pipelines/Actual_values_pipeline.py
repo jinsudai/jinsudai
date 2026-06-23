@@ -163,7 +163,7 @@ class ActualValuesPipeline:
             logger.info(f"{len(with_actual_values)} prédictions avec des valeurs réelles")
 
             if len(with_actual_values) > 0:
-                logger.info(f"Exemple de valeurs mises à jour:\n{with_actual_values[['prediction_timestamp', 'prediction', 'actual_value']].head()}")
+                logger.info(f"Exemple de valeurs mises à jour:\n{with_actual_values[['target_timestamp', 'prediction', 'actual_value']].head()}")
 
         return updated_predictions
 

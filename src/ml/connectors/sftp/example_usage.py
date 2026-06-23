@@ -29,9 +29,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 from ml.connectors.sftp.sftp_connector import SFTPConnector
 from ml.connectors.sftp.sftp_data_processor import SFTPDataProcessor
 from ml.connectors.sftp.sftp_tasks import (
-    process_sftp_actual_values_task,
-    process_single_sftp_file_task,
-    list_sftp_files_task
+    process_sftp_actual_values,
+    process_single_sftp_file,
+    list_sftp_files
 )
 from ml.utils.notifications.email_notifier import EmailNotifier
 from ml.config.global_config import (
@@ -244,12 +244,12 @@ def example_with_config():
         print(f"Traitement terminé: {summary}")
 
 
-def example_prefect_task():
+def example_with_functions():
     """
-    Exemple d'utilisation avec les tâches Prefect.
+    Exemple d'utilisation avec les fonctions.
     """
     print("\n" + "=" * 60)
-    print("EXEMPLE 5: Utilisation avec tâches Prefect")
+    print("EXEMPLE 5: Utilisation avec fonctions")
     print("=" * 60 + "\n")
 
     # Configuration
@@ -263,17 +263,17 @@ def example_prefect_task():
         "archive_directory": "/archived"
     }
 
-    # Exécuter la tâche de traitement
+    # Exécuter la fonction de traitement
     try:
-        result = process_sftp_actual_values_task(**task_config)
+        result = process_sftp_actual_values(**task_config)
 
-        print("\nRésultat de la tâche:")
+        print("\nRésultat de la fonction:")
         print(f"  Fichiers traités: {result['summary']['total_files']}")
         print(f"  Succès: {result['summary']['successful']}")
         print(f"  Prédictions mises à jour: {result['summary']['total_predictions_updated']}")
 
     except Exception as e:
-        print(f"Erreur lors de l'exécution de la tâche: {e}")
+        print(f"Erreur lors de l'exécution de la fonction: {e}")
 
 
 def example_list_files():
@@ -295,7 +295,7 @@ def example_list_files():
 
     # Lister les fichiers
     try:
-        files = list_sftp_files_task(**config)
+        files = list_sftp_files(**config)
 
         print(f"Fichiers disponibles dans {config['remote_directory']}:")
         for file_info in files:
@@ -419,8 +419,8 @@ def main():
         print(f"Erreur dans l'exemple 4: {e}")
 
     try:
-        # Exemple 5: Tâches Prefect
-        # example_prefect_task()
+        # Exemple 5: Fonctions
+        # example_with_functions()
         pass
     except Exception as e:
         print(f"Erreur dans l'exemple 5: {e}")

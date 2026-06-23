@@ -112,7 +112,7 @@ def generate_inference_data(
 
     data = {}
     for col in feature_columns:
-        if col in ("prediction_timestamp", "Horodate", "horodate"):  # A revoir pour être plus générique
+        if col in ("target_timestamp", "Horodate", "horodate"):  # A revoir pour être plus générique
             data[col] = timestamps
         elif col == "temperature_2m_mean":
             data[col] = [weather_mapping.get(ts, {}).get("temperature_2m_mean", 20.0) for ts in timestamps]

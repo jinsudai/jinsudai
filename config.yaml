@@ -67,11 +67,11 @@ services:
     - "MLflow"
     - "docsify"
     - "evidentlyUI"
+    - "slidev"
 
   satellites:
     - "airflow"
-    - "marp"
-
+    
 # Logging
 logging:
   level: "INFO"  # Options: "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"

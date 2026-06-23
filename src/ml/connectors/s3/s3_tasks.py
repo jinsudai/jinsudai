@@ -87,38 +87,3 @@ def upload_file_to_s3(
         }
 
 
-def upload_file_to_s3_task(
-    file_path: str,
-    bucket_name: str,
-    s3_key: str,
-    aws_access_key_id: Optional[str] = None,
-    aws_secret_access_key: Optional[str] = None,
-    aws_region: str = "us-east-1",
-    endpoint_url: Optional[str] = None
-) -> dict:
-    """
-    Prefect task wrapper for S3 upload.
-
-    This task can be used in Prefect flows to upload files to S3.
-
-    Args:
-        file_path: Local path to the file to upload
-        bucket_name: S3 bucket name
-        s3_key: S3 key (path within the bucket)
-        aws_access_key_id: AWS access key ID (optional)
-        aws_secret_access_key: AWS secret access key (optional)
-        aws_region: AWS region (default: us-east-1)
-        endpoint_url: Custom endpoint URL (for S3-compatible services)
-
-    Returns:
-        dict: Contains status, s3_uri, and metadata
-    """
-    return upload_file_to_s3(
-        file_path=file_path,
-        bucket_name=bucket_name,
-        s3_key=s3_key,
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key,
-        aws_region=aws_region,
-        endpoint_url=endpoint_url
-    )

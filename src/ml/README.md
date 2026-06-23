@@ -44,11 +44,11 @@ src/
     │   ├── __init__.py
     │   └── [futures classes]
     │
-    └── workflows/                # 🎯 Orchestration (Prefect)
+    └── workflows/                # 🎯 Orchestration
         ├── consumption_flow.py    # Flow: données → entraînement → monitoring (consumption)
         ├── solar_production_flow.py
         ├── shared_flows.py        # Workflows communs aux 2 domaines
-        └── utils.py               # Helpers Prefect (hooks, callbacks)
+        └── utils.py               # Helpers (hooks, callbacks)
 ```
 
 ---
@@ -60,7 +60,7 @@ src/
 |------------|----------------|----------|
 | `utils/` | Code générique réutilisable | Chargement CSV, prétraitement, tracking MLflow |
 | `consumption/` / `solar_production/` | Logique métier spécifique | Validation domaine, métriques custom |
-| `workflows/` | Orchestration | Flows Prefect, scheduling, dépendances |
+| `workflows/` | Orchestration | Flows, scheduling, dépendances |
 
 ### 2. **Flux de données**
 ```
@@ -96,16 +96,14 @@ workflows/        → Orchestre
 - Ajouter/modifier dans `utils/` (ex: nouveau type de prétraitement)
 - **Tester** l'impact sur tous les domaines avant merge
 
-### Créer un workflow Prefect
+### Créer un workflow
 - **Toujours** dans `workflows/`
 - Importer la logique depuis les répertoires domaine
 - Exemple minimal :
   ```python
-  from prefect import flow
   from ml.consumption.training import train_model
   from ml.utils.data.data_loader import load_data
   
-  @flow(name="consumption-training")
   def consumption_training():
       data = load_data("data/raw/consumption.csv")
       train_model(data)
@@ -118,12 +116,10 @@ workflows/        → Orchestre
 ### Cas 1: Entraînement d'un modèle de consommation
 ```python
 # src/ml/workflows/consumption_flow.py
-from prefect import flow, task
 from ml.config import load_config  # Chargeur central
 from ml.utils.data.data_loader import load_data
 from ml.pipelines.training_pipeline import MLPipeline
 
-@flow
 def consumption_full_pipeline():
     config = load_config("consumption.yaml")  # Charge depuis src/configs/
     pipeline = MLPipeline(config_path=config)
@@ -133,12 +129,10 @@ def consumption_full_pipeline():
 ### Cas 2: Inférence en production
 ```python
 # src/ml/workflows/inference_flow.py (partagé)
-from prefect import flow
 from ml.config import load_config
 from ml.utils.models.inference_model import InferenceModel
 from ml.consumption.models import ConsumptionInferenceModel  # Spécialisation
 
-@flow
 def predict_consumption():
     config = load_config("consumption.yaml")
     model = ConsumptionInferenceModel(config=config)  # Héritage de InferenceModel

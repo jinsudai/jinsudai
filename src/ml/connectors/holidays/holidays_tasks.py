@@ -1,18 +1,17 @@
 """
-Tâches Prefect pour les vacances scolaires et jours fériés.
+Fonctions pour les vacances scolaires et jours fériés.
 
-Ce module contient les tâches Prefect qui encapsulent les appels aux API
+Ce module contient les fonctions qui encapsulent les appels aux API
 des vacances scolaires et jours fériés.
 
 Exemple d'utilisation :
-    from analytics.utils.api.holidays.holidays_tasks import (
-        generate_holidays_parquet_task,
-        fetch_vacances_task,
-        fetch_jours_feries_task
+    from ml.connectors.holidays.holidays_tasks import (
+        generate_holidays_parquet,
+        fetch_vacances,
+        fetch_jours_feries
     )
 """
 
-from prefect import task
 from pathlib import Path
 from typing import Optional
 import logging
@@ -23,19 +22,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@task(
-    name="fetch_vacances",
-    description="Récupère les vacances scolaires depuis GitHub",
-    retries=3,
-    retry_delay_seconds=10
-)
-def fetch_vacances_task(
+def fetch_vacances(
     year: int,
     zone: str = "C",
     types: Optional[list] = None
 ) -> str:
     """
-    Tâche Prefect : Récupère les vacances scolaires.
+    Récupère les vacances scolaires.
 
     Args:
         year: Année (ex: 2024)
@@ -57,17 +50,11 @@ def fetch_vacances_task(
     return str(output_path)
 
 
-@task(
-    name="fetch_jours_feries",
-    description="Récupère les jours fériés depuis l'API gouvernementale",
-    retries=3,
-    retry_delay_seconds=10
-)
-def fetch_jours_feries_task(
+def fetch_jours_feries(
     year: Optional[int] = None
 ) -> str:
     """
-    Tâche Prefect : Récupère les jours fériés.
+    Récupère les jours fériés.
 
     Args:
         year: Année (optionnel, par défaut année courante)
@@ -87,20 +74,14 @@ def fetch_jours_feries_task(
     return str(output_path)
 
 
-@task(
-    name="generate_holidays_parquet",
-    description="Génère un Parquet combiné vacances + jours fériés",
-    retries=3,
-    retry_delay_seconds=10
-)
-def generate_holidays_parquet_task(
+def generate_holidays_parquet(
     start_date: str,
     end_date: str,
     output_path: str,
     zone: str = "C"
 ) -> str:
     """
-    Tâche Prefect : Génère un fichier Parquet avec vacances + jours fériés.
+    Génère un fichier Parquet avec vacances + jours fériés.
 
     Cette tâche génère un DataFrame avec les colonnes attendues par le template :
     - Horodate (datetime, fréquence 30min)
@@ -129,19 +110,15 @@ def generate_holidays_parquet_task(
     return str(parquet_path)
 
 
-@task(
-    name="generate_holidays_dataframe",
-    description="Génère un DataFrame avec vacances + jours fériés (sans sauvegarde)"
-)
-def generate_holidays_dataframe_task(
+def generate_holidays_dataframe(
     start_date: str,
     end_date: str,
     zone: str = "C"
 ) -> str:
     """
-    Tâche Prefect : Génère un DataFrame en mémoire (pour utilisation directe).
+    Génère un DataFrame en mémoire (pour utilisation directe).
 
-    Utilisé lorsque le DataFrame doit être passé directement à une autre tâche
+    Utilisé lorsque le DataFrame doit être passé directement à une autre fonction
     sans sauvegarde intermédiaire.
 
     Args:
@@ -155,8 +132,8 @@ def generate_holidays_dataframe_task(
     api = HolidaysCombinedAPI(zone=zone)
     api.generate_holidays_dataframe(start_date=start_date, end_date=end_date)
 
-    # Pour Prefect, on retourne un chemin temporaire
-    # En pratique, le DataFrame sera passé via le contexte Prefect
+    # On retourne un chemin temporaire
+    # En pratique, le DataFrame sera passé directement
     temp_path = f"temp://holidays_df_{start_date}_to_{end_date}"
     logger.info("DataFrame holidays généré (en mémoire)")
     return temp_path

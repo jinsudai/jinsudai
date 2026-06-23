@@ -1,14 +1,13 @@
 """
-Tâches Prefect pour l'intégration SFTP avec la base de données.
+Fonctions pour l'intégration SFTP avec la base de données.
 
-Ce module contient les tâches Prefect qui encapsulent le traitement des données
+Ce module contient les fonctions qui encapsulent le traitement des données
 SFTP pour récupérer les valeurs réelles et mettre à jour la base de données.
 
 Exemple d'utilisation :
-    from ml.connectors.sftp.sftp_tasks import process_sftp_actual_values_task
+    from ml.connectors.sftp.sftp_tasks import process_sftp_actual_values
 
-    # Dans un flow Prefect
-    results = process_sftp_actual_values_task(
+    results = process_sftp_actual_values(
         sftp_host="sftp.example.com",
         sftp_username="user",
         ppk_key_path="/path/to/key.ppk",
@@ -19,7 +18,6 @@ Exemple d'utilisation :
     )
 """
 
-from prefect import task
 from pathlib import Path
 from typing import Dict, Any, Optional
 import logging
@@ -30,13 +28,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@task(
-    name="process_sftp_actual_values",
-    description="Traite les fichiers SFTP pour mettre à jour les valeurs réelles dans la base de données",
-    retries=2,
-    retry_delay_seconds=30
-)
-def process_sftp_actual_values_task(
+def process_sftp_actual_values(
     sftp_host: str,
     sftp_username: str,
     ssh_private_key_b64: Optional[str] = None,
@@ -51,7 +43,7 @@ def process_sftp_actual_values_task(
     temp_local_dir: str = "/tmp/sftp_temp"
 ) -> Dict[str, Any]:
     """
-    Tâche Prefect : Traite les fichiers SFTP pour mettre à jour les valeurs réelles.
+    Traite les fichiers SFTP pour mettre à jour les valeurs réelles.
 
     Cette tâche :
     1. Se connecte au serveur SFTP avec authentification PPK
@@ -115,11 +107,7 @@ def process_sftp_actual_values_task(
     }
 
 
-@task(
-    name="process_single_sftp_file",
-    description="Traite un fichier individuel depuis SFTP"
-)
-def process_single_sftp_file_task(
+def process_single_sftp_file(
     sftp_host: str,
     sftp_username: str,
     ssh_private_key_b64: Optional[str] = None,
@@ -133,7 +121,7 @@ def process_single_sftp_file_task(
     temp_local_dir: str = "/tmp/sftp_temp"
 ) -> Dict[str, Any]:
     """
-    Tâche Prefect : Traite un fichier individuel depuis SFTP.
+    Traite un fichier individuel depuis SFTP.
 
     Utile pour traiter des fichiers spécifiques ou pour des workflows plus granulaires.
 
@@ -180,11 +168,7 @@ def process_single_sftp_file_task(
     return result
 
 
-@task(
-    name="list_sftp_files",
-    description="Liste les fichiers disponibles sur un serveur SFTP"
-)
-def list_sftp_files_task(
+def list_sftp_files(
     sftp_host: str,
     sftp_username: str,
     ssh_private_key_b64: Optional[str] = None,
@@ -197,7 +181,7 @@ def list_sftp_files_task(
     recursive: bool = False
 ) -> list:
     """
-    Tâche Prefect : Liste les fichiers disponibles sur un serveur SFTP.
+    Liste les fichiers disponibles sur un serveur SFTP.
 
     Utile pour vérifier les fichiers avant traitement ou pour des workflows conditionnels.
 

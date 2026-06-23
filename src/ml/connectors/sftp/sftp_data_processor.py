@@ -199,14 +199,14 @@ class SFTPDataProcessor:
             return {"prediction_ids": [], "actual_values": []}
 
         # Faire correspondre les horodates (arrondir à 30 minutes)
-        actual_df["prediction_timestamp"] = actual_df["Horodate"].dt.floor("30min")
-        predictions_df["prediction_timestamp"] = pd.to_datetime(predictions_df["prediction_timestamp"])
+        actual_df["target_timestamp"] = actual_df["Horodate"].dt.floor("30min")
+        predictions_df["target_timestamp"] = pd.to_datetime(predictions_df["target_timestamp"])
 
-        # Fusionner sur prediction_timestamp
+        # Fusionner sur target_timestamp
         merged = pd.merge(
             predictions_df,
-            actual_df[["prediction_timestamp", "Valeur"]],
-            on="prediction_timestamp",
+            actual_df[["target_timestamp", "Valeur"]],
+            on="target_timestamp",
             how="inner"
         )
 

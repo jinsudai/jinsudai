@@ -210,28 +210,28 @@ class PredictionPipeline:
             logger.error("Pas de prédictions à stocker")
             return False
 
-        # S'assurer que la colonne prediction_timestamp est disponible
-        if 'prediction_timestamp' not in self.df_predictions.columns:
+        # S'assurer que la colonne target_timestamp est disponible
+        if 'target_timestamp' not in self.df_predictions.columns:
             if 'Horodate' in self.df_predictions.columns:
-                self.df_predictions['prediction_timestamp'] = pd.to_datetime(self.df_predictions['Horodate'])
+                self.df_predictions['target_timestamp'] = pd.to_datetime(self.df_predictions['Horodate'])
             elif 'horodate' in self.df_predictions.columns:
-                self.df_predictions['prediction_timestamp'] = pd.to_datetime(self.df_predictions['horodate'])
+                self.df_predictions['target_timestamp'] = pd.to_datetime(self.df_predictions['horodate'])
             elif 'timestamp' in self.df_predictions.columns:
-                self.df_predictions['prediction_timestamp'] = pd.to_datetime(self.df_predictions['timestamp'])
+                self.df_predictions['target_timestamp'] = pd.to_datetime(self.df_predictions['timestamp'])
             else:
                 logger.warning("Aucune colonne de timestamp valide trouvée pour le stockage, utilisation de l'heure actuelle")
-                self.df_predictions['prediction_timestamp'] = datetime.now()
+                self.df_predictions['target_timestamp'] = datetime.now()
 
         if 'prediction_index' not in self.df_predictions.columns:
             self.df_predictions = self.df_predictions.reset_index(drop=True)
             self.df_predictions['prediction_index'] = self.df_predictions.index + 1
 
-        # Trier par prediction_timestamp décroissant
-        self.df_predictions = self.df_predictions.sort_values(by='prediction_timestamp', ascending=False)
+        # Trier par target_timestamp décroissant
+        self.df_predictions = self.df_predictions.sort_values(by='target_timestamp', ascending=False)
 
         # Valider que les prédictions sont bien espacées de 30 minutes
         if len(self.df_predictions) > 1:
-            time_diffs = self.df_predictions['prediction_timestamp'].diff().abs().dropna()
+            time_diffs = self.df_predictions['target_timestamp'].diff().abs().dropna()
             expected_diff = pd.Timedelta(minutes=30)
             if not (time_diffs == expected_diff).all():
                 logger.warning(f"Les prédictions ne sont pas toutes espacées de 30 minutes. Écarts détectés: {time_diffs.unique()}")

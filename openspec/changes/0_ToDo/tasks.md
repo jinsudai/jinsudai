@@ -5,14 +5,15 @@ Quand tu peux enlève les commentaire "sans prefect" qui sont dans plusieurs fic
 
 Evidently
 - J'ai un server EvidentlyAi deployé je pense qu'il faut juste uploader les rapports dans le bucket s3 evidently-reports
-- Est-ce que l'on compare bine les bon dataset?
+- Est-ce que l'on compare bien les bons datasets?
 - Data Drift (Drift Detection Action) -> A documenter
 
 slidev
 - Verifier la Documentation pour bloc 4
 
 Airflow
-- Créer les dags correspondant aux pipelines les étapes devront faire appel aux GitHubActions
+- Créer les dags correspondant aux pipelines les étapes devront faire appel aux GitHubActions -> A tester
+- Schedule?
 
 Db -> En cours
 - Quels informations sont stockée en base de données? Quels pipelines utilise la base de données predictions?

@@ -1,20 +1,18 @@
 """
-Tâches Prefect pour l'entraînement du modèle de consommation électrique.
+Fonctions pour l'entraînement du modèle de consommation électrique.
 
-Ce module contient les tâches Prefect qui encapsulent l'entraînement
+Ce module contient les fonctions qui encapsulent l'entraînement
 du modèle de consommation en utilisant les classes partagées de utils/.
 
 Exemple d'utilisation :
-    from analytics.consumption.training_tasks import train_consumption_model_task
+    from ml.consumption.training_tasks import train_consumption_model_task
 
-    # Dans un flow Prefect
     result = train_consumption_model_task(
         features_path="data/processed/consumption_features.parquet",
         config_path="src/configs/consumption.yaml"
     )
 """
 
-from prefect import task
 import pandas as pd
 import logging
 from typing import Dict, Any, Optional, List
@@ -37,12 +35,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@task(
-    name="train_consumption_model",
-    description="Entraîne le modèle de consommation avec les features préparées",
-    retries=1,
-    retry_delay_seconds=60
-)
 def train_consumption_model_task(
     features_path: str,
     config_path: str = "src/configs/consumption.yaml",
@@ -50,15 +42,15 @@ def train_consumption_model_task(
     random_state: Optional[int] = None
 ) -> Dict[str, Any]:
     """
-    Tâche Prefect : Entraîne le modèle de consommation.
+    Entraîne le modèle de consommation.
 
-    Utilise les classes partagées de analytics/utils/ :
+    Utilise les classes partagées de utils/ :
     - data.data_preparation.split_data
     - models.model.train_model
     - models.model.evaluate_model
 
     Args:
-        features_path: Chemin vers le fichier Parquet des features (sortie de prepare_consumption_features_task)
+        features_path: Chemin vers le fichier Parquet des features (sortie de prepare_consumption_features)
         config_path: Chemin vers la config consommation (défaut: src/configs/consumption.yaml)
         test_size: Taille du test set (override config)
         random_state: Random state (override config)
@@ -136,12 +128,6 @@ def train_consumption_model_task(
     return result
 
 
-@task(
-    name="evaluate_consumption_model",
-    description="Évalue un modèle de consommation sur des données de test",
-    retries=1,
-    retry_delay_seconds=30
-)
 def evaluate_consumption_model_task(
     model: Any,
     X_test: Any,
@@ -150,9 +136,9 @@ def evaluate_consumption_model_task(
     X_train: Optional[Any] = None
 ) -> Dict[str, Any]:
     """
-    Tâche Prefect : Évalue un modèle entraîné sur des données de test.
+    Évalue un modèle entraîné sur des données de test.
 
-    Utilise les classes partagées de analytics/utils/ :
+    Utilise les classes partagées de utils/ :
     - models.model.evaluate_model
     - models.model.get_feature_importance
 
@@ -189,12 +175,6 @@ def evaluate_consumption_model_task(
     return result
 
 
-@task(
-    name="evaluate_and_log_consumption_model",
-    description="Évalue un modèle et log les métriques dans MLflow",
-    retries=1,
-    retry_delay_seconds=30
-)
 def evaluate_and_log_consumption_model_task(
     model: Any,
     X_test: Any,
@@ -204,7 +184,7 @@ def evaluate_and_log_consumption_model_task(
     run_name: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Tâche Prefect : Évalue un modèle ET enregistre les métriques dans MLflow.
+    Évalue un modèle ET enregistre les métriques dans MLflow.
 
     Args:
         model: Modèle entraîné
@@ -263,18 +243,12 @@ def evaluate_and_log_consumption_model_task(
     }
 
 
-@task(
-    name="train_and_log_consumption_model",
-    description="Entraîne le modèle et log dans MLflow",
-    retries=1,
-    retry_delay_seconds=60
-)
 def train_and_log_consumption_model_task(
     features_path: str,
     config_path: str = "src/configs/consumption.yaml"
 ) -> Dict[str, Any]:
     """
-    Tâche Prefect : Entraîne le modèle ET enregistre dans MLflow.
+    Entraîne le modèle ET enregistre dans MLflow.
 
     Combine train_consumption_model_task avec le logging MLflow.
 
@@ -336,12 +310,6 @@ def train_and_log_consumption_model_task(
     }
 
 
-@task(
-    name="monitor_consumption_model",
-    description="Effectue le monitoring du modèle de consommation (drift + performance)",
-    retries=1,
-    retry_delay_seconds=30
-)
 def monitor_consumption_model_task(
     model: Any,
     X_train: Any,
@@ -352,9 +320,9 @@ def monitor_consumption_model_task(
     problem_type: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Tâche Prefect : Effectue le monitoring complet du modèle.
+    Effectue le monitoring complet du modèle.
 
-    Utilise les classes partagées de analytics/utils/monitoring/ :
+    Utilise les classes partagées de utils/monitoring/ :
     - performance_monitor.run_monitoring
     - performance_monitor.detect_prediction_drift
     - performance_monitor.generate_monitoring_summary
@@ -406,12 +374,6 @@ def monitor_consumption_model_task(
     return result
 
 
-@task(
-    name="monitor_and_log_consumption_model",
-    description="Effectue le monitoring et log dans MLflow",
-    retries=1,
-    retry_delay_seconds=30
-)
 def monitor_and_log_consumption_model_task(
     model: Any,
     X_train: Any,
@@ -423,7 +385,7 @@ def monitor_and_log_consumption_model_task(
     run_name: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Tâche Prefect : Monitoring + logging dans MLflow.
+    Monitoring + logging dans MLflow.
 
     Args:
         model: Modèle entraîné
@@ -504,12 +466,6 @@ def monitor_and_log_consumption_model_task(
     }
 
 
-@task(
-    name="stage_consumption_model",
-    description="Enregistre et gère les stages du modèle de consommation (Staging → Production)",
-    retries=1,
-    retry_delay_seconds=30
-)
 def stage_consumption_model_task(
     model: Any,
     config_path: str = "src/configs/consumption.yaml",
@@ -519,9 +475,9 @@ def stage_consumption_model_task(
     promote_to_prod: bool = True
 ) -> Dict[str, Any]:
     """
-    Tâche Prefect : Enregistre le modèle dans MLflow Model Registry et gère les stages.
+    Enregistre le modèle dans MLflow Model Registry et gère les stages.
 
-    Utilise les classes partagées de analytics/utils/models/mlflow_tracker.py :
+    Utilise les classes partagées de utils/models/mlflow_tracker.py :
     - register_model_version
     - promote_model_to_production
     - get_model_version_by_alias
@@ -603,12 +559,6 @@ def stage_consumption_model_task(
     }
 
 
-@task(
-    name="stage_and_log_consumption_model",
-    description="Enregistre le modèle, gère les stages et log dans MLflow",
-    retries=1,
-    retry_delay_seconds=30
-)
 def stage_and_log_consumption_model_task(
     model: Any,
     run_id: Optional[str] = None,
@@ -617,7 +567,7 @@ def stage_and_log_consumption_model_task(
     min_improvement: float = 0.0
 ) -> Dict[str, Any]:
     """
-    Tâche Prefect : Staging complet + logging dans MLflow.
+    Staging complet + logging dans MLflow.
 
     Combine :
     1. Enregistrement dans Model Registry

@@ -1,8 +1,7 @@
 """
 Pipeline métier pour l'ingestion de fichiers SFTP.
 
-Ce module contient la logique métier indépendante de Prefect.
-Il est ensuite utilisé par `ml.workflows.sftp_ingestion_flow`.
+Ce module contient la logique métier pour l'ingestion SFTP.
 """
 
 from typing import Dict, Any, Optional

@@ -1,14 +1,13 @@
 """
-Tâches Prefect pour la préparation des données de consommation électrique.
+Fonctions pour la préparation des données de consommation électrique.
 
-Ce module contient les tâches Prefect qui encapsulent la préparation
+Ce module contient les fonctions qui encapsulent la préparation
 des données de consommation à partir des fichiers bruts PRM.
 
 Exemple d'utilisation :
-    from analytics.consumption.consumption_tasks import prepare_consumption_features_task
+    from ml.consumption.consumption_tasks import prepare_consumption_features
 
-    # Dans un flow Prefect
-    features_path = prepare_consumption_features_task(
+    features_path = prepare_consumption_features(
         raw_path="data/templates/raw_template.csv",
         weather_path="data/raw/weather.parquet",
         holidays_path="data/raw/holidays.parquet",
@@ -16,7 +15,6 @@ Exemple d'utilisation :
     )
 """
 
-from prefect import task
 import logging
 
 from .consumption_preparer import ConsumptionDataPreparer
@@ -25,20 +23,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@task(
-    name="prepare_consumption_features",
-    description="Prépare les features consommation à partir des données brutes PRM, météo et calendrier",
-    retries=2,
-    retry_delay_seconds=30
-)
-def prepare_consumption_features_task(
+def prepare_consumption_features(
     raw_path: str,
     weather_path: str,
     holidays_path: str,
     output_path: str
 ) -> str:
     """
-    Tâche Prefect : Prépare les données de consommation pour l'entraînement.
+    Prépare les données de consommation pour l'entraînement.
 
     Cette tâche :
     1. Charge le fichier brut PRM (raw_template.csv)
@@ -75,20 +67,14 @@ def prepare_consumption_features_task(
     return output_path
 
 
-@task(
-    name="prepare_consumption_from_parquets",
-    description="Prépare les features consommation à partir de Parquets existants",
-    retries=2,
-    retry_delay_seconds=30
-)
-def prepare_consumption_from_parquets_task(
+def prepare_consumption_from_parquets(
     consumption_parquet: str,
     weather_parquet: str,
     holidays_parquet: str,
     output_path: str
 ) -> str:
     """
-    Tâche Prefect : Prépare les données à partir de Parquets déjà générés.
+    Prépare les données à partir de Parquets déjà générés.
 
     Alternative à prepare_consumption_features_task lorsque les données
     brutes sont déjà en format Parquet.
@@ -118,15 +104,11 @@ def prepare_consumption_from_parquets_task(
     return "not_implemented"
 
 
-@task(
-    name="validate_consumption_features",
-    description="Valide qu'un DataFrame correspond au template consommation"
-)
-def validate_consumption_features_task(
+def validate_consumption_features(
     features_path: str
 ) -> bool:
     """
-    Tâche Prefect : Valide un fichier de features consommation.
+    Valide un fichier de features consommation.
 
     Utilisé pour vérifier que les données sont prêtes avant l'entraînement.
 

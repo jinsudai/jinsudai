@@ -104,21 +104,11 @@ jobs:
               --use_env_config \
               --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
               ${{ github.event.inputs.db_uri && format('--db_uri "{0}"', github.event.inputs.db_uri) || '' }}
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            SFTP_HOST="${{ github.event.inputs.sftp_host }}"
-            SFTP_USERNAME="${{ github.event.inputs.sftp_username }}"
-            SSH_PRIVATE_KEY_B64="${{ github.event.inputs.ssh_private_key_b64 }}"
-            PASSPHRASE="${{ github.event.inputs.passphrase }}"
-            
-            # Fallback to environment variables if inputs are not provided
-            SFTP_HOST="${SFTP_HOST:-$SFTP_HOST}"
-            SFTP_USERNAME="${SFTP_USERNAME:-$SFTP_USERNAME}"
-            SSH_PRIVATE_KEY_B64="${SSH_PRIVATE_KEY_B64:-$SFTP_PRIVATE_KEY_B64}"
-            PASSPHRASE="${PASSPHRASE:-$SFTP_PASSPHRASE}"
-            
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.sftp_host }}" ] && [ -n "${{ github.event.inputs.sftp_username }}" ]; then
+            # User provided sftp_host and sftp_username, use them
             python pipelines/ingestion/sftp_ingestion_pipeline.py \
-              --sftp_host "$SFTP_HOST" \
-              --sftp_username "$SFTP_USERNAME" \
+              --sftp_host "${{ github.event.inputs.sftp_host }}" \
+              --sftp_username "${{ github.event.inputs.sftp_username }}" \
               --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
               --remote_directory "${{ github.event.inputs.remote_directory || '/data/incoming' }}" \
               --archive_directory "${{ github.event.inputs.archive_directory || '/data/archived' }}" \
@@ -126,11 +116,13 @@ jobs:
               --sftp_timeout "${{ github.event.inputs.sftp_timeout || '30' }}" \
               --file_pattern "${{ github.event.inputs.file_pattern || '*.csv' }}" \
               --temp_local_dir "${{ github.event.inputs.temp_local_dir || '/tmp/sftp_temp' }}" \
-              ${SSH_PRIVATE_KEY_B64:+--ssh_private_key_b64 "$SSH_PRIVATE_KEY_B64"} \
-              ${PASSPHRASE:+--passphrase "$PASSPHRASE"} \
+              ${{ github.event.inputs.ssh_private_key_b64 && format('--ssh_private_key_b64 "{0}"', github.event.inputs.ssh_private_key_b64) || '' }} \
+              ${{ github.event.inputs.passphrase && format('--passphrase "{0}"', github.event.inputs.passphrase) || '' }} \
               ${{ github.event.inputs.db_uri && format('--db_uri "{0}"', github.event.inputs.db_uri) || '' }}
           else
+            # Default to use_env_config
             python pipelines/ingestion/sftp_ingestion_pipeline.py \
               --use_env_config \
-              --config_name "consumption"
+              --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
+              ${{ github.event.inputs.db_uri && format('--db_uri "{0}"', github.event.inputs.db_uri) || '' }}
           fi

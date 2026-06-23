@@ -84,7 +84,7 @@ class DatabaseHandler:
 
             prediction_id UUID PRIMARY KEY,
 
-            prediction_timestamp TIMESTAMP NOT NULL,
+            target_timestamp TIMESTAMP NOT NULL,
 
             prediction_index INTEGER NOT NULL,
 
@@ -116,7 +116,7 @@ class DatabaseHandler:
 
                     cursor.execute(
 
-                        "CREATE INDEX IF NOT EXISTS idx_predictions_pipeline_prediction_timestamp ON predictions_pipeline (prediction_timestamp);"
+                        "CREATE INDEX IF NOT EXISTS idx_predictions_pipeline_target_timestamp ON predictions_pipeline (target_timestamp);"
 
                     )
 
@@ -138,7 +138,7 @@ class DatabaseHandler:
 
                     )
 
-                    # Créer une vue avec ordre par défaut décroissant sur prediction_timestamp
+                    # Créer une vue avec ordre par défaut décroissant sur target_timestamp
 
                     cursor.execute("""
 
@@ -146,7 +146,7 @@ class DatabaseHandler:
 
                         SELECT * FROM predictions_pipeline
 
-                        ORDER BY prediction_timestamp DESC;
+                        ORDER BY target_timestamp DESC;
 
                     """)
 
@@ -186,19 +186,19 @@ class DatabaseHandler:
 
 
 
-        if 'prediction_timestamp' not in df.columns:
+        if 'target_timestamp' not in df.columns:
 
             if 'horodate' in df.columns:
 
-                df['prediction_timestamp'] = pd.to_datetime(df['horodate'])
+                df['target_timestamp'] = pd.to_datetime(df['horodate'])
 
             elif 'timestamp' in df.columns:
 
-                df['prediction_timestamp'] = pd.to_datetime(df['timestamp'])
+                df['target_timestamp'] = pd.to_datetime(df['timestamp'])
 
             else:
 
-                df['prediction_timestamp'] = pd.Timestamp.now()
+                df['target_timestamp'] = pd.Timestamp.now()
 
 
 
@@ -214,7 +214,7 @@ class DatabaseHandler:
 
         INSERT INTO predictions_pipeline (
 
-            prediction_id, prediction_timestamp, prediction_index, prediction, model_version, entity_id, run_id
+            prediction_id, target_timestamp, prediction_index, prediction, model_version, entity_id, run_id
 
         ) VALUES (%s, %s, %s, %s, %s, %s, %s)
 
@@ -236,7 +236,7 @@ class DatabaseHandler:
 
                             str(uuid.uuid4()),
 
-                            row.get("prediction_timestamp"),
+                            row.get("target_timestamp"),
 
                             int(row.get("prediction_index", 0)),
 
@@ -282,11 +282,11 @@ class DatabaseHandler:
 
         query = """
 
-        SELECT prediction_id, prediction_timestamp, prediction, model_version, entity_id, run_id, created_at
+        SELECT prediction_id, target_timestamp, prediction, model_version, entity_id, run_id, created_at
 
         FROM predictions_pipeline
 
-        ORDER BY prediction_timestamp DESC
+        ORDER BY target_timestamp DESC
 
         LIMIT %s
 
@@ -380,15 +380,15 @@ class DatabaseHandler:
 
         query = """
 
-        SELECT prediction_id, prediction_timestamp, prediction_index,
+        SELECT prediction_id, target_timestamp, prediction_index,
 
                prediction, model_version, entity_id, run_id, actual_value
 
         FROM predictions_pipeline
 
-        WHERE prediction_timestamp >= %s AND prediction_timestamp <= %s
+        WHERE target_timestamp >= %s AND target_timestamp <= %s
 
-        ORDER BY prediction_timestamp DESC
+        ORDER BY target_timestamp DESC
 
         """
 
@@ -566,7 +566,7 @@ class DatabaseHandler:
 
         Returns:
 
-            DataFrame avec les colonnes prediction_timestamp, prediction, actual_value
+            DataFrame avec les colonnes target_timestamp, prediction, actual_value
 
             ou None en cas d'erreur
 
@@ -584,13 +584,13 @@ class DatabaseHandler:
 
             query = """
 
-            SELECT prediction_timestamp, prediction, actual_value
+            SELECT target_timestamp, prediction, actual_value
 
             FROM predictions_pipeline
 
             WHERE actual_value IS NOT NULL
 
-            ORDER BY prediction_timestamp DESC
+            ORDER BY target_timestamp DESC
 
             LIMIT %s
 
@@ -602,13 +602,13 @@ class DatabaseHandler:
 
             query = """
 
-            SELECT prediction_timestamp, prediction, actual_value
+            SELECT target_timestamp, prediction, actual_value
 
             FROM predictions_pipeline
 
             WHERE actual_value IS NOT NULL
 
-            ORDER BY prediction_timestamp DESC
+            ORDER BY target_timestamp DESC
 
             """
 
