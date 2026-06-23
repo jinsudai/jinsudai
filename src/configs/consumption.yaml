@@ -1,178 +1,88 @@
 # Configuration - Modèle de CONSOMMATION ÉLECTRIQUE
-
 # Voir SPECIFICATIONS.md pour les contraintes globales
 
-
-
 # Chemins données
-
 data:
-
-
-
   # Fichier brut PRM (override dans les fichiers spécifiques à l'environnement)
-
   raw_path: "../data/dev/raw_consumption.csv"
-
   processed_path: "../data/dev/"
-
   train_path: "../data/dev/train_consumption.parquet"
-
   weather_file: "../data/processed/weather.parquet"
-
   holidays_file: "../data/processed/holidays.parquet"
-
   holidays_zone: "C"  # Zone scolaire (A, B ou C)
 
-  
-
   # Configuration API météo pour prévisions
-
   weather_latitude: 43.5297  # Aix en Provence par défaut
-
   weather_longitude: 5.4474
-
   weather_location: "Aix en Provence"
-
-
 
   target_column: "Valeur"  # Consommation en kWh
 
-  
-
   # Features à utiliser
-
   feature_columns:
-
     - "Horodate"
-
     - "temperature_2m_mean"
-
     - "relative_humidity_mean"
-
     - "precipitation_sum"
-
     - "is_vacances"
-
     - "jour de la semaine"
-
     - "jour férié"
 
-
-
-  
-
   # Colonnes à supprimer
-
   drop_columns:
-
     - "Identifiant PRM"
-
     - "Date de début"
-
     - "Date de fin"
-
     - "Grandeur physique"
-
     - "Grandeur métier"
-
     - "Etape métier"
-
     - "Unité"
-
     - "Nature"
-
     - "Pas"
-
     - "Indice de vraisemblance"
-
     - "Etat complémentaire"
 
-
-
 # Paramètres modèle
-
 model:
-
   test_size: 0.2
-
   random_state: 42
-
   model_type: "auto_gluon"
-
   problem_type: "regression"  # Prédiction consommation (continu)
 
-  
-
 # Paramètres entraînement
-
 training:
-
   epochs: 100
-
   batch_size: 32
-
   learning_rate: 0.001
-
   time_limit: 3600  # 1h max (voir SPECIFICATIONS.md)
 
-
-
 # MLflow
-
 mlflow:
-
   tracking_uri: "https://jinsudai-mlflow.hf.space/"
-
   experiment_name: "energy_consumption"
-
   model_name: "consumption_model"
 
-  
-
 # Monitoring
-
 monitoring:
-
   metric_name: "r2_score"  # R² pour régression
-
   metric_target: 0.90  # Target 90%
-
   alert_threshold: 0.85  # Warning si < 85%
 
-
-
 # Configuration des notifications par email
-
 # Note: La configuration détaillée est dans config.yaml (section email)
-
 email:
-
   enabled: false  # Activer/désactiver les notifications email pour ce module
 
-
-
 # Configuration de la détection de drift
-
 drift_detection:
-
   enabled: true  # Activer/désactiver la détection de drift
-
   data_drift_threshold: 0.1  # Seuil pour Population Stability Index (PSI)
-
   concept_drift_threshold: 0.15  # Seuil pour drift de performance
-
   feature_drift_threshold: 0.2  # Seuil pour drift par feature
-
   reference_data_path: "../data/processed/2024-01-01_to_2024-01-31_train.parquet"  # Chemin vers les données de référence (format: {date_debut}_{date_fin}_train.parquet)
-
   min_samples_for_detection: 100  # Nombre minimum d'échantillons pour détecter le drift
 
-
-
 # Configuration de la base de données
-
 database:
-
   uri: null  # URI PostgreSQL (à définir via variable d'environnement PREDICTIONS_POSTGRES_URI)
 
