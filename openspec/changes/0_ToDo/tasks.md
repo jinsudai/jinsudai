@@ -1,6 +1,7 @@
 # Pour Devin
 
 # Tâches de fond:
+Le projet ne souhaite pas utiliser prefect pour le moment
 Quand tu peux enlève les commentaire "sans prefect" qui sont dans plusieurs fichiers
 
 Evidently

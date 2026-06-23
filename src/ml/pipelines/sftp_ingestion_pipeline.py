@@ -119,6 +119,65 @@ def run_sftp_ingestion_pipeline(
     }
 
 
+def run_sftp_ingestion_with_random_data(db_uri: Optional[str] = None) -> Dict[str, Any]:
+    """Fallback: utilise `ActualValuesPipeline` pour générer et appliquer des valeurs aléatoires.
+
+    Le pipeline `ActualValuesPipeline` récupère les prédictions de la veille,
+    génère des valeurs aléatoires et met à jour la base de données.
+    """
+    db_uri = get_default_db_uri(db_uri)
+
+    # Importer localement pour éviter les dépendances circulaires
+    from ml.pipelines.Actual_values_pipeline import ActualValuesPipeline
+
+    pipeline = ActualValuesPipeline(db_uri=db_uri, config={'sftp': {'enabled': False}})
+
+    if not pipeline.setup():
+        return {
+            'status': 'error',
+            'files_count': 0,
+            'processing': {'status': 'failed'},
+            'summary': {'note': 'Impossible de configurer le pipeline de valeurs réelles'}
+        }
+
+    preds_ok = pipeline.get_previous_day_predictions()
+    if preds_ok is None:
+        return {
+            'status': 'no_files',
+            'files_count': 0,
+            'processing': {'status': 'skipped'},
+            'summary': {'note': 'Aucune prédiction pour la veille'}
+        }
+    if not preds_ok:
+        return {
+            'status': 'error',
+            'files_count': 0,
+            'processing': {'status': 'failed'},
+            'summary': {'note': 'Erreur lors de la récupération des prédictions'}
+        }
+
+    # Génération et mise à jour
+    if not pipeline.generate_random_actual_values():
+        return {
+            'status': 'error',
+            'files_count': 0,
+            'processing': {'status': 'failed'},
+            'summary': {'note': 'Échec de la génération/mise à jour aléatoire'}
+        }
+
+    summary = {'updated': pipeline.updated_count}
+
+    return {
+        'status': 'success',
+        'files_count': 1,
+        'processing': {
+            'summary': summary,
+            'details': [{'file': 'random_generated', 'success': True, 'records_processed': pipeline.updated_count, 'predictions_updated': pipeline.updated_count}]
+        },
+        'summary': summary
+    }
+
+
 __all__ = [
     'load_sftp_config',
     'run_sftp_ingestion_pipeline'

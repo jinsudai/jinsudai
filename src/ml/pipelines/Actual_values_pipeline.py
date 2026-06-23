@@ -193,17 +193,92 @@ class ActualValuesPipeline:
         if not predictions_result:
             return False, None
 
-        # Vérifier si le SFTP est activé avant de générer des valeurs aléatoires
+        # Vérifier si le SFTP est activé : si oui, utiliser le module SFTP pour ingérer
         sftp_enabled = self.config.get('sftp', {}).get('enabled', False)
 
         if sftp_enabled:
-            logger.info("=== SFTP ACTIVÉ - PAS DE GÉNÉRATION ALÉATOIRE ===")
-            logger.warning("Le SFTP est activé dans la configuration. Les valeurs réelles doivent être récupérées depuis le SFTP.")
-            logger.info("Pipeline terminé avec succès - aucune génération aléatoire nécessaire")
-            return True, None
+            logger.info("=== SFTP ACTIVÉ - LANCEMENT DE L'INGESTION SFTP ===")
+            try:
+                from ml.pipelines.sftp_ingestion_pipeline import (
+                    run_sftp_ingestion_pipeline,
+                    load_sftp_config
+                )
 
-        if not self.generate_random_actual_values():
-            return False, None
+                sftp_cfg = self.config.get('sftp', {})
+
+                # Priorité: config > environnement
+                if sftp_cfg.get('use_env_config', False):
+                    try:
+                        env_cfg = load_sftp_config()
+                        result = run_sftp_ingestion_pipeline(
+                            sftp_host=env_cfg['host'],
+                            sftp_username=env_cfg['username'],
+                            ssh_private_key_b64=env_cfg.get('ssh_private_key_b64'),
+                            ssh_private_key_content=env_cfg.get('ssh_private_key_content'),
+                            db_uri=self.db_uri,
+                            remote_directory=env_cfg.get('remote_directory'),
+                            archive_directory=env_cfg.get('archive_directory'),
+                            passphrase=env_cfg.get('passphrase'),
+                            sftp_port=env_cfg.get('port', 22),
+                            sftp_timeout=env_cfg.get('timeout', 30),
+                            file_pattern=env_cfg.get('file_pattern', '*.csv'),
+                            temp_local_dir=env_cfg.get('temp_local_dir', '/tmp/sftp_temp')
+                        )
+                    except Exception as e:
+                        logger.error(f"Erreur lors du chargement de la configuration SFTP depuis l'environnement: {e}")
+                        logger.warning("Basculement vers génération aléatoire")
+                        if not self.generate_random_actual_values():
+                            return False, None
+                        results = self.verify_updates()
+                        return True, results
+                else:
+                    # Lire les paramètres SFTP depuis la config
+                    host = sftp_cfg.get('host')
+                    username = sftp_cfg.get('username')
+                    if not host or not username:
+                        logger.warning("Configuration SFTP incomplète dans config; basculement vers génération aléatoire")
+                        if not self.generate_random_actual_values():
+                            return False, None
+                        results = self.verify_updates()
+                        return True, results
+
+                    result = run_sftp_ingestion_pipeline(
+                        sftp_host=host,
+                        sftp_username=username,
+                        ssh_private_key_b64=sftp_cfg.get('ssh_private_key_b64'),
+                        ssh_private_key_content=sftp_cfg.get('ssh_private_key_content'),
+                        db_uri=self.db_uri,
+                        remote_directory=sftp_cfg.get('remote_directory', '/data/incoming'),
+                        archive_directory=sftp_cfg.get('archive_directory', '/data/archived'),
+                        passphrase=sftp_cfg.get('passphrase'),
+                        sftp_port=sftp_cfg.get('port', 22),
+                        sftp_timeout=sftp_cfg.get('timeout', 30),
+                        file_pattern=sftp_cfg.get('file_pattern', '*.csv'),
+                        temp_local_dir=sftp_cfg.get('temp_local_dir', '/tmp/sftp_temp')
+                    )
+
+                # Interpréter le résultat de l'ingestion SFTP
+                if result is None:
+                    logger.error("Résultat de l'ingestion SFTP invalide")
+                    return False, None
+
+                status = result.get('status')
+                if status == 'success':
+                    logger.info("Ingestion SFTP réalisée avec succès")
+                    results = self.verify_updates()
+                    return True, results
+                elif status == 'no_files':
+                    logger.info("Aucun fichier récupéré depuis SFTP")
+                    return True, None
+                else:
+                    logger.error(f"Erreur lors de l'ingestion SFTP: {result}")
+                    return False, None
+
+            except Exception as e:
+                logger.error(f"Échec du flux SFTP: {e}")
+                logger.warning("Basculement vers génération aléatoire")
+                if not self.generate_random_actual_values():
+                    return False, None
 
         results = self.verify_updates()
 

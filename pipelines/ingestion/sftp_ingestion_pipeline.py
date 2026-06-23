@@ -61,33 +61,34 @@ def main():
             )
         else:
             # Utiliser les arguments en ligne de commande
-            if not args.sftp_host or not args.sftp_username:
-                print(f"❌ Erreur: sftp_host et sftp_username sont requis si use_env_config n'est pas activé")
-                sys.exit(1)
-            
-            # Charger la config pour les valeurs par défaut (avec environnement)
+            # Si les informations SFTP manquent, basculer en génération aléatoire
             from ml.config.global_config import load_config_with_environment
             config = load_config_with_environment(args.config_name)
-            
+
             if args.db_uri is None:
                 db_uri = config.get('database', {}).get('uri')
             else:
                 db_uri = args.db_uri
-            
-            result = run_sftp_ingestion_pipeline(
-                sftp_host=args.sftp_host,
-                sftp_username=args.sftp_username,
-                ssh_private_key_b64=args.ssh_private_key_b64,
-                ssh_private_key_content=args.ssh_private_key_content,
-                db_uri=db_uri,
-                remote_directory=args.remote_directory,
-                archive_directory=args.archive_directory,
-                passphrase=args.passphrase,
-                sftp_port=args.sftp_port,
-                sftp_timeout=args.sftp_timeout,
-                file_pattern=args.file_pattern,
-                temp_local_dir=args.temp_local_dir
-            )
+
+            if not args.sftp_host or not args.sftp_username:
+                print("⚠️ Configuration SFTP manquante — utilisation de données aléatoires de test")
+                from ml.pipelines.sftp_ingestion_pipeline import run_sftp_ingestion_with_random_data
+                result = run_sftp_ingestion_with_random_data(db_uri=db_uri)
+            else:
+                result = run_sftp_ingestion_pipeline(
+                    sftp_host=args.sftp_host,
+                    sftp_username=args.sftp_username,
+                    ssh_private_key_b64=args.ssh_private_key_b64,
+                    ssh_private_key_content=args.ssh_private_key_content,
+                    db_uri=db_uri,
+                    remote_directory=args.remote_directory,
+                    archive_directory=args.archive_directory,
+                    passphrase=args.passphrase,
+                    sftp_port=args.sftp_port,
+                    sftp_timeout=args.sftp_timeout,
+                    file_pattern=args.file_pattern,
+                    temp_local_dir=args.temp_local_dir
+                )
         
         if result['status'] == 'success':
             print(f"\n✅ Pipeline terminé avec succès")
