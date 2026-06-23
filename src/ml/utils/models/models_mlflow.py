@@ -167,16 +167,15 @@ def _log_autogluon_model(model, artifact_path):
             def predict(self, context, model_input):
                 return self.predictor.predict(model_input)
 
-        # Convertir le chemin Windows en URI file:// pour MLflow
-        from pathlib import Path
-        predictor_uri = Path(predictor_dir).as_uri()
-        logger.info(f"URI de l'artefact AutoGluon: {predictor_uri}")
+        # Utiliser le chemin direct du répertoire temporaire pour l'upload MLflow
+        # MLflow uploadera automatiquement les fichiers vers le serveur distant
+        logger.info(f"Chemin de l'artefact AutoGluon pour upload: {predictor_dir}")
 
         # Enregistrer le modèle via mlflow.pyfunc
         mlflow.pyfunc.log_model(
             artifact_path=artifact_path,
             python_model=AutoGluonPyFunc(),
-            artifacts={"ag_model": predictor_uri},
+            artifacts={"ag_model": predictor_dir},
         )
         logger.info("Modèle AutoGluon enregistré comme artefact pyfunc portable")
     except Exception as e:
