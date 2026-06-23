@@ -223,8 +223,10 @@ def load_config_with_environment(config_name: str) -> Dict[str, Any]:
     base_config = load_config(config_name=config_name)
     
     # Charger la config spécifique à l'environnement si elle existe
-    # Priorité: variable d'environnement ENVIRONMENT (majuscules) > Environment (premier caractère majuscule) > Dev par défaut
+    # Priorité: variable d'environnement ENVIRONMENT (majuscules) > Environment (premier caractère majuscule)
     environment = os.getenv('ENVIRONMENT')
+    if environment is None:
+        raise ValueError("La variable d'environnement ENVIRONMENT n'est pas définie")
     environment = environment.lower()
     env_config_name = f"{config_name}.{environment}"
     

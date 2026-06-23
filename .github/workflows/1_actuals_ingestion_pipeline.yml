@@ -98,6 +98,7 @@ jobs:
           SFTP_ARCHIVE_DIRECTORY: ${{ secrets.SFTP_ARCHIVE_DIRECTORY || '/data/archived' }}
           SFTP_FILE_PATTERN: ${{ secrets.SFTP_FILE_PATTERN || '*.csv' }}
           SFTP_TEMP_LOCAL_DIR: ${{ secrets.SFTP_TEMP_LOCAL_DIR || '/tmp/sftp_temp' }}
+          ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.use_env_config }}" = "true" ]; then
             python pipelines/ingestion/actuals_ingestion_pipeline.py \
