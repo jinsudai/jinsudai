@@ -115,27 +115,59 @@ class DatabaseHandler:
                     cursor.execute(create_query)
 
                     cursor.execute(
+                        "SELECT column_name FROM information_schema.columns "
+                        "WHERE table_name = 'predictions_pipeline';"
+                    )
+                    existing_columns = [row[0] for row in cursor.fetchall()]
 
+                    if 'target_timestamp' not in existing_columns:
+                        if 'prediction_timestamp' in existing_columns:
+                            cursor.execute(
+                                "ALTER TABLE predictions_pipeline RENAME COLUMN prediction_timestamp TO target_timestamp;"
+                            )
+                            existing_columns.append('target_timestamp')
+                            existing_columns.remove('prediction_timestamp')
+                        else:
+                            cursor.execute(
+                                "ALTER TABLE predictions_pipeline ADD COLUMN IF NOT EXISTS target_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP;"
+                            )
+                            existing_columns.append('target_timestamp')
+
+                    if 'prediction_index' not in existing_columns:
+                        cursor.execute(
+                            "ALTER TABLE predictions_pipeline ADD COLUMN IF NOT EXISTS prediction_index INTEGER DEFAULT 0;"
+                        )
+                    if 'model_version' not in existing_columns:
+                        cursor.execute(
+                            "ALTER TABLE predictions_pipeline ADD COLUMN IF NOT EXISTS model_version TEXT;"
+                        )
+                    if 'entity_id' not in existing_columns:
+                        cursor.execute(
+                            "ALTER TABLE predictions_pipeline ADD COLUMN IF NOT EXISTS entity_id TEXT;"
+                        )
+                    if 'run_id' not in existing_columns:
+                        cursor.execute(
+                            "ALTER TABLE predictions_pipeline ADD COLUMN IF NOT EXISTS run_id TEXT;"
+                        )
+                    if 'actual_value' not in existing_columns:
+                        cursor.execute(
+                            "ALTER TABLE predictions_pipeline ADD COLUMN IF NOT EXISTS actual_value DOUBLE PRECISION;"
+                        )
+
+                    cursor.execute(
                         "CREATE INDEX IF NOT EXISTS idx_predictions_pipeline_target_timestamp ON predictions_pipeline (target_timestamp);"
-
                     )
 
                     cursor.execute(
-
                         "CREATE INDEX IF NOT EXISTS idx_predictions_pipeline_prediction_index ON predictions_pipeline (prediction_index);"
-
                     )
 
                     cursor.execute(
-
                         "CREATE INDEX IF NOT EXISTS idx_predictions_pipeline_entity_id ON predictions_pipeline (entity_id);"
-
                     )
 
                     cursor.execute(
-
                         "CREATE INDEX IF NOT EXISTS idx_predictions_pipeline_run_id ON predictions_pipeline (run_id);"
-
                     )
 
                     # Créer une vue avec ordre par défaut décroissant sur target_timestamp
