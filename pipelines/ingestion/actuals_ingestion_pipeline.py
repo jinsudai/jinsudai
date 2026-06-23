@@ -21,6 +21,7 @@ def main():
     parser = argparse.ArgumentParser(description='Exécute le pipeline de mise à jour des valeurs réelles')
     parser.add_argument('--db_uri', type=str, required=False, help='URI de connexion PostgreSQL')
     parser.add_argument('--config_name', type=str, default='consumption', help='Nom de la config (consumption, solar_production)')
+    parser.add_argument('--use_env_config', action='store_true', help='Utiliser la configuration depuis les variables d\'environnement')
     
     args = parser.parse_args()
     

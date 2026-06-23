@@ -30,7 +30,7 @@ from mlflow.pyfunc import PythonModel
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-DEFAULT_ARTIFACT_DIR = Path(__file__).resolve().parents[5] / "jinsudai" / "model"
+DEFAULT_ARTIFACT_DIR = Path(__file__).resolve().parents[5] / "model"
 
 
 def _ensure_artifact_location(artifact_location=None):
@@ -45,20 +45,19 @@ def _ensure_artifact_location(artifact_location=None):
 def set_mlflow_tracking(tracking_uri=None, artifact_location=None):
     """Configure la cible de suivi MLflow et le stockage local des artefacts."""
     try:
-        # Ne créer l'artifact_location local que si explicitement demandé
-        # ou si tracking_uri n'est pas fourni (mode local)
-        if artifact_location is not None or tracking_uri is None:
-            artifact_path = _ensure_artifact_location(artifact_location)
-            artifact_uri = artifact_path.as_uri()
-            os.environ["MLFLOW_ARTIFACT_URI"] = artifact_uri
-            logger.info(f"Répertoire local des artefacts configuré: {artifact_path}")
-
-        if tracking_uri is None and artifact_location is None:
-            tracking_uri = artifact_path.as_uri()
-
+        # Si tracking_uri est fourni (serveur distant), ne pas forcer artifact_location local
+        # MLflow uploadera directement les artefacts vers le serveur distant
         if tracking_uri is not None:
             mlflow.set_tracking_uri(tracking_uri)
             logger.info(f"Tracking URI configuré: {tracking_uri}")
+        else:
+            # Mode local : créer un artifact_location local
+            artifact_path = _ensure_artifact_location(artifact_location)
+            artifact_uri = artifact_path.as_uri()
+            mlflow.set_tracking_uri(artifact_uri)
+            os.environ["MLFLOW_ARTIFACT_URI"] = artifact_uri
+            logger.info(f"Tracking URI configuré (mode local): {artifact_uri}")
+            logger.info(f"Répertoire local des artefacts: {artifact_path}")
     except Exception as e:
         logger.error(f"Erreur lors de la configuration MLflow: {e}")
 
@@ -115,14 +114,23 @@ def log_metrics(metrics):
 
 def log_model(model, artifact_path="model"):
     """Enregistre le modèle (sklearn ou AutoGluon)"""
+    temp_dir_to_cleanup = None
     try:
         if type(model).__name__ == "TabularPredictor":
-            _log_autogluon_model(model, artifact_path)
+            temp_dir_to_cleanup = _log_autogluon_model(model, artifact_path)
         else:
             mlflow.sklearn.log_model(model, name=artifact_path)
         logger.info(f"Modèle enregistré: {artifact_path}")
     except Exception as e:
         logger.error(f"Erreur lors de l'enregistrement du modèle: {e}")
+        raise
+    finally:
+        # Nettoyer le répertoire temporaire après un court délai pour permettre l'upload MLflow
+        if temp_dir_to_cleanup:
+            import time
+            time.sleep(2)  # Attendre 2 secondes pour que MLflow finisse l'upload
+            shutil.rmtree(temp_dir_to_cleanup, ignore_errors=True)
+            logger.info(f"Répertoire temporaire nettoyé: {temp_dir_to_cleanup}")
 
 
 def _log_autogluon_model(model, artifact_path):
@@ -178,11 +186,17 @@ def _log_autogluon_model(model, artifact_path):
             artifacts={"ag_model": predictor_dir},
         )
         logger.info("Modèle AutoGluon enregistré comme artefact pyfunc portable")
+        
+        # Attendre que MLflow finisse l'upload avant de supprimer le temp_dir
+        # Le répertoire temporaire sera nettoyé plus tard par le pipeline
+        logger.info(f"Répertoire temporaire conservé pour upload MLflow: {temp_dir}")
+        return temp_dir  # Retourner le chemin pour nettoyage ultérieur
+        
     except Exception as e:
         logger.error(f"Erreur lors de log_autogluon_model: {e}")
-    finally:
+        # En cas d'erreur, nettoyer le temp_dir
         shutil.rmtree(temp_dir, ignore_errors=True)
-        logger.info(f"Répertoire temporaire supprimé: {temp_dir}")
+        raise
 
 
 def log_artifact(file_path, artifact_path=None, artifact_location=None):

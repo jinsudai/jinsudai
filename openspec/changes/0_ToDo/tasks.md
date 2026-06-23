@@ -1,15 +1,15 @@
 # Pour Devin
 
-# Tâches de fond:
+## Tâches de fond:
 Le projet ne souhaite pas utiliser prefect pour le moment
 Quand tu peux enlève les commentaire "sans prefect" qui sont dans plusieurs fichiers
 
-Evidently
+## Evidently
 - J'ai un server EvidentlyAi deployé je pense qu'il faut juste uploader les rapports dans le bucket s3 evidently-reports
-- Est-ce que l'on compare bien les bons datasets?
-- Data Drift (Drift Detection Action) -> A documenter
+- Est-ce que l'on compare bien les bons datasets? -> OK
+- Data Drift (Drift Detection Action) -> Tester la documentation
 
-slidev
+## slidev
 - Verifier la Documentation pour bloc 4
 
 Airflow

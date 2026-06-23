@@ -610,9 +610,9 @@ class MLPipeline:
             ("Évaluation", self.step_5_evaluate_model),
             ("Monitoring", self.step_6_monitor_performance),
             ("MLflow Logging", self.step_7_log_with_mlflow),
+            ("Gestion des Stages", self.step_9_manage_model_stages),
             ("Upload des données entraînées vers S3", self.step_8_upload_trained_data_to_s3),
             ("Nettoyage du modèle", self.step_8_cleanup_model),
-            ("Gestion des Stages", self.step_9_manage_model_stages),
         ]
 
         for step_name, step_func in steps:
