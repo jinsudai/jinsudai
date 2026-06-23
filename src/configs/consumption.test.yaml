@@ -9,7 +9,7 @@ data:
 model:
   test_size: 0.25
   time_limit: 1800  # 30 min max
-  model_type: "random_forest"  # Use faster model for testing
+  model_type: "autogluon"  # Use faster model for testing
 
 training:
   epochs: 50

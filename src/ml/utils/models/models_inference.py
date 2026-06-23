@@ -247,28 +247,58 @@ class InferenceModel:
             return None
 
         try:
+            # Logger les features disponibles
+            if isinstance(X_data, pd.DataFrame):
+                logger.info(f"Features disponibles dans X_data: {list(X_data.columns)}")
+                logger.info(f"Types des features: {X_data.dtypes.to_dict()}")
+
+            # Identifier les features attendues par le modèle
             expected_features = None
             if hasattr(self.model, 'features') and callable(getattr(self.model, 'features')):
                 expected_features = self.model.features()
+                logger.info(f"Features attendues (via features()): {expected_features}")
             elif hasattr(self.model, 'feature_names_in_'):
                 expected_features = list(self.model.feature_names_in_)
+                logger.info(f"Features attendues (via feature_names_in_): {expected_features}")
             elif hasattr(self.model, 'feature_names'):
                 expected_features = list(self.model.feature_names)
+                logger.info(f"Features attendues (via feature_names): {expected_features}")
+            else:
+                logger.warning("Le modèle n'a pas d'information sur les noms de features")
+
+            # Vérifier le nombre de features attendu
+            if hasattr(self.model, 'n_features_in_'):
+                logger.info(f"Nombre de features attendu par le modèle: {self.model.n_features_in_}")
 
             if expected_features is not None and isinstance(X_data, pd.DataFrame):
+                # Comparer features attendues vs disponibles
+                available_features = [f for f in expected_features if f in X_data.columns]
                 missing_features = [f for f in expected_features if f not in X_data.columns]
+                extra_features = [f for f in X_data.columns if f not in expected_features]
+
+                logger.info(f"=== COMPARAISON DES FEATURES ===")
+                logger.info(f"Features attendues: {expected_features}")
+                logger.info(f"Features disponibles: {list(X_data.columns)}")
+                logger.info(f"Features manquantes: {missing_features}")
+                logger.info(f"Features en trop: {extra_features}")
+                logger.info(f"Features correspondantes: {available_features}")
+
                 if missing_features:
                     logger.warning(
-                        "Les colonnes attendues par le modèle sont manquantes : %s. "
-                        "La prédiction sera effectuée avec toutes les colonnes disponibles.",
-                        missing_features
+                        f"Colonnes attendues manquantes: {missing_features}. "
+                        f"Utilisation des features disponibles: {available_features}"
                     )
+                if extra_features:
+                    logger.warning(f"Colonnes en trop qui seront ignorées: {extra_features}")
+
+                if available_features:
+                    X_data = X_data[available_features]
+                    logger.info(f"DataFrame réduit aux features correspondantes: {list(X_data.columns)}")
                 else:
-                    X_data = X_data[expected_features]
+                    logger.warning("Aucune feature attendue disponible, fallback sur toutes les colonnes")
 
             # Filtrer les colonnes non-numériques pour éviter les erreurs de conversion
             if isinstance(X_data, pd.DataFrame):
-                # Garder uniquement les colonnes numériques
                 numeric_cols = X_data.select_dtypes(include=[np.number]).columns.tolist()
                 if len(numeric_cols) < X_data.shape[1]:
                     logger.info(
@@ -277,6 +307,11 @@ class InferenceModel:
                     logger.debug(f"Colonnes supprimées: {set(X_data.columns) - set(numeric_cols)}")
                     X_data = X_data[numeric_cols]
 
+            # Vérification finale avant prédiction
+            if isinstance(X_data, pd.DataFrame):
+                logger.info(f"Shape final avant prédiction: {X_data.shape}")
+                logger.info(f"Colonnes finales: {list(X_data.columns)}")
+
             predictions = self.model.predict(X_data)
 
             logger.info(f"Prédictions générées pour {len(X_data)} échantillons")
@@ -284,6 +319,8 @@ class InferenceModel:
 
         except Exception as e:
             logger.error(f"Erreur lors de la prédiction: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return None
 
     def get_model_info(self):
