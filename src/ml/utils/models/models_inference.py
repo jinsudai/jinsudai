@@ -266,6 +266,17 @@ class InferenceModel:
                 else:
                     X_data = X_data[expected_features]
 
+            # Filtrer les colonnes non-numériques pour éviter les erreurs de conversion
+            if isinstance(X_data, pd.DataFrame):
+                # Garder uniquement les colonnes numériques
+                numeric_cols = X_data.select_dtypes(include=[np.number]).columns.tolist()
+                if len(numeric_cols) < X_data.shape[1]:
+                    logger.info(
+                        f"Filtrage des colonnes non-numériques: {X_data.shape[1]} -> {len(numeric_cols)} colonnes"
+                    )
+                    logger.debug(f"Colonnes supprimées: {set(X_data.columns) - set(numeric_cols)}")
+                    X_data = X_data[numeric_cols]
+
             predictions = self.model.predict(X_data)
 
             logger.info(f"Prédictions générées pour {len(X_data)} échantillons")
