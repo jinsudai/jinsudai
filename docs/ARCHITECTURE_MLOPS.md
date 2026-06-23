@@ -740,13 +740,13 @@ graph TB
 
 ## 10. Schéma de Base de Données
 
-### 10.1 Table `predictions_pipeline`
+### 10.1 Table `consumption_predictions`
 
-La table `predictions_pipeline` stocke toutes les prédictions générées par les modèles en production.
+La table `consumption_predictions` stocke toutes les prédictions générées par les modèles en production.
 
 **Structure principale :**
 - `prediction_id` : UUID unique (clé primaire)
-- `prediction_timestamp` : Timestamp de la prédiction
+- `target_timestamp` : Timestamp de la prédiction
 - `prediction` : Valeur prédite en kWh
 - `model_version` : Version du modèle utilisé
 - `entity_id` : Identifiant de l'entité (client/site)

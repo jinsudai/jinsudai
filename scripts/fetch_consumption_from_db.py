@@ -46,17 +46,17 @@ def main():
         # Déterminer la requête SQL
         if args.start_date and args.end_date:
             query = f"""
-            SELECT * FROM consumption_data 
-            WHERE date >= '{args.start_date}' AND date <= '{args.end_date}'
-            ORDER BY date ASC
+            SELECT * FROM consumption_predictions 
+            WHERE target_timestamp >= '{args.start_date}' AND target_timestamp <= '{args.end_date}'
+            ORDER BY target_timestamp ASC
             """
             print(f"Période: {args.start_date} à {args.end_date}")
         else:
             # Récupérer les données du dernier jour
             query = """
-            SELECT * FROM consumption_data 
-            WHERE date = (SELECT MAX(date) FROM consumption_data)
-            ORDER BY date ASC
+            SELECT * FROM consumption_predictions 
+            WHERE target_timestamp = (SELECT MAX(target_timestamp) FROM consumption_predictions)
+            ORDER BY target_timestamp ASC
             """
             print(f"Période: dernier jour disponible")
         

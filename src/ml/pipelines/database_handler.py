@@ -6,7 +6,6 @@ import pandas as pd
 
 import psycopg2
 
-import uuid
 
 from psycopg2.extras import execute_batch
 
@@ -80,13 +79,11 @@ class DatabaseHandler:
 
         create_query = """
 
-        CREATE TABLE IF NOT EXISTS predictions_pipeline (
+        CREATE TABLE IF NOT EXISTS consumption_predictions (
 
-            prediction_id UUID PRIMARY KEY,
+            prediction_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 
             target_timestamp TIMESTAMP NOT NULL,
-
-            prediction_index INTEGER NOT NULL,
 
             prediction DOUBLE PRECISION NOT NULL,
 
@@ -98,7 +95,9 @@ class DatabaseHandler:
 
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-            actual_value DOUBLE PRECISION
+            actual_value DOUBLE PRECISION,
+
+            CONSTRAINT unique_target_entity UNIQUE (target_timestamp, entity_id)
 
         );
 
@@ -115,28 +114,24 @@ class DatabaseHandler:
                     cursor.execute(create_query)
 
                     cursor.execute(
-                        "CREATE INDEX IF NOT EXISTS idx_predictions_pipeline_target_timestamp ON predictions_pipeline (target_timestamp);"
+                        "CREATE INDEX IF NOT EXISTS idx_consumption_predictions_target_timestamp ON consumption_predictions (target_timestamp);"
                     )
 
                     cursor.execute(
-                        "CREATE INDEX IF NOT EXISTS idx_predictions_pipeline_prediction_index ON predictions_pipeline (prediction_index);"
+                        "CREATE INDEX IF NOT EXISTS idx_consumption_predictions_entity_id ON consumption_predictions (entity_id);"
                     )
 
                     cursor.execute(
-                        "CREATE INDEX IF NOT EXISTS idx_predictions_pipeline_entity_id ON predictions_pipeline (entity_id);"
-                    )
-
-                    cursor.execute(
-                        "CREATE INDEX IF NOT EXISTS idx_predictions_pipeline_run_id ON predictions_pipeline (run_id);"
+                        "CREATE INDEX IF NOT EXISTS idx_consumption_predictions_run_id ON consumption_predictions (run_id);"
                     )
 
                     # Créer une vue avec ordre par défaut décroissant sur target_timestamp
 
                     cursor.execute("""
 
-                        CREATE OR REPLACE VIEW predictions_pipeline_sorted AS
+                        CREATE OR REPLACE VIEW consumption_predictions_sorted AS
 
-                        SELECT * FROM predictions_pipeline
+                        SELECT * FROM consumption_predictions
 
                         ORDER BY target_timestamp DESC;
 
@@ -144,7 +139,7 @@ class DatabaseHandler:
 
                     conn.commit()
 
-            logger.info("Table predictions_pipeline créée ou déjà existante")
+            logger.info("Table consumption_predictions créée ou déjà existante")
 
             return True
 
@@ -176,41 +171,25 @@ class DatabaseHandler:
 
         df = df_predictions.copy()
 
-
-
         if 'target_timestamp' not in df.columns:
-
-            if 'horodate' in df.columns:
-
-                df['target_timestamp'] = pd.to_datetime(df['horodate'])
-
-            elif 'timestamp' in df.columns:
-
-                df['target_timestamp'] = pd.to_datetime(df['timestamp'])
-
-            else:
-
-                df['target_timestamp'] = pd.Timestamp.now()
-
-
-
-        if 'prediction_index' not in df.columns:
-
-            df = df.reset_index(drop=True)
-
-            df['prediction_index'] = df.index + 1
+            logger.error("La colonne 'target_timestamp' est requise mais absente du DataFrame")
+            return False
 
 
 
         insert_query = """
 
-        INSERT INTO predictions_pipeline (
+        INSERT INTO consumption_predictions (
 
-            prediction_id, target_timestamp, prediction_index, prediction, model_version, entity_id, run_id
+            target_timestamp, prediction, model_version, entity_id, run_id
 
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+        ) VALUES (%s, %s, %s, %s, %s)
 
-        ON CONFLICT (prediction_id) DO NOTHING;
+        ON CONFLICT (target_timestamp, entity_id) 
+        DO UPDATE SET 
+            prediction = EXCLUDED.prediction,
+            model_version = EXCLUDED.model_version,
+            run_id = EXCLUDED.run_id;
 
         """
 
@@ -226,11 +205,7 @@ class DatabaseHandler:
 
                         (
 
-                            str(uuid.uuid4()),
-
                             row.get("target_timestamp"),
-
-                            int(row.get("prediction_index", 0)),
 
                             float(row.get("prediction")),
 
@@ -276,7 +251,7 @@ class DatabaseHandler:
 
         SELECT prediction_id, target_timestamp, prediction, model_version, entity_id, run_id, created_at
 
-        FROM predictions_pipeline
+        FROM consumption_predictions
 
         ORDER BY target_timestamp DESC
 
@@ -318,7 +293,7 @@ class DatabaseHandler:
 
 
 
-        query = "SELECT COUNT(*) FROM predictions_pipeline"
+        query = "SELECT COUNT(*) FROM consumption_predictions"
 
         try:
 
@@ -372,11 +347,11 @@ class DatabaseHandler:
 
         query = """
 
-        SELECT prediction_id, target_timestamp, prediction_index,
+        SELECT prediction_id, target_timestamp,
 
                prediction, model_version, entity_id, run_id, actual_value
 
-        FROM predictions_pipeline
+        FROM consumption_predictions
 
         WHERE target_timestamp >= %s AND target_timestamp <= %s
 
@@ -448,7 +423,7 @@ class DatabaseHandler:
 
         update_query = """
 
-        UPDATE predictions_pipeline
+        UPDATE consumption_predictions
 
         SET actual_value = %s
 
@@ -506,7 +481,7 @@ class DatabaseHandler:
 
         alter_query = """
 
-        ALTER TABLE predictions_pipeline
+        ALTER TABLE consumption_predictions
 
         ADD COLUMN IF NOT EXISTS actual_value DOUBLE PRECISION
 
@@ -578,7 +553,7 @@ class DatabaseHandler:
 
             SELECT target_timestamp, prediction, actual_value
 
-            FROM predictions_pipeline
+            FROM consumption_predictions
 
             WHERE actual_value IS NOT NULL
 
@@ -596,7 +571,7 @@ class DatabaseHandler:
 
             SELECT target_timestamp, prediction, actual_value
 
-            FROM predictions_pipeline
+            FROM consumption_predictions
 
             WHERE actual_value IS NOT NULL
 

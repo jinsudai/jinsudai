@@ -1,20 +1,20 @@
 # Schéma de la Base de Données - PostgreSQL
 
-## Table `predictions_pipeline`
+## Table `consumption_predictions`
 
 ### Structure
 
 ```sql
-CREATE TABLE predictions_pipeline (
+CREATE TABLE consumption_predictions (
     prediction_id UUID PRIMARY KEY,
-    prediction_timestamp TIMESTAMP NOT NULL,
-    prediction_index INTEGER NOT NULL,
+    target_timestamp TIMESTAMP NOT NULL,
     prediction DOUBLE PRECISION NOT NULL,
     model_version TEXT NOT NULL,
     entity_id TEXT NOT NULL,
     run_id TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    actual_value DOUBLE PRECISION
+    actual_value DOUBLE PRECISION,
+    CONSTRAINT unique_target_entity UNIQUE (target_timestamp, entity_id)
 );
 ```
 
@@ -23,8 +23,7 @@ CREATE TABLE predictions_pipeline (
 | Colonne | Type | Description | Nullable |
 |---------|------|-------------|----------|
 | `prediction_id` | UUID | Identifiant unique de la prédiction (clé primaire) | NON |
-| `prediction_timestamp` | TIMESTAMP | Timestamp de la prédiction (quand la prédiction a été faite) | NON |
-| `prediction_index` | INTEGER | Index de la prédiction (pour différencier plusieurs prédictions par timestamp) | NON |
+| `target_timestamp` | TIMESTAMP | Timestamp de la prédiction (quand la prédiction a été faite) | NON |
 | `prediction` | DOUBLE PRECISION | Valeur prédite en kWh (consommation ou production) | NON |
 | `model_version` | TEXT | Version du modèle utilisé pour la prédiction | NON |
 | `entity_id` | TEXT | Identifiant de l'entité (client PRM ou site de production) | NON |
@@ -35,18 +34,17 @@ CREATE TABLE predictions_pipeline (
 ### Index
 
 ```sql
-CREATE INDEX idx_predictions_pipeline_prediction_timestamp ON predictions_pipeline (prediction_timestamp);
-CREATE INDEX idx_predictions_pipeline_prediction_index ON predictions_pipeline (prediction_index);
-CREATE INDEX idx_predictions_pipeline_entity_id ON predictions_pipeline (entity_id);
-CREATE INDEX idx_predictions_pipeline_run_id ON predictions_pipeline (run_id);
+CREATE INDEX idx_consumption_predictions_target_timestamp ON consumption_predictions (target_timestamp);
+CREATE INDEX idx_consumption_predictions_entity_id ON consumption_predictions (entity_id);
+CREATE INDEX idx_consumption_predictions_run_id ON consumption_predictions (run_id);
 ```
 
 ### Vue triée
 
 ```sql
-CREATE VIEW predictions_pipeline_sorted AS
-SELECT * FROM predictions_pipeline
-ORDER BY prediction_timestamp DESC;
+CREATE VIEW consumption_predictions_sorted AS
+SELECT * FROM consumption_predictions
+ORDER BY target_timestamp DESC;
 ```
 
 ---
@@ -55,7 +53,7 @@ ORDER BY prediction_timestamp DESC;
 
 ### Localisation
 
-`src/ml/pipelines/database_handler.py`
+`src/ml/pipelines/database_handler.py` (Note: table name in code also uses `consumption_predictions`)
 
 ### Méthodes disponibles
 
@@ -77,12 +75,12 @@ Vérifie la connexion à la base de données.
 ---
 
 #### `create_tables()`
-Crée la table `predictions_pipeline` avec ses index et la vue triée.
+Crée la table `consumption_predictions` avec ses index et la vue triée.
 
 **Comportement :**
 - Utilise `CREATE TABLE IF NOT EXISTS` pour éviter les erreurs si la table existe déjà
 - Crée les index sur les colonnes fréquemment utilisées
-- Crée la vue `predictions_pipeline_sorted` pour un accès trié par timestamp
+- Crée la vue `consumption_predictions_sorted` pour un accès trié par timestamp
 
 **Retourne :**
 - `True` si création réussie
@@ -95,8 +93,7 @@ Stocke un DataFrame de prédictions dans la table.
 
 **Paramètres :**
 - `df_predictions` (pd.DataFrame) : DataFrame contenant les prédictions avec colonnes :
-  - `prediction_timestamp` ou `horodate` ou `timestamp` (optionnel, généré si absent)
-  - `prediction_index` (optionnel, généré si absent)
+  - `target_timestamp` (requis) : Timestamp de la prédiction
   - `prediction` (requis)
 - `model_version` (str) : Version du modèle utilisé
 - `run_id` (str, optional) : ID du run MLflow
@@ -120,7 +117,7 @@ Récupère les N prédictions les plus récentes.
 - `limit` (int, default=100) : Nombre maximum de prédictions à récupérer
 
 **Retourne :**
-- `pd.DataFrame` avec les colonnes : `prediction_id`, `prediction_timestamp`, `prediction`, `model_version`, `entity_id`, `run_id`, `created_at`
+- `pd.DataFrame` avec les colonnes : `prediction_id`, `target_timestamp`, `prediction`, `model_version`, `entity_id`, `run_id`, `created_at`
 - `None` en cas d'erreur
 
 ---
@@ -142,7 +139,7 @@ Récupère les prédictions pour une plage de dates.
 - `end_date` (datetime ou str) : Date de fin
 
 **Retourne :**
-- `pd.DataFrame` avec les colonnes : `prediction_id`, `prediction_timestamp`, `prediction_index`, `prediction`, `model_version`, `entity_id`, `run_id`, `actual_value`
+- `pd.DataFrame` avec les colonnes : `prediction_id`, `target_timestamp`, `prediction`, `model_version`, `entity_id`, `run_id`, `actual_value`
 - `None` en cas d'erreur
 
 ---
@@ -183,7 +180,7 @@ Récupère les données de production avec valeurs réelles pour le retraining.
 - `limit` (int, optional) : Nombre maximum d'enregistrements
 
 **Retourne :**
-- `pd.DataFrame` avec les colonnes : `prediction_timestamp`, `prediction`, `actual_value`
+- `pd.DataFrame` avec les colonnes : `target_timestamp`, `prediction`, `actual_value`
 - `None` en cas d'erreur
 
 **Filtre :**
@@ -217,7 +214,7 @@ import pandas as pd
 
 # DataFrame de prédictions
 df_predictions = pd.DataFrame({
-    'prediction_timestamp': pd.date_range('2024-01-01', periods=48, freq='30min'),
+    'target_timestamp': pd.date_range('2024-01-01', periods=48, freq='30min'),
     'prediction': [100.5, 102.3, 98.7, ...],  # 48 valeurs
 })
 
@@ -272,12 +269,11 @@ training_data = db_handler.get_production_data_for_retraining(limit=1000)
 ### UUID et doublons
 - Chaque prédiction reçoit un UUID unique généré par `uuid.uuid4()`
 - La clause `ON CONFLICT (prediction_id) DO NOTHING` empêche les insertions avec le même UUID
-- **Attention :** Il n'y a PAS de contrainte UNIQUE sur les champs métier (`prediction_timestamp`, `entity_id`), donc des doublons métier peuvent exister
+- **Contrainte UNIQUE** : Il y a une contrainte UNIQUE sur la combinaison (`target_timestamp`, `entity_id`), empêchant les doublons métier
 
 ### Timestamps
-- `prediction_timestamp` : Quand la prédiction a été faite (timestamp métier)
+- `target_timestamp` : Quand la prédiction a été faite (timestamp métier) - **REQUIS**
 - `created_at` : Quand l'enregistrement a été créé en base (timestamp système)
-- Si `prediction_timestamp` est absent, il est déduit de `horodate`, `timestamp`, ou utilise l'heure actuelle
 
 ### entity_id
 - Actuellement codé en dur à `"550e8400-e29b-41d4-a716-446655440000"` dans `store_predictions`
@@ -308,7 +304,7 @@ db_handler.create_tables()  # Note : actuellement ne supprime PAS la table exist
 Pour supprimer et recréer la table, il faut exécuter manuellement :
 
 ```sql
-DROP TABLE IF EXISTS predictions_pipeline CASCADE;
+DROP TABLE IF EXISTS consumption_predictions CASCADE;
 ```
 
 Puis appeler `create_tables()`.
