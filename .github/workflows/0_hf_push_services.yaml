@@ -5,7 +5,7 @@ on:
     paths:
       - '.github/scripts/hf_push_services.py'
       - '.github/scripts/hf_create_spaces.py'
-      - '.env'
+      - 'config.yaml'
       - 'Services/**'      
   workflow_dispatch:
 
