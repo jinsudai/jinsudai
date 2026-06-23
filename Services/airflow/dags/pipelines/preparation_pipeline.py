@@ -31,7 +31,7 @@ with DAG(
     'preparation_pipeline',
     default_args=default_args,
     description='Déclenche le pipeline de préparation via GitHub Action',
-    schedule='0 1 * * *',  # Tous les jours à 1h
+    schedule=None,  # Désactivé - orchestré par master_pipeline
     catchup=False,
     tags=['preparation', 'github-action'],
 ) as dag:

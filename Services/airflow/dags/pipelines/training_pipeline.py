@@ -34,7 +34,7 @@ with DAG(
     'training_pipeline',
     default_args=default_args,
     description='Déclenche le pipeline d\'entraînement via GitHub Action (conditionnel)',
-    schedule='0 2 * * *',  # Tous les jours à 2h (conditionnel)
+    schedule=None,  # Désactivé - orchestré par master_pipeline
     catchup=False,
     tags=['training', 'github-action'],
 ) as dag:

@@ -31,7 +31,7 @@ with DAG(
     'actuals_ingestion_pipeline',
     default_args=default_args,
     description='Déclenche le pipeline d\'ingestion des actuals via GitHub Action',
-    schedule='30 0 * * *',  # Tous les jours à 0h30
+    schedule=None,  # Désactivé - orchestré par master_pipeline
     catchup=False,
     tags=['ingestion', 'actuals', 'github-action'],
 ) as dag:

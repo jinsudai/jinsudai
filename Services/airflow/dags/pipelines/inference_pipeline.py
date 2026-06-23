@@ -31,7 +31,7 @@ with DAG(
     'inference_pipeline',
     default_args=default_args,
     description='Déclenche le pipeline d\'inférence via GitHub Action',
-    schedule='0 3 * * *',  # Tous les jours à 3h
+    schedule=None,  # Désactivé - orchestré par master_pipeline
     catchup=False,
     tags=['inference', 'github-action'],
 ) as dag:

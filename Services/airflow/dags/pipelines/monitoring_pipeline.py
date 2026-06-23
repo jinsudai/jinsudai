@@ -31,7 +31,7 @@ with DAG(
     'monitoring_pipeline',
     default_args=default_args,
     description='Déclenche le pipeline de monitoring via GitHub Action',
-    schedule='30 1 * * *',  # Tous les jours à 1h30
+    schedule=None,  # Désactivé - orchestré par master_pipeline
     catchup=False,
     tags=['monitoring', 'github-action'],
 ) as dag:
