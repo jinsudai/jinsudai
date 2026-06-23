@@ -4,21 +4,29 @@
 Le projet ne souhaite pas utiliser prefect pour le moment
 Quand tu peux enlève les commentaire "sans prefect" qui sont dans plusieurs fichiers
 
+## Orchestration
+Ordonnancement dans GitHub? -> En cours
+
+
+
+# A tester
+
 ## Evidently
 - J'ai un server EvidentlyAi deployé je pense qu'il faut juste uploader les rapports dans le bucket s3 evidently-reports
-- Est-ce que l'on compare bien les bons datasets? -> OK
+- Est-ce que l'on compare bien les bons datasets?
 - Data Drift (Drift Detection Action) -> Tester la documentation
 
 ## slidev
 - Verifier la Documentation pour bloc 4
 
-Airflow
-- Créer les dags correspondant aux pipelines les étapes devront faire appel aux GitHubActions -> A tester
+## Airflow
+- Créer les dags correspondant aux pipelines les étapes devront faire appel aux GitHubActions
 - Schedule?
 
-Db -> En cours
+## Db
 - Quels informations sont stockée en base de données? Quels pipelines utilise la base de données predictions?
-- Il y a t'il un documentation pour documenter les interraction avec la table prediction?
+- Il y a t'il un documentation pour documenter les interraction avec la table prediction?  
+- 
 
 
 A faire

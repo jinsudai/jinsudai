@@ -287,7 +287,8 @@ def train_and_log_consumption_model_task(
                 "model_type": train_result["config"]["model_type"]
             },
             artifact_path="model",
-            model_name=mlflow_config.get('model_name', 'consumption_model')
+            experiment_name=experiment_name,
+            tracking_uri=tracking_uri
         )
 
         # 6. Logger l'importance des features

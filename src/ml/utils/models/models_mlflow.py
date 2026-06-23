@@ -45,8 +45,6 @@ def _ensure_artifact_location(artifact_location=None):
 def set_mlflow_tracking(tracking_uri=None, artifact_location=None):
     """Configure la cible de suivi MLflow et le stockage local des artefacts."""
     try:
-        # Si tracking_uri est fourni (serveur distant), ne pas forcer artifact_location local
-        # MLflow uploadera directement les artefacts vers le serveur distant
         if tracking_uri is not None:
             mlflow.set_tracking_uri(tracking_uri)
             logger.info(f"Tracking URI configuré: {tracking_uri}")
