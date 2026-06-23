@@ -13,6 +13,8 @@ Classe principale :
 """
 import logging
 import os
+import tempfile
+import shutil
 import mlflow
 import mlflow.sklearn
 import mlflow.pyfunc
@@ -99,7 +101,19 @@ class InferenceModel:
             # Charger le modèle via alias
             model_uri = f"models:/{model_name}@{alias_prod}"
 
-            # Essayer d'abord avec sklearn (compatible modèles sklearn)
+            # Essayer d'abord avec skops (format sécurisé recommandé)
+            try:
+                self.model = self._load_skops_from_mlflow(model_version)
+                if self.model is not None:
+                    logger.info(f"Modèle {model_name} v{self.model_version} chargé via skops")
+                    return True
+            except Exception as skops_error:
+                logger.warning(
+                    f"Chargement skops échoué ({skops_error}), "
+                    f"tentative chargement sklearn pour {model_uri}"
+                )
+
+            # Essayer avec sklearn (compatible modèles sklearn)
             try:
                 self.model = mlflow.sklearn.load_model(model_uri)
                 logger.info(f"Modèle {model_name} v{self.model_version} chargé via sklearn")
@@ -209,6 +223,68 @@ class InferenceModel:
             logger.error(f"Erreur lors du chargement AutoGluon depuis le registre MLflow: {e}")
             return None
 
+    def _load_skops_from_mlflow(self, model_version):
+        """Charge un modèle skops depuis les artefacts MLflow."""
+        try:
+            client = mlflow.tracking.MlflowClient()
+            run_id, artifact_path = self._parse_mlflow_source(model_version.source)
+            if run_id is None:
+                run_id = model_version.run_id
+            if artifact_path is None:
+                artifact_path = 'model'
+
+            if run_id is None and not model_version.source:
+                logger.error("Impossible de déterminer le run_id du modèle MLflow pour le chargement skops")
+                return None
+
+            logger.info(
+                f"Chargement skops depuis le registre MLflow: source={model_version.source}, "
+                f"run_id={run_id}, artifact_path={artifact_path}"
+            )
+
+            # Télécharger les artefacts dans un répertoire temporaire
+            temp_dir = tempfile.mkdtemp(prefix="skops_model_")
+            try:
+                target_dir = client.download_artifacts(run_id, artifact_path, dst_path=temp_dir)
+            except Exception as download_error:
+                logger.warning(
+                    f"Impossible de télécharger l'artefact '{artifact_path}' du run {run_id}: {download_error}"
+                )
+                # Essayer de télécharger l'arborescence complète
+                try:
+                    target_dir = client.download_artifacts(run_id, "", dst_path=temp_dir)
+                except Exception as full_download_error:
+                    logger.warning(
+                        f"Téléchargement complet échoué: {full_download_error}"
+                    )
+                    shutil.rmtree(temp_dir, ignore_errors=True)
+                    return None
+
+            # Chercher le fichier .skops
+            skops_file = self._find_skops_file(target_dir)
+            if skops_file is None:
+                logger.error("Aucun fichier .skops trouvé dans les artefacts MLflow téléchargés")
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                return None
+
+            try:
+                import skops
+            except Exception as e:
+                logger.error(f"skops non disponible pour le chargement du modèle: {e}")
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                return None
+
+            logger.info(f"Chargement skops depuis artefact: {skops_file}")
+            model = skops.load(skops_file, trusted=True)
+
+            # Nettoyer le répertoire temporaire
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+            return model
+        except Exception as e:
+            logger.error(f"Erreur lors du chargement skops depuis le registre MLflow: {e}")
+            return None
+
     @staticmethod
     def _parse_mlflow_source(source):
         """Extrait run_id et artifact_path d'une source MLflow de type runs:/..."""
@@ -230,6 +306,15 @@ class InferenceModel:
         for root, _, files in os.walk(base_dir):
             if 'predictor.pkl' in files:
                 return root
+        return None
+
+    @staticmethod
+    def _find_skops_file(base_dir):
+        """Recherche le fichier .skops dans un artefact MLflow."""
+        for root, _, files in os.walk(base_dir):
+            for file in files:
+                if file.endswith('.skops'):
+                    return os.path.join(root, file)
         return None
 
     def predict(self, X_data):

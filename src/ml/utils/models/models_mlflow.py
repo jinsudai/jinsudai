@@ -236,7 +236,8 @@ def log_model(model, artifact_path="model"):
 
         else:
 
-            mlflow.sklearn.log_model(model, name=artifact_path)
+            # Essayer de sauvegarder en format skops (sécurisé)
+            temp_dir_to_cleanup = _log_skops_model(model, artifact_path)
 
         logger.info(f"Modèle enregistré: {artifact_path}")
 
@@ -370,7 +371,7 @@ def _log_autogluon_model(model, artifact_path):
 
         logger.info("Modèle AutoGluon enregistré comme artefact pyfunc portable")
 
-        
+
 
         # Attendre que MLflow finisse l'upload avant de supprimer le temp_dir
 
@@ -380,7 +381,7 @@ def _log_autogluon_model(model, artifact_path):
 
         return temp_dir  # Retourner le chemin pour nettoyage ultérieur
 
-        
+
 
     except Exception as e:
 
@@ -391,6 +392,86 @@ def _log_autogluon_model(model, artifact_path):
         shutil.rmtree(temp_dir, ignore_errors=True)
 
         raise
+
+
+
+def _log_skops_model(model, artifact_path):
+
+    """Enregistre un modèle sklearn au format skops (sécurisé)"""
+
+    temp_dir = tempfile.mkdtemp(prefix="skops_model_")
+
+    try:
+
+        # Essayer d'importer skops
+
+        try:
+
+            import skops
+
+        except ImportError:
+
+            logger.warning("skops non disponible, fallback sur sklearn.log_model")
+
+            mlflow.sklearn.log_model(model, name=artifact_path)
+
+            return None  # Pas de nettoyage nécessaire
+
+
+
+        # Créer le chemin du fichier .skops
+
+        skops_file = os.path.join(temp_dir, f"{artifact_path}.skops")
+
+        logger.info(f"Sauvegarde du modèle au format skops: {skops_file}")
+
+
+
+        # Sauvegarder avec skops
+
+        skops.dump(model, skops_file, trusted=True)
+
+        logger.info(f"Modèle sauvegardé en format skops: {skops_file}")
+
+
+
+        # Logger le fichier .skops comme artefact MLflow
+
+        mlflow.log_artifact(skops_file, artifact_path=artifact_path)
+
+        logger.info(f"Fichier .skops enregistré dans MLflow: {artifact_path}")
+
+
+
+        # Garder aussi une version sklearn pour compatibilité
+
+        mlflow.sklearn.log_model(model, name=f"{artifact_path}_sklearn")
+
+        logger.info(f"Version sklearn également enregistrée pour compatibilité")
+
+
+
+        return temp_dir  # Retourner le chemin pour nettoyage ultérieur
+
+
+
+    except Exception as e:
+
+        logger.error(f"Erreur lors de log_skops_model: {e}")
+
+        # Fallback sur sklearn en cas d'erreur
+
+        logger.warning("Fallback sur sklearn.log_model")
+
+        mlflow.sklearn.log_model(model, name=artifact_path)
+
+        # Nettoyer le temp_dir si créé
+
+        if os.path.exists(temp_dir):
+
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+        return None  # Pas de nettoyage nécessaire
 
 
 
