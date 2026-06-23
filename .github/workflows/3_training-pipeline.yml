@@ -74,8 +74,8 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION || 'eu-west-3' }}
-          AWS_BUCKET: ${{ secrets.AWS_BUCKET || 'data-store' }}
           AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
+          AWS_BUCKET: ${{ secrets.AWS_BUCKET || 'data-store' }} #Not for Mlflow, but for storing the datasets          
         run: |
           python pipelines/training/training_pipeline.py \
             --features_path "${{ steps.features_path.outputs.path }}"
