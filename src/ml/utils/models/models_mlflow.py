@@ -30,7 +30,7 @@ from mlflow.pyfunc import PythonModel
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-DEFAULT_ARTIFACT_DIR = Path(__file__).resolve().parents[3] / "jinsudai" / "mlflow"
+DEFAULT_ARTIFACT_DIR = Path(__file__).resolve().parents[5] / "jinsudai" / "model"
 
 
 def _ensure_artifact_location(artifact_location=None):
@@ -45,17 +45,20 @@ def _ensure_artifact_location(artifact_location=None):
 def set_mlflow_tracking(tracking_uri=None, artifact_location=None):
     """Configure la cible de suivi MLflow et le stockage local des artefacts."""
     try:
-        artifact_path = _ensure_artifact_location(artifact_location)
-        artifact_uri = artifact_path.as_uri()
+        # Ne créer l'artifact_location local que si explicitement demandé
+        # ou si tracking_uri n'est pas fourni (mode local)
+        if artifact_location is not None or tracking_uri is None:
+            artifact_path = _ensure_artifact_location(artifact_location)
+            artifact_uri = artifact_path.as_uri()
+            os.environ["MLFLOW_ARTIFACT_URI"] = artifact_uri
+            logger.info(f"Répertoire local des artefacts configuré: {artifact_path}")
 
-        if tracking_uri is None:
-            tracking_uri = artifact_uri
+        if tracking_uri is None and artifact_location is None:
+            tracking_uri = artifact_path.as_uri()
 
-        mlflow.set_tracking_uri(tracking_uri)
-        os.environ["MLFLOW_ARTIFACT_URI"] = artifact_uri
-
-        logger.info(f"Tracking URI configuré: {tracking_uri}")
-        logger.info(f"Répertoire local des artefacts configuré: {artifact_path}")
+        if tracking_uri is not None:
+            mlflow.set_tracking_uri(tracking_uri)
+            logger.info(f"Tracking URI configuré: {tracking_uri}")
     except Exception as e:
         logger.error(f"Erreur lors de la configuration MLflow: {e}")
 
