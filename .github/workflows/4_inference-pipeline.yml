@@ -33,6 +33,7 @@ on:
       - main
     paths:
       - 'pipelines/inference/**'
+      - '.github/workflows/4_inference-pipeline.yml'
       - 'src/ml/**'
   pull_request:
     branches:
