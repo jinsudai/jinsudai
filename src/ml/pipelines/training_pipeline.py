@@ -126,101 +126,39 @@ class MLPipeline:
         logger.info(f"Pipeline MLOps initialisé avec model_name={self.model_name}")
 
     def _download_train_from_s3(self, local_path: str) -> bool:
-
         """
-
         Télécharge le dernier fichier train (combiné ou individuel) depuis S3.
 
         Args:
-
             local_path: Chemin local de destination
 
         Returns:
-
             True si succès, False sinon
-
         """
-
         try:
-
-            # Charger la configuration S3
-
             from ml.config import load_config
 
             global_config = load_config('config.yaml')
-
             s3_config = global_config.get('s3', {})
-
             bucket = s3_config.get('bucket', 'data-store')
-
-            # Chercher dans le préfixe consumption pour les fichiers train
-
-            prefix = "consumption"
-
-            logger.info(f"Recherche sur S3: bucket={bucket}, prefix={prefix}")
-
-            # Initialiser le handler S3
 
             s3_handler = S3Handler(bucket=bucket)
 
-            if not s3_handler.s3_enabled:
-
-                logger.warning("S3 non disponible (credentials manquants)")
-
-                return False
-
-            # Lister les fichiers train.parquet
-
-            files = s3_handler.list_files(prefix=prefix)
-
-            train_files = [f for f in files if 'train' in f and f.endswith('.parquet')]
-
-            if not train_files:
-
-                logger.warning(f"Aucun fichier train.parquet trouvé dans s3://{bucket}/{prefix}/")
-
-                return False
-
-            # Trouver le plus récent
-
-            train_files_sorted = sorted(train_files, reverse=True)
-
-            latest_file = train_files_sorted[0]
-
-            logger.info(f"Fichier le plus récent sur S3: {latest_file}")
-
-            # Télécharger le fichier
-
-            local_path_obj = Path(local_path)
-
-            local_path_obj.parent.mkdir(parents=True, exist_ok=True)
-
-            result = s3_handler.download_file(
-
-                s3_key=latest_file,
-
-                local_path=str(local_path),
-
-                overwrite=True
-
+            result = s3_handler.download_latest_train_file(
+                local_path=local_path,
+                prefix="consumption",
+                prioritize_dated=True
             )
 
             if result["status"] == "success":
-
                 logger.info(f"Fichier téléchargé depuis S3: {local_path}")
-
                 return True
-
             else:
-
                 logger.error(f"Erreur lors du téléchargement: {result.get('reason')}")
-
                 return False
 
         except Exception as e:
-
             logger.error(f"Erreur lors du téléchargement depuis S3: {e}")
-
             return False
 
     def step_1_load_data(self, data_path=None, download_from_s3_if_missing=True):

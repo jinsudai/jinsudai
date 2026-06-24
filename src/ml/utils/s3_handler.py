@@ -227,3 +227,69 @@ class S3Handler:
         except Exception as e:
             logger.error(f"❌ Erreur liste S3: {e}")
             return []
+
+    def download_latest_train_file(
+        self,
+        local_path: str,
+        prefix: str = "consumption",
+        prioritize_dated: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Télécharge le dernier fichier train.parquet depuis S3 avec priorité aux fichiers datés.
+
+        Args:
+            local_path: Chemin local de destination
+            prefix: Préfixe S3 pour la recherche (défaut: "consumption")
+            prioritize_dated: Si True, priorise les fichiers avec format YYYY-MM-DD_to_YYYY-MM-DD_train.parquet
+
+        Returns:
+            dict: Résultat de l'opération (status, local_path, s3_key, etc.)
+        """
+        if not self.s3_enabled:
+            return {
+                "status": "skipped",
+                "reason": "S3 credentials not available"
+            }
+
+        try:
+            logger.info(f"Recherche sur S3: bucket={self.bucket}, prefix={prefix}")
+
+            # Lister les fichiers train.parquet
+            files = self.list_files(prefix=prefix)
+            train_files = [f for f in files if 'train' in f and f.endswith('.parquet')]
+
+            if not train_files:
+                logger.warning(f"Aucun fichier train.parquet trouvé dans s3://{self.bucket}/{prefix}/")
+                return {
+                    "status": "error",
+                    "reason": f"No train files found in s3://{self.bucket}/{prefix}/"
+                }
+
+            # Prioriser les fichiers avec le format date: YYYY-MM-DD_to_YYYY-MM-DD_train.parquet
+            if prioritize_dated:
+                dated_files = [f for f in train_files if '_to_' in f and '_train.parquet' in f]
+                if dated_files:
+                    train_files = dated_files
+                    logger.info(f"Fichiers datés trouvés: {len(dated_files)}")
+
+            # Trouver le plus récent (tri alphabétique inverse)
+            train_files_sorted = sorted(train_files, reverse=True)
+            latest_file = train_files_sorted[0]
+
+            logger.info(f"Fichier le plus récent sur S3: {latest_file}")
+
+            # Télécharger le fichier
+            result = self.download_file(
+                s3_key=latest_file,
+                local_path=local_path,
+                overwrite=True
+            )
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Erreur lors du téléchargement depuis S3: {e}")
+            return {
+                "status": "error",
+                "reason": str(e)
+            }

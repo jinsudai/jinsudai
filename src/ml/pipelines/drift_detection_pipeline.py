@@ -146,37 +146,14 @@ class DriftDetectionPipeline:
             # Chercher dans le préfixe consumption/trained pour les fichiers train
             prefix = "consumption/trained"
 
-            logger.info(f"Recherche sur S3: bucket={bucket}, prefix={prefix}")
-
             # Initialiser le handler S3
             s3_handler = S3Handler(bucket=bucket)
 
-            if not s3_handler.s3_enabled:
-                logger.warning("S3 non disponible (credentials manquants)")
-                return False
-
-            # Lister les fichiers train.parquet
-            files = s3_handler.list_files(prefix=prefix)
-            train_files = [f for f in files if 'train' in f and f.endswith('.parquet')]
-
-            if not train_files:
-                logger.warning(f"Aucun fichier train.parquet trouvé dans s3://{bucket}/{prefix}/")
-                return False
-
-            # Trouver le plus récent
-            train_files_sorted = sorted(train_files, reverse=True)
-            latest_file = train_files_sorted[0]
-
-            logger.info(f"Fichier le plus récent sur S3: {latest_file}")
-
-            # Télécharger le fichier
-            local_path_obj = Path(local_path)
-            local_path_obj.parent.mkdir(parents=True, exist_ok=True)
-
-            result = s3_handler.download_file(
-                s3_key=latest_file,
-                local_path=str(local_path),
-                overwrite=True
+            # Utiliser la méthode partagée
+            result = s3_handler.download_latest_train_file(
+                local_path=local_path,
+                prefix=prefix,
+                prioritize_dated=True
             )
 
             if result["status"] == "success":
@@ -207,28 +184,8 @@ class DriftDetectionPipeline:
             # Chercher dans le préfixe consumption pour les fichiers train générés
             prefix = "consumption"
 
-            logger.info(f"Recherche sur S3: bucket={bucket}, prefix={prefix}")
-
             # Initialiser le handler S3
             s3_handler = S3Handler(bucket=bucket)
-
-            if not s3_handler.s3_enabled:
-                logger.warning("S3 non disponible (credentials manquants)")
-                return False
-
-            # Lister les fichiers train.parquet
-            files = s3_handler.list_files(prefix=prefix)
-            train_files = [f for f in files if 'train' in f and f.endswith('.parquet')]
-
-            if not train_files:
-                logger.warning(f"Aucun fichier train.parquet trouvé dans s3://{bucket}/{prefix}/")
-                return False
-
-            # Trouver le plus récent
-            train_files_sorted = sorted(train_files, reverse=True)
-            latest_file = train_files_sorted[0]
-
-            logger.info(f"Fichier le plus récent sur S3: {latest_file}")
 
             # Télécharger le fichier dans un répertoire temporaire
             project_root = Path(__file__).parent.parent.parent.parent
@@ -237,10 +194,11 @@ class DriftDetectionPipeline:
 
             local_path = temp_dir / "current_train.parquet"
 
-            result = s3_handler.download_file(
-                s3_key=latest_file,
+            # Utiliser la méthode partagée
+            result = s3_handler.download_latest_train_file(
                 local_path=str(local_path),
-                overwrite=True
+                prefix=prefix,
+                prioritize_dated=True
             )
 
             if result["status"] == "success":
