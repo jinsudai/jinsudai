@@ -9,6 +9,7 @@ Usage:
 import argparse
 import sys
 from pathlib import Path
+from datetime import datetime, timedelta
 
 # Ajouter le répertoire src au path
 project_root = Path(__file__).parent.parent.parent
@@ -47,16 +48,22 @@ def main():
                         help='Sauvegarder le rapport sur S3')
     
     args = parser.parse_args()
-    
+
     # Charger la config spécifique à l'environnement
     import os
     environment = os.getenv('Environment', 'Dev').lower()
     config_name_to_use = f"{args.config_name}.{environment}"
-    
+
+    # Calculer les dates pour le drift detection (veille du dernier entraînement à aujourd'hui)
+    # Par défaut, on utilise les 7 derniers jours si pas de date spécifiée
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=7)
+
     print(f"=== Pipeline de détection de drift ===")
     print(f"Config: {config_name_to_use}")
     print(f"Données référence: {args.reference_path or 'Depuis config/S3'}")
     print(f"Données courantes: {args.current_data_path or 'Base de données'}")
+    print(f"Période de drift detection: {start_date.strftime('%Y-%m-%d')} à {end_date.strftime('%Y-%m-%d')}")
     print(f"Limite données courantes: {args.current_data_limit}")
     print(f"Téléchargement S3: {args.download_from_s3}")
     print()
@@ -85,7 +92,9 @@ def main():
             mlflow_run_id=args.mlflow_run_id,
             download_from_s3=args.download_from_s3,
             save_to_workspace=args.save_to_workspace,
-            save_to_s3=args.save_to_s3
+            save_to_s3=args.save_to_s3,
+            start_date=start_date.strftime('%Y-%m-%d'),
+            end_date=end_date.strftime('%Y-%m-%d')
         )
         
         if results["success"]:

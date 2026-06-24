@@ -191,13 +191,17 @@ class DriftDetectionPipeline:
             return False
 
     def step_2_load_current_data(self, current_data_path: Optional[str] = None,
-                                 limit: int = 1000) -> bool:
+                                 limit: int = 1000,
+                                 start_date: Optional[str] = None,
+                                 end_date: Optional[str] = None) -> bool:
         """
         Étape 2: Chargement des données courantes (production).
 
         Args:
             current_data_path: Chemin vers le fichier de données courantes (optionnel)
             limit: Nombre maximum d'enregistrements depuis la BD
+            start_date: Date de début pour filtrer les données (optionnel)
+            end_date: Date de fin pour filtrer les données (optionnel)
 
         Returns:
             True si succès, False sinon
@@ -230,7 +234,9 @@ class DriftDetectionPipeline:
 
             self.current_data = load_production_data(
                 db_handler=self.db_handler,
-                limit=limit
+                limit=limit,
+                start_date=start_date,
+                end_date=end_date
             )
 
             if self.current_data is None:
@@ -480,7 +486,9 @@ class DriftDetectionPipeline:
                           mlflow_run_id: Optional[str] = None,
                           download_from_s3: bool = True,
                           save_to_workspace: bool = False,
-                          save_to_s3: bool = False) -> Dict[str, Any]:
+                          save_to_s3: bool = False,
+                          start_date: Optional[str] = None,
+                          end_date: Optional[str] = None) -> Dict[str, Any]:
         """
         Exécute le pipeline complet de détection de drift.
 
@@ -496,6 +504,8 @@ class DriftDetectionPipeline:
             download_from_s3: Télécharger depuis S3 si le fichier de référence n'existe pas
             save_to_workspace: Sauvegarder le rapport dans le workspace Evidently UI local
             save_to_s3: Sauvegarder le rapport sur S3
+            start_date: Date de début pour filtrer les données de production (optionnel)
+            end_date: Date de fin pour filtrer les données de production (optionnel)
 
         Returns:
             Dict avec les résultats du pipeline
@@ -517,7 +527,7 @@ class DriftDetectionPipeline:
             results["steps_completed"].append("load_reference_data")
 
             # Étape 2: Chargement données courantes
-            if not self.step_2_load_current_data(current_data_path, current_data_limit):
+            if not self.step_2_load_current_data(current_data_path, current_data_limit, start_date, end_date):
                 results["error"] = "Échec du chargement des données courantes"
                 return results
             results["steps_completed"].append("load_current_data")

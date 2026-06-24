@@ -2,6 +2,7 @@
 
 ## Tâches de fond:
 On ne souhaite pas utiliser prefect dans ce projet
+Eviter les sauts de ligne inutiles
 
 ## Orchestration
 Ordonnancement dans GitHub? -> En cours

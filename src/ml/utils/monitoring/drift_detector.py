@@ -67,7 +67,9 @@ def load_reference_data(
 def load_production_data(
     db_handler,
     run_id: Optional[str] = None,
-    limit: int = 1000
+    limit: int = 1000,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
 ) -> pd.DataFrame:
     """
     Charge les données de production depuis PostgreSQL.
@@ -76,12 +78,14 @@ def load_production_data(
         db_handler: Instance de DatabaseHandler
         run_id: ID de la run spécifique (optionnel)
         limit: Nombre maximum d'enregistrements
+        start_date: Date de début pour filtrer les données (optionnel)
+        end_date: Date de fin pour filtrer les données (optionnel)
 
     Returns:
         DataFrame avec les données de production
     """
     try:
-        df = db_handler.get_recent_predictions(limit=limit)
+        df = db_handler.get_predictions_for_drift_detection(limit=limit, start_date=start_date, end_date=end_date)
         if df is not None and not df.empty:
             logger.info(f"Données de production chargées: {len(df)} enregistrements")
             return df
@@ -368,8 +372,8 @@ def run_drift_detection(
             )
 
         # Détection globale
-        data_drift_detected = results.get("data_drift", {}).get("drift_detected", False)
-        concept_drift_detected = results.get("concept_drift", {}).get("drift_detected", False)
+        data_drift_detected = (results.get("data_drift") or {}).get("drift_detected", False)
+        concept_drift_detected = (results.get("concept_drift") or {}).get("drift_detected", False)
 
         results["overall_drift_detected"] = data_drift_detected or concept_drift_detected
 
