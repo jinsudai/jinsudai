@@ -190,6 +190,72 @@ class DriftDetectionPipeline:
             logger.error(f"Erreur lors du téléchargement depuis S3: {e}")
             return False
 
+    def _download_latest_train_from_s3(self) -> bool:
+        """
+        Télécharge le dernier fichier train.parquet depuis S3 (préfixe consumption/).
+
+        Returns:
+            True si succès, False sinon
+        """
+        try:
+            # Charger la configuration S3
+            global_config = load_config('config.yaml')
+            s3_config = global_config.get('s3', {})
+
+            bucket = s3_config.get('bucket', 'data-store')
+
+            # Chercher dans le préfixe consumption pour les fichiers train générés
+            prefix = "consumption"
+
+            logger.info(f"Recherche sur S3: bucket={bucket}, prefix={prefix}")
+
+            # Initialiser le handler S3
+            s3_handler = S3Handler(bucket=bucket)
+
+            if not s3_handler.s3_enabled:
+                logger.warning("S3 non disponible (credentials manquants)")
+                return False
+
+            # Lister les fichiers train.parquet
+            files = s3_handler.list_files(prefix=prefix)
+            train_files = [f for f in files if 'train' in f and f.endswith('.parquet')]
+
+            if not train_files:
+                logger.warning(f"Aucun fichier train.parquet trouvé dans s3://{bucket}/{prefix}/")
+                return False
+
+            # Trouver le plus récent
+            train_files_sorted = sorted(train_files, reverse=True)
+            latest_file = train_files_sorted[0]
+
+            logger.info(f"Fichier le plus récent sur S3: {latest_file}")
+
+            # Télécharger le fichier dans un répertoire temporaire
+            project_root = Path(__file__).parent.parent.parent.parent
+            temp_dir = project_root / "data" / "temp"
+            temp_dir.mkdir(parents=True, exist_ok=True)
+
+            local_path = temp_dir / "current_train.parquet"
+
+            result = s3_handler.download_file(
+                s3_key=latest_file,
+                local_path=str(local_path),
+                overwrite=True
+            )
+
+            if result["status"] == "success":
+                self.current_data = pd.read_parquet(local_path)
+                logger.info(f"Fichier téléchargé depuis S3: {local_path}")
+                logger.info(f"Données courantes chargées: {len(self.current_data)} enregistrements")
+                return True
+            else:
+                logger.error(f"Erreur lors du téléchargement: {result.get('reason')}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Erreur lors du téléchargement depuis S3: {e}")
+            return False
+
     def step_2_load_current_data(self, current_data_path: Optional[str] = None,
                                  limit: int = 1000,
                                  start_date: Optional[str] = None,
@@ -208,7 +274,7 @@ class DriftDetectionPipeline:
         """
         logger.info("=== ÉTAPE 2: CHARGEMENT DES DONNÉES COURANTES ===")
 
-        # Priorité: fichier fourni -> base de données
+        # Priorité: fichier fourni -> S3
         if current_data_path:
             # Charger depuis un fichier
             if not Path(current_data_path).is_absolute():
@@ -223,30 +289,13 @@ class DriftDetectionPipeline:
                 logger.error(f"Impossible de charger les données courantes depuis fichier: {e}")
                 return False
 
-        # Charger depuis la base de données
-        if self.db_uri:
-            if self.db_handler is None:
-                self.db_handler = DatabaseHandler(db_uri=self.db_uri)
-
-            if not self.db_handler.verify_connection():
-                logger.error("Impossible de se connecter à la base de données")
-                return False
-
-            self.current_data = load_production_data(
-                db_handler=self.db_handler,
-                limit=limit,
-                start_date=start_date,
-                end_date=end_date
-            )
-
-            if self.current_data is None:
-                logger.error("Impossible de charger les données de production")
-                return False
-
-            logger.info(f"Données courantes chargées depuis BD: {len(self.current_data)} enregistrements")
+        # Télécharger le dernier train.parquet depuis S3 (par défaut)
+        logger.info("Tentative de téléchargement du dernier train.parquet depuis S3...")
+        success = self._download_latest_train_from_s3()
+        if success:
             return True
         else:
-            logger.error("Aucun fichier ou URI de base de données fourni pour les données courantes")
+            logger.error("Impossible de télécharger depuis S3")
             return False
 
     def step_3_detect_drift(self) -> bool:

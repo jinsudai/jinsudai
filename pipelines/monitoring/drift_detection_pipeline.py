@@ -40,11 +40,11 @@ def main():
                         help='Envoyer les notifications email si drift détecté')
     parser.add_argument('--mlflow_run_id', type=str, default=None, 
                         help='ID de la run MLflow (optionnel)')
-    parser.add_argument('--download_from_s3', action='store_true', default=True, 
+    parser.add_argument('--download_from_s3', action='store_true', default=True,
                         help='Télécharger depuis S3 si le fichier de référence n\'existe pas')
-    parser.add_argument('--save_to_workspace', action='store_true', default=True, 
+    parser.add_argument('--save_to_workspace', action='store_true', default=True,
                         help='Sauvegarder le rapport dans le workspace Evidently UI (S3)')
-    parser.add_argument('--save_to_s3', action='store_true', default=True, 
+    parser.add_argument('--save_to_s3', action='store_true', default=True,
                         help='Sauvegarder le rapport sur S3')
     
     args = parser.parse_args()
@@ -114,7 +114,10 @@ def main():
                     print(f"  Features avec drift: {data_drift.get('drifted_features_count', 0)}/{data_drift.get('total_features_analyzed', 0)}")
                     print(f"  Score drift global: {data_drift.get('overall_drift_score', 0):.4f}")
                 
-                print(f"Concept drift détecté: {concept_drift.get('drift_detected', False)}")
+                if concept_drift is None:
+                    print(f"Concept drift détecté: Non disponible (colonne cible non trouvée)")
+                else:
+                    print(f"Concept drift détecté: {concept_drift.get('drift_detected', False)}")
                 print(f"Drift global détecté: {overall_drift}")
                 
                 if overall_drift:
