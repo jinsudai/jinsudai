@@ -53,6 +53,7 @@ A faire (later)
 - Faire fonctionner prefect en local
 - Faire en sorte que chaque pipeline soit un service ?
 - Loki pour collecter les logs ?
+- Renommer les fichiers initiaux pour suivre le format date_xxx.parquet
 
 Idées
 - Renomage de FastAPI en inference-service
