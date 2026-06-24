@@ -291,9 +291,14 @@ class DriftDetectionPipeline:
             return False
 
         # Logger les résultats
-        data_drift_detected = self.drift_results.get('data_drift', {}).get('drift_detected', False)
-        concept_drift_detected = self.drift_results.get('concept_drift', {}).get('drift_detected', False)
+        data_drift_detected = (self.drift_results.get('data_drift') or {}).get('drift_detected', False)
+        concept_drift_detected = (self.drift_results.get('concept_drift') or {}).get('drift_detected', False)
         overall_drift_detected = self.drift_results.get('overall_drift_detected', False)
+
+        # Avertir si la détection de concept drift n'a pas pu être effectuée
+        if self.drift_results.get('concept_drift') is None:
+            target_column = self.config.get('data', {}).get('target_column', 'Valeur')
+            logger.warning(f"Concept drift non détecté: colonne cible '{target_column}' non trouvée dans les données")
 
         logger.info(f"Data drift détecté: {data_drift_detected}")
         logger.info(f"Concept drift détecté: {concept_drift_detected}")

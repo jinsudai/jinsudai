@@ -57,8 +57,7 @@ A faire (later)
 
 Idées
 - Renomage de FastAPI en inference-service
-- Fast API qui contient tout le ML pour une orchestration peu gourmande
-  L'orchestrateur qui appelle les endpoints
+- Fast API qui contient tout le ML pour une orchestration peu gourmande avec l'orchestrateur qui appelle les endpoints
 
 
 
