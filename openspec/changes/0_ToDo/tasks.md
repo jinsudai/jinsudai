@@ -84,28 +84,6 @@ ModuleNotFoundError: No module named 'evidently.ui.dashboards'
 
 
 
-
-CI/CD erreur comment faire dans le cas d'une library?
-build-and-push (Airflow)
-buildx failed with: ERROR: failed to build: failed to solve: failed to compute cache key: failed to calculate checksum of ref kiw59aulbykum0484mn3adpwg::1iikn05edexob1twkcj67a028: "/src": not found
-
-poetry env activate
-C:\Users\SustCoop\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\Local\pypoetry\Cache\virtualenvs\ml-6PV5fMfH-py3.11\Scripts\activate.ps1
-streamlit run .\services\EvidentlyAI\main.py
--> Erreur lors du chargement des rapports: 'str' object has no attribute 'info'
-
-FastApi
-Peux tu ecrire un guide pour utiliser FastApi
--> Comment le tester
-
-
-Pas de 30minutes???? Doublon dans la base de données...
-
-
-
-Documentation
--> Docsify?
-
 QU'est ce qu'il manque dans le projet pour respecter le besoin suivant:
 Description: Faire en sorte de respecter le cahier des charges
 Créer un algorithme d'Intelligence Artificielle adapté aux données d'entraînement et conforme aux spécifications du cahier des charges, en veillant à répondre aux besoins spécifiques, notamment en termes d'accessibilité.

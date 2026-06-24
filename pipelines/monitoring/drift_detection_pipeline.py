@@ -52,7 +52,7 @@ def main():
     # Charger la config spécifique à l'environnement
     import os
     environment = os.getenv('Environment', 'Dev').lower()
-    config_name_to_use = f"{args.config_name}.{environment}"
+    config_name_to_use = args.config_name
 
     # Calculer les dates pour le drift detection (veille du dernier entraînement à aujourd'hui)
     # Par défaut, on utilise les 7 derniers jours si pas de date spécifiée
