@@ -6,4 +6,4 @@ WORKDIR /app
 
 COPY . .
 
-CMD ["evidently", "ui", "--workspace", "s3://evidently-reports/workspace"]
+CMD ["evidently", "ui", "--workspace", "s3://evidently-reports/workspace", "--port", "7860", "--host", "0.0.0.0"]

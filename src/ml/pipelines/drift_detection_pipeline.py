@@ -264,7 +264,7 @@ class DriftDetectionPipeline:
 
         # Vérifier le nombre minimum d'échantillons
         drift_config = self.config.get('drift_detection', {})
-        min_samples = drift_config.get('min_samples_for_detection', 100)
+        min_samples = drift_config.get('min_samples_for_detection', 96)
 
         if len(self.current_data) < min_samples:
             logger.warning(f"Pas assez d'échantillons pour détecter le drift ({len(self.current_data)} < {min_samples})")
