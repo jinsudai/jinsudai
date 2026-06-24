@@ -172,6 +172,7 @@ src/ml/workflows/_disabled/
 tests/_disabled/
 .github/workflows/_disabled/
 src/_disabled/
+src/configs/_disabled/
 
 # Copilot
 .copilotignore

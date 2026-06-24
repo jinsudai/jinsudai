@@ -511,6 +511,94 @@ class DatabaseHandler:
 
 
 
+    def insert_predictions_with_actual_values(self, target_timestamps, actual_values, entity_id):
+
+        """
+
+        Insère des enregistrements avec target_timestamp et actual_value uniquement
+
+
+
+        Args:
+
+            target_timestamps: Liste des timestamps cibles
+
+            actual_values: Liste des valeurs réelles
+
+            entity_id: ID de l'entité
+
+
+
+        Returns:
+
+            True si succès, False sinon
+
+        """
+
+        if not self.db_uri:
+
+            logger.warning("DB URI non fournie, insertion ignorée")
+
+            return False
+
+
+
+        if len(target_timestamps) != len(actual_values):
+
+            logger.error("Les listes target_timestamps et actual_values doivent avoir la même longueur")
+
+            return False
+
+
+
+        insert_query = """
+
+        INSERT INTO consumption_predictions (
+
+            target_timestamp, actual_value, entity_id
+
+        ) VALUES (%s, %s, %s)
+
+        ON CONFLICT (target_timestamp, entity_id)
+
+        DO UPDATE SET
+
+            actual_value = EXCLUDED.actual_value;
+
+        """
+
+
+
+        try:
+
+            with self._get_connection() as conn:
+
+                with conn.cursor() as cursor:
+
+                    data = [
+
+                        (ts, actual, entity_id)
+
+                        for ts, actual in zip(target_timestamps, actual_values)
+
+                    ]
+
+                    execute_batch(cursor, insert_query, data)
+
+                    conn.commit()
+
+            logger.info(f"{len(data)} enregistrements insérés avec target_timestamp et actual_value")
+
+            return True
+
+        except Exception as e:
+
+            logger.error(f"Erreur lors de l'insertion des enregistrements: {e}")
+
+            return False
+
+
+
 
 
 

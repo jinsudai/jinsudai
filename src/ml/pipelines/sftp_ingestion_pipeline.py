@@ -141,13 +141,6 @@ def run_sftp_ingestion_with_random_data(db_uri: Optional[str] = None) -> Dict[st
         }
 
     preds_ok = pipeline.get_previous_day_predictions()
-    if preds_ok is None:
-        return {
-            'status': 'no_files',
-            'files_count': 0,
-            'processing': {'status': 'skipped'},
-            'summary': {'note': 'Aucune prédiction pour la veille'}
-        }
     if not preds_ok:
         return {
             'status': 'error',

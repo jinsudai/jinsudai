@@ -90,15 +90,16 @@ class ActualValuesPipeline:
 
         if self.previous_day_predictions is None or len(self.previous_day_predictions) == 0:
             logger.warning(f"Aucune prédiction trouvée pour la date {yesterday}")
-            logger.info("Pipeline terminé avec succès - aucune mise à jour nécessaire")
-            return None  # Retourne None pour indiquer aucune prédiction (pas une erreur)
 
         logger.info(f"{len(self.previous_day_predictions)} prédictions récupérées pour la veille")
         return True
 
-    def generate_random_actual_values(self):
+    def generate_random_actual_values(self, insert_if_missing=False):
         """
         Génère des valeurs aléatoires pour les prédictions de la veille
+
+        Args:
+            insert_if_missing: Si True, insère des enregistrements complets si aucune prédiction n'existe
 
         Returns:
             True si succès, False sinon
@@ -106,8 +107,12 @@ class ActualValuesPipeline:
         logger.info("=== ÉTAPE 3: GÉNÉRATION DES VALEURS ALÉATOIRES ===")
 
         if self.previous_day_predictions is None or len(self.previous_day_predictions) == 0:
-            logger.error("Aucune prédiction à traiter")
-            return False
+            if insert_if_missing:
+                logger.info("Aucune prédiction trouvée - génération d'enregistrements complets")
+                return self._generate_and_insert_records()
+            else:
+                logger.error("Aucune prédiction à traiter")
+                return False
 
         # Générer des valeurs aléatoires autour de la valeur prédite
         # Pour simuler des valeurs réelles réalistes
@@ -135,6 +140,46 @@ class ActualValuesPipeline:
             return False
 
         self.updated_count = len(actual_values)
+        return True
+
+    def _generate_and_insert_records(self):
+        """
+        Génère et insère des enregistrements complets (prediction + actual_value)
+        pour la veille lorsqu'aucune prédiction n'existe en base
+
+        Returns:
+            True si succès, False sinon
+        """
+        logger.info("=== GÉNÉRATION D'ENREGISTREMENTS COMPLETS ===")
+
+        # Calculer les dates de la veille
+        today = datetime.now().date()
+        yesterday = today - timedelta(days=1)
+
+        # Générer 48 enregistrements au pas de 30 minutes pour la veille
+        target_timestamps = []
+        actual_values = []
+
+        for half_hour in range(48):
+            timestamp = datetime.combine(yesterday, datetime.min.time()) + timedelta(minutes=30 * half_hour)
+            target_timestamps.append(timestamp)
+
+            # Générer une valeur réelle aléatoire entre 100 et 500
+            actual_value = random.uniform(100, 500)
+            actual_values.append(actual_value)
+
+        logger.info(f"{len(target_timestamps)} enregistrements générés")
+
+        # Insérer dans la base de données
+        entity_id = "550e8400-e29b-41d4-a716-446655440000"
+
+        if not self.db_handler.insert_predictions_with_actual_values(
+            target_timestamps, actual_values, entity_id
+        ):
+            logger.error("Impossible d'insérer les enregistrements")
+            return False
+
+        self.updated_count = len(target_timestamps)
         return True
 
     def verify_updates(self):
@@ -185,10 +230,13 @@ class ActualValuesPipeline:
 
         predictions_result = self.get_previous_day_predictions()
 
-        # Si aucune prédiction trouvée, retourner succès (pas une erreur)
-        if predictions_result is None:
-            logger.info("Pipeline terminé avec succès - aucune prédiction à mettre à jour")
-            return True, None
+        # Si aucune prédiction trouvée, générer et insérer des enregistrements
+        if self.previous_day_predictions is None or len(self.previous_day_predictions) == 0:
+            logger.info("Aucune prédiction trouvée - génération et insertion d'enregistrements")
+            if not self.generate_random_actual_values(insert_if_missing=True):
+                return False, None
+            results = self.verify_updates()
+            return True, results
 
         if not predictions_result:
             return False, None
@@ -227,7 +275,7 @@ class ActualValuesPipeline:
                     except Exception as e:
                         logger.error(f"Erreur lors du chargement de la configuration SFTP depuis l'environnement: {e}")
                         logger.warning("Basculement vers génération aléatoire")
-                        if not self.generate_random_actual_values():
+                        if not self.generate_random_actual_values(insert_if_missing=True):
                             return False, None
                         results = self.verify_updates()
                         return True, results
@@ -237,7 +285,7 @@ class ActualValuesPipeline:
                     username = sftp_cfg.get('username')
                     if not host or not username:
                         logger.warning("Configuration SFTP incomplète dans config; basculement vers génération aléatoire")
-                        if not self.generate_random_actual_values():
+                        if not self.generate_random_actual_values(insert_if_missing=True):
                             return False, None
                         results = self.verify_updates()
                         return True, results
@@ -277,7 +325,7 @@ class ActualValuesPipeline:
             except Exception as e:
                 logger.error(f"Échec du flux SFTP: {e}")
                 logger.warning("Basculement vers génération aléatoire")
-                if not self.generate_random_actual_values():
+                if not self.generate_random_actual_values(insert_if_missing=True):
                     return False, None
 
         results = self.verify_updates()
