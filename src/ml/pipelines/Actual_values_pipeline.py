@@ -50,6 +50,11 @@ class ActualValuesPipeline:
                 logger.error("Impossible de se connecter à la base de données")
                 return False
 
+            # Créer les tables si nécessaire
+            if not self.db_handler.create_tables():
+                logger.error("Impossible de créer les tables")
+                return False
+
             logger.info("Base de données configurée")
         else:
             logger.warning("Aucune URI de base de données fournie")
@@ -85,6 +90,7 @@ class ActualValuesPipeline:
 
         if self.previous_day_predictions is None or len(self.previous_day_predictions) == 0:
             logger.warning(f"Aucune prédiction trouvée pour la date {yesterday}")
+            return True
 
         logger.info(f"{len(self.previous_day_predictions)} prédictions récupérées pour la veille")
         return True
