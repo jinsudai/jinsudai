@@ -44,7 +44,17 @@ def generate_inference_data(
     np.random.seed(seed)
 
     if start_date is None:
-        start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        # Default to current time rounded to next 30-minute interval
+        now = datetime.now()
+        minute = now.minute
+        # Round to next 30-minute mark
+        if minute < 30:
+            start_date = now.replace(minute=30, second=0, microsecond=0)
+        else:
+            start_date = (now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1))
+    
+    logger.info(f"Génération de données d'inférence: {n_days} jour(s) à partir de {start_date}")
+    logger.info(f"Échantillons par jour: {n_samples_per_day}, Total échantillons: {n_days * n_samples_per_day}")
 
     if feature_columns is None:
         feature_columns = _get_feature_columns_from_config(
@@ -95,26 +105,49 @@ def generate_inference_data(
 
     # Déterminer si on utilise des données horaires ou journalières
     hourly = n_samples_per_day > 1
+    
+    # Calculate exact days needed for weather forecast
+    # Start from current time, so we need to calculate days until end of prediction period
+    end_date = start_date + timedelta(days=n_days)
+    days_needed = (end_date - start_date).days + 1  # +1 to include partial start day
+    
+    logger.info(f"Prévisions météo nécessaires: {days_needed} jour(s) du {start_date} au {end_date}")
+    
+    # Fetch weather data only for the necessary days
+    # Open-Meteo provides up to 16 days forecast
     weather_df = weather_api.fetch_forecast(
-        forecast_days=n_days,
+        forecast_days=min(days_needed, 16),
         hourly=hourly
     )
 
     # Créer un mapping Horodate -> données météo
+    # Weather API returns hourly data, so we need to map to 30-minute intervals
+    # We'll create a mapping for both the hour and the half-hour
     weather_mapping = {}
     for _, row in weather_df.iterrows():
         ts = row["Horodate"]
+        # Map to the hour (e.g., 23:00)
         weather_mapping[ts] = {
             "temperature_2m_mean": row["temperature_2m_mean"],
             "relative_humidity_mean": row["relative_humidity_mean"],
             "precipitation_sum": row["precipitation_sum"]
         }
+        # Also map to the half-hour (e.g., 23:30) using same values
+        ts_half_hour = ts.replace(minute=30)
+        weather_mapping[ts_half_hour] = {
+            "temperature_2m_mean": row["temperature_2m_mean"],
+            "relative_humidity_mean": row["relative_humidity_mean"],
+            "precipitation_sum": row["precipitation_sum"]
+        }
+    
+    logger.info(f"Mapping météo créé avec {len(weather_mapping)} entrées (horaire + demi-heure)")
 
     data = {}
     for col in feature_columns:
         if col in ("target_timestamp", "Horodate", "horodate"):  # A revoir pour être plus générique
             data[col] = timestamps
         elif col == "temperature_2m_mean":
+            # Map 30-minute timestamps to weather data (mapping includes both hour and half-hour)
             data[col] = [weather_mapping.get(ts, {}).get("temperature_2m_mean", 20.0) for ts in timestamps]
         elif col == "relative_humidity_mean":
             data[col] = [weather_mapping.get(ts, {}).get("relative_humidity_mean", 50.0) for ts in timestamps]
