@@ -6,6 +6,7 @@ On ne souhaite pas utiliser prefect dans ce projet
 Eviter les sauts de ligne inutiles
 
 # A faire
+- datadrift récupérer le fichier depuis S3 dans trained
 - grafana
 
 
@@ -16,6 +17,9 @@ fetch_consumption_from_db.py (ligne 78) -> A deplacer je pense
 
 
 # A tester
+
+## prepare Consumption prepare -> En cours
+- prepare consumption
 
 ## Evidently
 - J'ai un server EvidentlyAi deployé je pense qu'il faut juste uploader les rapports dans le bucket s3 evidently-reports
@@ -36,30 +40,19 @@ fetch_consumption_from_db.py (ligne 78) -> A deplacer je pense
 - Il y a t'il un documentation pour documenter les interraction avec la table prediction?  
 
 
-# Fait?
-
-deployement (ou streamlit) fait via le lancement des pipeline Retraining et Prediction provoqué par les Workflows?
+# Fait? -> A Challenger avec le prof
+- Orchestration airflow qui déclenche GitHub Actions
+- Prediction (inférence) inclue dans le pipeline pour être executé une seule fois dans un environnement temporaire
+- deployement (ou streamlit) fait via le lancement des pipeline Retraining et Prediction provoqué par les Workflows?
 
 
 # Nice to have
 
-## Orchestration
-Ordonnancement dans GitHub? -> En cours
-Airflow appelant Github Action -> A controler
-
-
-
-A vérifier
-- prepare consumption pipelines
-
 A faire (later)
 - Réparer base de donnée neon airflai (via un import de celle de jinsudai? Essayer plutot airflow db reset --yes)
-- airflow peut orchestrer Github via des pushs git
 - Faire fonctionner prefect en local
-- Faire en sorte que chaque pipeline soit un service -> Sauvegarder le projet
+- Faire en sorte que chaque pipeline soit un service ?
 - Loki pour collecter les logs ?
-- pb de URI Database non poussé avec Airflow?
-
 
 Idées
 - Renomage de FastAPI en inference-service

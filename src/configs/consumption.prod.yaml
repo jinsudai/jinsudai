@@ -1,7 +1,7 @@
 # Overrides pour l'environnement PROD
 # Merge avec consumption.yaml (base)
 
-data:
+data: #fichier stocké en local stockage sur S3 non configurable
   raw_path: "../data/prod/raw_consumption.csv"
   train_path: "../data/prod/train_consumption.parquet"
   processed_path: "../data/prod/"

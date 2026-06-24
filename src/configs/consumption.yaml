@@ -2,8 +2,7 @@
 # Voir SPECIFICATIONS.md pour les contraintes globales
 
 # Chemins données
-data:
-  # Fichier brut PRM (override dans les fichiers spécifiques à l'environnement)
+data: #fichier stocké en local stockage sur S3 non configurable
   raw_path: "../data/dev/raw_consumption.csv"
   processed_path: "../data/dev/"
   train_path: "../data/dev/train_consumption.parquet"
