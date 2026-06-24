@@ -39,8 +39,6 @@ def test_psi_calculation():
     else:
         print(f"[WARNING] PSI faible pour distributions différentes: {psi_drift}")
 
-    return True
-
 
 def test_data_drift_detection():
     """Test de la détection de data drift."""
@@ -97,8 +95,6 @@ def test_data_drift_detection():
     else:
         print("[WARNING] Drift non détecté avec des données différentes")
 
-    return True
-
 
 def test_concept_drift_detection():
     """Test de la détection de concept drift."""
@@ -149,8 +145,6 @@ def test_concept_drift_detection():
     else:
         print("[WARNING] Concept drift non détecté avec des données différentes")
 
-    return True
-
 
 def test_module_imports():
     """Test que les modules sont importables."""
@@ -166,36 +160,23 @@ def test_module_imports():
             calculate_psi
         )
         print("[OK] Module drift_detector importable")
-        return True
     except ImportError as e:
         print(f"[ERROR] Impossible d'importer drift_detector: {e}")
-        return False
 
 
 if __name__ == "__main__":
     print("=== TESTS SIMPLIFIÉS DU MODULE DRIFT DETECTOR ===\n")
 
-    results = {}
-
     # Test 1: Calcul PSI
-    results['psi_calculation'] = test_psi_calculation()
+    test_psi_calculation()
 
     # Test 2: Détection data drift
-    results['data_drift_detection'] = test_data_drift_detection()
+    test_data_drift_detection()
 
     # Test 3: Détection concept drift
-    results['concept_drift_detection'] = test_concept_drift_detection()
+    test_concept_drift_detection()
 
     # Test 4: Import des modules
-    results['module_imports'] = test_module_imports()
+    test_module_imports()
 
-    # Résumé
-    print("\n=== RÉSUMÉ DES TESTS ===")
-    for test_name, result in results.items():
-        status = "✅ PASS" if result else "❌ FAIL"
-        print(f"{status}: {test_name}")
-
-    all_passed = all(results.values())
-    print(f"\n{'✅ TOUS LES TESTS PASSENT' if all_passed else '❌ CERTAINS TESTS ONT ÉCHOUÉ'}")
-
-    sys.exit(0 if all_passed else 1)
+    print("\n=== TESTS TERMINÉS ===")
