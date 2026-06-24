@@ -6,7 +6,8 @@ On ne souhaite pas utiliser prefect dans ce projet
 ## Orchestration
 Ordonnancement dans GitHub? -> En cours
 
-
+## Netoyage
+Nettoyer les tests inutiles
 
 # A tester
 
