@@ -32,15 +32,15 @@ on:
     branches:
       - main
     paths:
-      - 'pipelines/inference/**'
-      - '.github/workflows/4_inference-pipeline.yml'
-      - 'src/ml/**'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'pipelines/inference/**'
-      - 'src/ml/**'
+      - 'pipelines/inference/prediction_pipeline.py'
+      - 'src/ml/pipelines/Prediction_pipeline.py'
+      - 'src/ml/pipelines/database_handler.py'
+      - 'src/ml/utils/data/**'
+      - 'src/ml/utils/models/models_inference.py'
+      - 'src/ml/config/**'
+    paths-ignore:
+      - '**.md'
+      - '**/__pycache__/**'
 
 jobs:
   prediction:

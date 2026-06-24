@@ -31,17 +31,18 @@ on:
       - main
     paths:
       - 'pipelines/preparation/**'
+      - 'scripts/fetch_consumption_from_db.py'
+      - 'scripts/run_prepare_consumption_pipeline.py'
       - 'src/ml/consumption/**'
       - 'src/ml/utils/s3_handler.py'
+      - 'src/ml/utils/data/**'
+      - 'src/ml/connectors/weather/**'
+      - 'src/ml/connectors/holidays/**'
+      - 'src/ml/config/**'
       - 'data/templates/**'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'pipelines/preparation/**'
-      - 'src/ml/consumption/**'
-      - 'src/ml/utils/s3_handler.py'
-      - 'data/templates/**'
+    paths-ignore:
+      - '**.md'
+      - '**/__pycache__/**'
 
 jobs:
   prepare_consumption:

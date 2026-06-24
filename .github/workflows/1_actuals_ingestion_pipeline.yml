@@ -57,14 +57,15 @@ on:
     branches:
       - main
     paths:
-      - 'pipelines/ingestion/**'
-      - 'src/ml/**'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'pipelines/ingestion/**'
-      - 'src/ml/**'
+      - 'pipelines/ingestion/actuals_ingestion_pipeline.py'
+      - 'src/ml/pipelines/Actual_values_pipeline.py'
+      - 'src/ml/pipelines/sftp_ingestion_pipeline.py'
+      - 'src/ml/pipelines/database_handler.py'
+      - 'src/ml/connectors/sftp/**'
+      - 'src/ml/config/**'
+    paths-ignore:
+      - '**.md'
+      - '**/__pycache__/**'
 
 jobs:
   actuals_ingestion:

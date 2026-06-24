@@ -22,16 +22,19 @@ on:
     branches:
       - main
     paths:
-      - 'pipelines/training/**'
-      - 'src/ml/**'
+      - 'pipelines/training/training_pipeline.py'
+      - 'scripts/run_data_pipeline_simple.py'
+      - 'src/ml/pipelines/training_pipeline.py'
+      - 'src/ml/config/**'
+      - 'src/ml/utils/models/**'
+      - 'src/ml/utils/data/**'
+      - 'src/ml/utils/monitoring/**'
+      - 'src/ml/utils/s3_handler.py'
+      - 'src/ml/consumption/training_tasks.py'
       - 'data/templates/**'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'pipelines/training/**'
-      - 'src/ml/**'
-      - 'data/templates/**'
+    paths-ignore:
+      - '**.md'
+      - '**/__pycache__/**'
 
 jobs:
   training:

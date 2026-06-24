@@ -1,14 +1,16 @@
 # Pour Devin
 
+
 ## Tâches de fond:
 On ne souhaite pas utiliser prefect dans ce projet
 Eviter les sauts de ligne inutiles
 
-## Orchestration
-Ordonnancement dans GitHub? -> En cours
 
-## Netoyage
-Nettoyer les tests inutiles
+# A Nettoyer
+
+Dossier script (workflow appelant un script directement ou un pipeline).
+fetch_consumption_from_db.py (ligne 78) -> A deplacer je pense
+
 
 # A tester
 
@@ -27,8 +29,12 @@ Nettoyer les tests inutiles
 ## Db
 - Quels informations sont stockée en base de données? Quels pipelines utilise la base de données predictions?
 - Il y a t'il un documentation pour documenter les interraction avec la table prediction?  
-- 
 
+
+# Nice to have
+
+## Orchestration
+Ordonnancement dans GitHub? -> En cours
 
 A faire
 - Ordonnancement dans GitHub ou via Airflow?

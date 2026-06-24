@@ -36,17 +36,21 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'pipelines/monitoring/**'
-      - 'src/ml/utils/monitoring/**'
-      - 'src/ml/pipelines/drift_detection_pipeline.py'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'pipelines/monitoring/**'
-      - 'src/ml/utils/monitoring/**'
-      - 'src/ml/pipelines/drift_detection_pipeline.py'
+push:
+  branches:
+    - main
+  paths:
+    - 'pipelines/monitoring/drift_detection_pipeline.py'
+    - 'src/ml/pipelines/drift_detection_pipeline.py'
+    - 'src/ml/pipelines/database_handler.py'
+    - 'src/ml/utils/monitoring/**'
+    - 'src/ml/utils/data/data_validator.py'
+    - 'src/ml/utils/s3_handler.py'
+    - 'src/ml/utils/notifications/email_notifier.py'
+    - 'src/ml/config/**'
+  paths-ignore:
+    - '**.md'
+    - '**/__pycache__/**'
 
 jobs:
   drift_detection:
