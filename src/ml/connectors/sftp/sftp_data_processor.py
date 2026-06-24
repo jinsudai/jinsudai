@@ -108,11 +108,6 @@ class SFTPDataProcessor:
                 logger.error("Impossible de créer les tables")
                 return False
 
-            # Ajouter la colonne actual_value si nécessaire
-            if not self.db_handler.add_actual_value_column():
-                logger.error("Impossible d'ajouter la colonne actual_value")
-                return False
-
             logger.info("Configuration terminée avec succès")
             return True
 

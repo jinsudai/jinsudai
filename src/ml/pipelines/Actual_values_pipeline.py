@@ -50,11 +50,6 @@ class ActualValuesPipeline:
                 logger.error("Impossible de se connecter à la base de données")
                 return False
 
-            # Ajouter la colonne actual_value si elle n'existe pas
-            if not self.db_handler.add_actual_value_column():
-                logger.error("Impossible d'ajouter la colonne actual_value")
-                return False
-
             logger.info("Base de données configurée")
         else:
             logger.warning("Aucune URI de base de données fournie")
