@@ -3,21 +3,21 @@ import logging
 import pandas as pd
 import psycopg2
 from psycopg2.extras import execute_batch
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
 class DatabaseHandler:
     """Classe de gestion de stockage des prédictions."""
 
-
     def __init__(self, db_uri=None):
         self.db_uri = db_uri
-
 
     def _get_connection(self):
         if not self.db_uri:
             raise ValueError("DB URI non fournie")
         return psycopg2.connect(self.db_uri)
-
 
     def verify_connection(self):
         if not self.db_uri:
@@ -31,7 +31,6 @@ class DatabaseHandler:
         except Exception as e:
             logger.error(f"Erreur de connexion BD: {e}")
             return False
-
 
     def create_tables(self):
         if not self.db_uri:
@@ -76,7 +75,6 @@ class DatabaseHandler:
             logger.error(f"Erreur lors de la création des tables: {e}")
             return False
 
-
     def store_predictions(self, df_predictions, model_version, run_id=None):
         if not self.db_uri:
             logger.warning("DB URI non fournie, stockage ignoré")
@@ -119,7 +117,6 @@ class DatabaseHandler:
             logger.error(f"Erreur lors du stockage des prédictions: {e}")
             return False
 
-
     def get_recent_predictions(self, limit=100):
         if not self.db_uri:
             logger.warning("DB URI non fournie, récupération ignorée")
@@ -140,8 +137,6 @@ class DatabaseHandler:
         except Exception as e:
             logger.error(f"Erreur lors de la récupération des prédictions: {e}")
             return None
-
-
 
     def get_predictions_for_drift_detection(self, limit=100, start_date=None, end_date=None):
         """
@@ -189,8 +184,6 @@ class DatabaseHandler:
             logger.error(f"Erreur lors de la récupération des données pour drift detection: {e}")
             return None
 
-
-
     def get_prediction_stats(self):
         if not self.db_uri:
             logger.warning("DB URI non fournie, statistiques ignorées")
@@ -205,7 +198,6 @@ class DatabaseHandler:
         except Exception as e:
             logger.error(f"Erreur lors de la récupération des stats: {e}")
             return None
-
 
     def get_predictions_by_date(self, start_date, end_date):
         """
@@ -236,7 +228,6 @@ class DatabaseHandler:
         except Exception as e:
             logger.error(f"Erreur lors de la récupération des prédictions par date: {e}")
             return None
-
 
     def update_actual_values(self, prediction_ids, actual_values):
         """
@@ -269,7 +260,6 @@ class DatabaseHandler:
         except Exception as e:
             logger.error(f"Erreur lors de la mise à jour des valeurs réelles: {e}")
             return False
-
 
     def insert_predictions_with_actual_values(self, target_timestamps, actual_values, entity_id):
         """
@@ -309,7 +299,6 @@ class DatabaseHandler:
         except Exception as e:
             logger.error(f"Erreur lors de l'insertion des enregistrements: {e}")
             return False
-
 
     def get_production_data_for_retraining(self, limit=None):
         """

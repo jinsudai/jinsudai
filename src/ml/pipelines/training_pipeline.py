@@ -2,8 +2,6 @@
 
 Pipeline complet d'entraînement : données -> validation -> entraînement -> monitoring.
 
-
-
 Spécifications (voir SPECIFICATIONS.md) :
 
 - Étapes :
@@ -24,13 +22,9 @@ Spécifications (voir SPECIFICATIONS.md) :
 
   8. Monitoring : Performance baseline vs nouveau modèle
 
-
-
 - Performance : < 1h complet
 
 - Output : Modèle versionné MLflow + métriques
-
-
 
 Classe principale :
 
@@ -72,29 +66,20 @@ from ml.utils.s3_handler import S3Handler
 
 from ml.config import load_config, DEFAULT_CONSUMPTION_CONFIG
 
-
-
 logging.basicConfig(level=logging.INFO)
 
 logger = logging.getLogger(__name__)
-
-
-
 
 
 class MLPipeline:
 
     """Pipeline complet pour le projet MLOps"""
 
-
-
     def __init__(self, config_name=DEFAULT_CONSUMPTION_CONFIG, model_name=None):
 
         """
 
         Initialise le pipeline avec la configuration.
-
-
 
         Args:
 
@@ -126,8 +111,6 @@ class MLPipeline:
 
         self.metrics = {}
 
-
-
         # Gestion des stages MLflow
 
         self.model_name = model_name or self.config.get('mlflow', {}).get('model_name', 'model')
@@ -136,17 +119,11 @@ class MLPipeline:
 
         self.promotion_result = None
 
-
-
         # Track the actual data path used for training
 
         self.actual_data_path = None
 
-
-
         logger.info(f"Pipeline MLOps initialisé avec model_name={self.model_name}")
-
-
 
     def _download_train_from_s3(self, local_path: str) -> bool:
 
@@ -154,13 +131,9 @@ class MLPipeline:
 
         Télécharge le dernier fichier train (combiné ou individuel) depuis S3.
 
-
-
         Args:
 
             local_path: Chemin local de destination
-
-
 
         Returns:
 
@@ -178,27 +151,17 @@ class MLPipeline:
 
             s3_config = global_config.get('s3', {})
 
-
-
             bucket = s3_config.get('bucket', 'data-store')
-
-
 
             # Chercher dans le préfixe consumption pour les fichiers train
 
             prefix = "consumption"
 
-
-
             logger.info(f"Recherche sur S3: bucket={bucket}, prefix={prefix}")
-
-
 
             # Initialiser le handler S3
 
             s3_handler = S3Handler(bucket=bucket)
-
-
 
             if not s3_handler.s3_enabled:
 
@@ -206,15 +169,11 @@ class MLPipeline:
 
                 return False
 
-
-
             # Lister les fichiers train.parquet
 
             files = s3_handler.list_files(prefix=prefix)
 
             train_files = [f for f in files if 'train' in f and f.endswith('.parquet')]
-
-
 
             if not train_files:
 
@@ -222,27 +181,19 @@ class MLPipeline:
 
                 return False
 
-
-
             # Trouver le plus récent
 
             train_files_sorted = sorted(train_files, reverse=True)
 
             latest_file = train_files_sorted[0]
 
-
-
             logger.info(f"Fichier le plus récent sur S3: {latest_file}")
-
-
 
             # Télécharger le fichier
 
             local_path_obj = Path(local_path)
 
             local_path_obj.parent.mkdir(parents=True, exist_ok=True)
-
-
 
             result = s3_handler.download_file(
 
@@ -253,8 +204,6 @@ class MLPipeline:
                 overwrite=True
 
             )
-
-
 
             if result["status"] == "success":
 
@@ -268,15 +217,11 @@ class MLPipeline:
 
                 return False
 
-
-
         except Exception as e:
 
             logger.error(f"Erreur lors du téléchargement depuis S3: {e}")
 
             return False
-
-
 
     def step_1_load_data(self, data_path=None, download_from_s3_if_missing=True):
 
@@ -284,23 +229,17 @@ class MLPipeline:
 
         logger.info("=== ÉTAPE 1: CHARGEMENT DES DONNÉES ===TE")
 
-
-
         # Utiliser le chemin depuis la config si non fourni
 
         if data_path is None:
 
             data_path = self.config.get('data', {}).get('train_path')
 
-
-
         # Vérifier si le fichier existe, sinon essayer de le télécharger depuis S3
 
         if not Path(data_path).exists():
 
             logger.warning(f"Fichier de données non trouvé: {data_path}")
-
-
 
             if download_from_s3_if_missing:
 
@@ -320,13 +259,9 @@ class MLPipeline:
 
                 return False
 
-
-
         # Store the actual path used
 
         self.actual_data_path = data_path
-
-
 
         self.data = load_data(data_path)
 
@@ -334,15 +269,11 @@ class MLPipeline:
 
         return self.data is not None
 
-
-
     def step_2_validate_data(self, save_report=True):
 
         """Étape 2: Validation des données"""
 
         logger.info("=== ÉTAPE 2: VALIDATION DES DONNÉES ===")
-
-
 
         if self.data is None:
 
@@ -350,21 +281,15 @@ class MLPipeline:
 
             return False
 
-
-
         # Validation basique
 
         validation_results = validate_data_quality(self.data)
 
         logger.info(f"Résultats de validation: {validation_results['is_valid']}")
 
-
-
         if not validation_results['is_valid']:
 
             logger.warning("Attention: Problèmes de qualité détectés")
-
-
 
         # Rapport Evidently
 
@@ -384,11 +309,7 @@ class MLPipeline:
 
                 logger.warning(f"Rapport Evidently non généré: {e}")
 
-
-
         return validation_results['is_valid']
-
-
 
     def step_3_transform_data(self):
 
@@ -426,11 +347,7 @@ class MLPipeline:
 
             return False
 
-
-
     def step_3_prepare_data(self):
-
-
 
         print("=== ÉTAPE 3: PRÉPARATION ET PRÉTRAITEMENT (stateless)===")
 
@@ -440,21 +357,15 @@ class MLPipeline:
 
             return False
 
-
-
         """Étape 3: Préparation et prétraitement avancé des données"""
 
         logger.info("=== ÉTAPE 3: PRÉPARATION ET PRÉTRAITEMENT (stateful)===")
-
-
 
         if self.data is None:
 
             logger.error("Pas de données à préparer")
 
             return False
-
-
 
         # Division train/test
 
@@ -463,8 +374,6 @@ class MLPipeline:
         test_size = self.config['model']['test_size']
 
         random_state = self.config['model']['random_state']
-
-
 
         target_column = self.config['data'].get('target_column')
 
@@ -484,8 +393,6 @@ class MLPipeline:
 
         logger.info(f"  ✓ Split effectué: train={self.X_train.shape}, test={self.X_test.shape}")
 
-
-
         # Prétraitement avancé (numériques, catégories, encoding)
 
         try:
@@ -500,11 +407,7 @@ class MLPipeline:
 
                 logger.info("  → Prétraitement avancé (imputation, scaling, encoding)...")
 
-
-
             result = prepare_data(self.X_train, self.X_test, autogluon=autogluon_mode)
-
-
 
             self.X_train = result['X_train']
 
@@ -513,8 +416,6 @@ class MLPipeline:
             self.preprocessor = result['preprocessor']
 
             self.feature_names = result['feature_names']
-
-
 
             logger.info(f"  ✓ Prétraitement effectué: {self.X_train.shape} (train), {self.X_test.shape} (test)")
 
@@ -532,23 +433,17 @@ class MLPipeline:
 
             return False
 
-
-
     def step_4_train_model(self):
 
         """Étape 4: Entraînement du modèle"""
 
         logger.info("=== ÉTAPE 4: ENTRAÎNEMENT DU MODÈLE ===")
 
-
-
         if self.X_train is None:
 
             logger.error("Pas de données d'entraînement")
 
             return False
-
-
 
         self.model = train_model(
 
@@ -560,11 +455,7 @@ class MLPipeline:
 
         )
 
-
-
         return self.model is not None
-
-
 
     def step_5_evaluate_model(self):
 
@@ -572,21 +463,15 @@ class MLPipeline:
 
         logger.info("=== ÉTAPE 5: ÉVALUATION DU MODÈLE ===")
 
-
-
         if self.model is None:
 
             logger.error("Pas de modèle à évaluer")
 
             return False
 
-
-
         self.metrics = evaluate_model(self.model, self.X_test, self.y_test)
 
         return self.metrics is not None
-
-
 
     def step_6_monitor_performance(self):
 
@@ -594,23 +479,17 @@ class MLPipeline:
 
         logger.info("=== ÉTAPE 6: MONITORING DE LA PERFORMANCE ===")
 
-
-
         if self.model is None:
 
             logger.error("Pas de modèle à monitorer")
 
             return False
 
-
-
         if self.X_train is None or self.X_test is None:
 
             logger.error("Pas de données de training/test pour le monitoring")
 
             return False
-
-
 
         try:
 
@@ -630,15 +509,11 @@ class MLPipeline:
 
             )
 
-
-
             if self.monitoring_results is None:
 
                 logger.error("Monitoring non réalisé")
 
                 return False
-
-
 
             logger.info(f"Résultats du monitoring: Drift={self.monitoring_results['drift']['drift_detected']}")
 
@@ -656,15 +531,11 @@ class MLPipeline:
 
             return False
 
-
-
     def step_7_log_with_mlflow(self):
 
         """Étape 7: Logging avec MLflow"""
 
         logger.info("=== ÉTAPE 7: LOGGING AVEC MLFLOW ===")
-
-
 
         if self.model is None or not self.metrics:
 
@@ -672,21 +543,15 @@ class MLPipeline:
 
             return False
 
-
-
         try:
 
             from ml.utils.models.models_mlflow import log_training_session
-
-
 
             log_metrics = self.metrics.copy() if self.metrics else {}
 
             if getattr(self, 'monitoring_results', None):
 
                 log_metrics.update(flatten_monitoring_metrics(self.monitoring_results))
-
-
 
             log_training_session(
 
@@ -712,11 +577,7 @@ class MLPipeline:
 
             return False
 
-
-
     # Step interessante mais non fonctionnel (Refactoring necessaire mais non prioritaire)
-
-
 
     def step_8_cleanup_model(self):
 
@@ -724,15 +585,11 @@ class MLPipeline:
 
         logger.info("=== ÉTAPE 8: NETTOYAGE DU MODÈLE LOCAL ===")
 
-
-
         if self.model is None:
 
             logger.info("Pas de modèle à nettoyer")
 
             return True
-
-
 
         try:
 
@@ -762,8 +619,6 @@ class MLPipeline:
 
                 logger.info("Modèle sklearn - pas de nettoyage nécessaire")
 
-
-
             return True
 
         except Exception as e:
@@ -772,21 +627,15 @@ class MLPipeline:
 
             return False
 
-
-
     def step_8_upload_trained_data_to_s3(self):
 
         """
 
         Étape 8: Upload du fichier train.parquet vers S3 après entraînement.
 
-
-
         Upload le fichier de données utilisé pour l'entraînement vers le prefix
 
         /consumption/trained/ sur S3 pour être utilisé par le retraining.
-
-
 
         Returns:
 
@@ -796,8 +645,6 @@ class MLPipeline:
 
         logger.info("=== ÉTAPE 8: UPLOAD DES DONNÉES ENTRAÎNÉES VERS S3 ===")
 
-
-
         try:
 
             # Charger la configuration S3
@@ -806,31 +653,21 @@ class MLPipeline:
 
             s3_config = global_config.get('s3', {})
 
-
-
             bucket = s3_config.get('bucket', 'data-store')
 
             prefix = "consumption/trained/"
 
-
-
             logger.info(f"Upload vers S3: bucket={bucket}, prefix={prefix}")
-
-
 
             # Initialiser le handler S3
 
             s3_handler = S3Handler(bucket=bucket)
-
-
 
             if not s3_handler.s3_enabled:
 
                 logger.warning("S3 non disponible (credentials manquants)")
 
                 return False
-
-
 
             # Récupérer le chemin du fichier train utilisé (actual path, not config path)
 
@@ -842,21 +679,15 @@ class MLPipeline:
 
                 return False
 
-
-
             # Utiliser le nom de fichier original (format: {start_date}_to_{end_date}_train.parquet)
 
             train_filename = Path(train_path).name
 
             s3_key = f"{prefix}{train_filename}"
 
-
-
             logger.info(f"Upload du fichier: {train_path}")
 
             logger.info(f"Vers: s3://{bucket}/{s3_key}")
-
-
 
             # Upload le fichier
 
@@ -878,8 +709,6 @@ class MLPipeline:
 
             )
 
-
-
             if result["status"] == "success":
 
                 logger.info(f"✅ Fichier uploadé avec succès: {result['s3_uri']}")
@@ -898,8 +727,6 @@ class MLPipeline:
 
                 return False
 
-
-
         except Exception as e:
 
             logger.error(f"Erreur lors de l'upload vers S3: {e}")
@@ -909,8 +736,6 @@ class MLPipeline:
             logger.error(traceback.format_exc())
 
             return False
-
-
 
     def step_9_manage_model_stages(self, metric_keys=None, min_improvement=0.0):
 
@@ -922,8 +747,6 @@ class MLPipeline:
 
         Support de plusieurs métriques (ex: pour prédiction énergétique)
 
-
-
         Args:
 
             metric_keys: Liste de métriques à utiliser pour la comparaison
@@ -934,8 +757,6 @@ class MLPipeline:
 
             min_improvement: Amélioration minimale requise en % (défaut: 0.0)
 
-
-
         Returns:
 
             True si succès, False sinon
@@ -943,8 +764,6 @@ class MLPipeline:
         """
 
         logger.info("=== ÉTAPE 8: GESTION DES ALIASES DU MODÈLE ===")
-
-
 
         # Définir les métriques par défaut pour prédiction énergétique
 
@@ -955,8 +774,6 @@ class MLPipeline:
         elif isinstance(metric_keys, str):
 
             metric_keys = [metric_keys]
-
-
 
         try:
 
@@ -974,33 +791,23 @@ class MLPipeline:
 
             )
 
-
-
             # Configurer MLflow (ne pas dépendre de la run active)
 
             tracking_uri = self.config['mlflow']['tracking_uri']
 
             experiment_name = self.config['mlflow']['experiment_name']
 
-
-
             set_mlflow_tracking(tracking_uri)
 
             mlflow.set_experiment(experiment_name)
-
-
 
             logger.info("\n[1/4] Récupération du run_id et enregistrement du modèle en Staging...")
 
             logger.info(f"  Métriques à comparer (priorité): {metric_keys}")
 
-
-
             # Récupérer le run_id de la dernière run
 
             client = mlflow.tracking.MlflowClient()
-
-
 
             # Chercher la dernière run de l'expérience
 
@@ -1012,13 +819,9 @@ class MLPipeline:
 
                 return False
 
-
-
             # Récupérer les runs de l'expérience
 
             runs = client.search_runs(experiment_ids=[experiment.experiment_id], max_results=1)
-
-
 
             if not runs:
 
@@ -1026,13 +829,9 @@ class MLPipeline:
 
                 return False
 
-
-
             run_id = runs[0].info.run_id
 
             logger.info(f"  ℹ Run trouvée: {run_id}")
-
-
 
             # Enregistrer le modèle
 
@@ -1046,8 +845,6 @@ class MLPipeline:
 
                     return False
 
-
-
                 self.version_staging = int(model_version.version)
 
                 logger.info(f"  ✓ Modèle {self.model_name} v{self.version_staging} enregistré")
@@ -1058,15 +855,11 @@ class MLPipeline:
 
                 return False
 
-
-
             if self.version_staging is None:
 
                 logger.error("Impossible de récupérer la version du modèle")
 
                 return False
-
-
 
             # Vérifier les versions existantes avec l'alias "prod"
 
@@ -1088,13 +881,9 @@ class MLPipeline:
 
                 logger.info("  ℹ Aucune version avec alias 'prod' (première fois)")
 
-
-
             # Promotion automatique
 
             logger.info("\n[3/4] Promotion automatique en Production (alias 'prod')...")
-
-
 
             # Promouvoir avec validation des métriques
 
@@ -1112,8 +901,6 @@ class MLPipeline:
 
             )
 
-
-
             # Résultat final
 
             logger.info("\n[4/4] Résultat:")
@@ -1130,8 +917,6 @@ class MLPipeline:
 
                 logger.info(f"    Métrique de décision: {self.promotion_result.get('metric_used', 'N/A')}")
 
-
-
                 # Afficher tous les métriques de la nouvelle version
 
                 if self.promotion_result.get('metrics_new'):
@@ -1141,8 +926,6 @@ class MLPipeline:
                     for key, val in self.promotion_result['metrics_new'].items():
 
                         logger.info(f"      • {key}: {val:.4f}")
-
-
 
                 # Afficher l'amélioration si disponible
 
@@ -1164,8 +947,6 @@ class MLPipeline:
 
                 logger.info(f"    Métrique de décision: {metric_used}")
 
-
-
                 improvement = self.promotion_result.get('improvement')
 
                 improvement_pct = self.promotion_result.get('improvement_pct')
@@ -1174,13 +955,9 @@ class MLPipeline:
 
                     logger.info(f"    Amélioration: {improvement:+.4f} ({improvement_pct:+.1f}%)")
 
-
-
             logger.info("=" * 60)
 
             return True
-
-
 
         except Exception as e:
 
@@ -1192,8 +969,6 @@ class MLPipeline:
 
             return False
 
-
-
     def run_full_pipeline(self, data_path, download_from_s3=True):
 
         """Exécute le pipeline complet"""
@@ -1203,8 +978,6 @@ class MLPipeline:
         logger.info("DÉMARRAGE DU PIPELINE COMPLET")
 
         logger.info("=" * 50 + "\n")
-
-
 
         steps = [
 
@@ -1232,8 +1005,6 @@ class MLPipeline:
 
         ]
 
-
-
         for step_name, step_func in steps:
 
             try:
@@ -1250,15 +1021,11 @@ class MLPipeline:
 
                 return False
 
-
-
         logger.info("\n" + "=" * 50)
 
         logger.info("PIPELINE TERMINÉ AVEC SUCCÈS")
 
         logger.info("=" * 50 + "\n")
-
-
 
         return True
 

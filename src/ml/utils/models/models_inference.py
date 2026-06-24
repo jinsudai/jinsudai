@@ -276,7 +276,7 @@ class InferenceModel:
                 missing_features = [f for f in expected_features if f not in X_data.columns]
                 extra_features = [f for f in X_data.columns if f not in expected_features]
 
-                logger.info(f"=== COMPARAISON DES FEATURES ===")
+                logger.info("=== COMPARAISON DES FEATURES ===")
                 logger.info(f"Features attendues: {expected_features}")
                 logger.info(f"Features disponibles: {list(X_data.columns)}")
                 logger.info(f"Features manquantes: {missing_features}")

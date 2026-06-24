@@ -657,8 +657,6 @@ def save_evidently_report_to_s3(
         return False
 
 
-
-
 def run_evidently_drift_detection(
     reference_data: pd.DataFrame,
     current_data: pd.DataFrame,

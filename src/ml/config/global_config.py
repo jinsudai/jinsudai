@@ -217,11 +217,11 @@ def load_config_with_environment(config_name: str) -> Dict[str, Any]:
     Returns:
         Dictionnaire avec la configuration fusionnée
     """
-    from ml.config import load_config
-    
+    from .config_loader import load_config as _load_config
+
     # Charger la config de base
-    base_config = load_config(config_name=config_name)
-    
+    base_config = _load_config(config_name=config_name)
+
     # Charger la config spécifique à l'environnement si elle existe
     # Priorité: variable d'environnement ENVIRONMENT (majuscules) > Environment (premier caractère majuscule)
     environment = os.getenv('ENVIRONMENT')
@@ -229,9 +229,9 @@ def load_config_with_environment(config_name: str) -> Dict[str, Any]:
         raise ValueError("La variable d'environnement ENVIRONMENT n'est pas définie")
     environment = environment.lower()
     env_config_name = f"{config_name}.{environment}"
-    
+
     try:
-        env_config = load_config(config_name=env_config_name)
+        env_config = _load_config(config_name=env_config_name)
         # Deep merge for nested dictionaries (especially mlflow section)
         config = {**base_config}
         for key, value in env_config.items():
@@ -294,9 +294,3 @@ def get_satellites_names() -> list:
     return satellites
 
 
-# Import load_config from config_loader.py
-from .config_loader import (
-    load_config,
-    DEFAULT_CONSUMPTION_CONFIG,
-    get_nested,
-)

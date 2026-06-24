@@ -2,8 +2,6 @@
 
 Suivi des expériences avec MLflow.
 
-
-
 Spécifications (voir SPECIFICATIONS.md) :
 
 - Tracking : Tous les entraînements et leurs métriques
@@ -16,15 +14,11 @@ Spécifications (voir SPECIFICATIONS.md) :
 
 - Tagging : Modèle production vs staging vs test
 
-
-
 Variables d'environnement requises :
 
 - MLFLOW_TRACKING_URI
 
 - MLFLOW_EXPERIMENT_NAME
-
-
 
 Classe principale :
 
@@ -44,8 +38,6 @@ import time
 
 from pathlib import Path
 
-
-
 import mlflow
 
 import mlflow.sklearn
@@ -54,18 +46,11 @@ import mlflow.pyfunc
 
 from mlflow.pyfunc import PythonModel
 
-
-
 logging.basicConfig(level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
-
-
 DEFAULT_ARTIFACT_DIR = Path(__file__).resolve().parents[5] / "model"
-
-
-
 
 
 def _ensure_artifact_location(artifact_location=None):
@@ -81,9 +66,6 @@ def _ensure_artifact_location(artifact_location=None):
     path.mkdir(parents=True, exist_ok=True)
 
     return path
-
-
-
 
 
 def set_mlflow_tracking(tracking_uri=None, artifact_location=None):
@@ -119,16 +101,11 @@ def set_mlflow_tracking(tracking_uri=None, artifact_location=None):
         logger.error(f"Erreur lors de la configuration MLflow: {e}")
 
 
-
-
-
 def start_mlflow_run(experiment_name, run_name=None, max_retries=3, backoff_factor=2):
 
     """
 
     Démarre une nouvelle run MLflow
-
-
 
     Args:
 
@@ -181,9 +158,6 @@ def start_mlflow_run(experiment_name, run_name=None, max_retries=3, backoff_fact
             time.sleep(sleep_time)
 
 
-
-
-
 def log_params(params):
 
     """Enregistre les paramètres"""
@@ -197,9 +171,6 @@ def log_params(params):
     except Exception as e:
 
         logger.error(f"Erreur lors de l'enregistrement des paramètres: {e}")
-
-
-
 
 
 def log_metrics(metrics):
@@ -217,9 +188,6 @@ def log_metrics(metrics):
     except Exception as e:
 
         logger.error(f"Erreur lors de l'enregistrement des métriques: {e}")
-
-
-
 
 
 def log_model(model, artifact_path="model"):
@@ -262,9 +230,6 @@ def log_model(model, artifact_path="model"):
             logger.info(f"Répertoire temporaire nettoyé: {temp_dir_to_cleanup}")
 
 
-
-
-
 def _log_autogluon_model(model, artifact_path):
 
     """Enregistre un modèle AutoGluon comme modèle pyfunc portable"""
@@ -281,8 +246,6 @@ def _log_autogluon_model(model, artifact_path):
 
             raise ValueError("Impossible de trouver le chemin du modèle AutoGluon (model.path est introuvable)")
 
-
-
         model_dir = os.path.abspath(model_dir)
 
         logger.info(f"Chemin AutoGluon détecté: {model_dir}")
@@ -290,8 +253,6 @@ def _log_autogluon_model(model, artifact_path):
         shutil.copytree(model_dir, temp_dir, dirs_exist_ok=True)
 
         logger.info(f"Modèle AutoGluon copié temporairement dans {temp_dir}")
-
-
 
         predictor_dir = None
 
@@ -303,8 +264,6 @@ def _log_autogluon_model(model, artifact_path):
 
                 break
 
-
-
         if predictor_dir is None:
 
             raise FileNotFoundError(
@@ -313,11 +272,7 @@ def _log_autogluon_model(model, artifact_path):
 
             )
 
-
-
         logger.info(f"Répertoire AutoGluon valide trouvé: {predictor_dir}")
-
-
 
         # Définir la classe wrapper PythonModel
 
@@ -327,13 +282,9 @@ def _log_autogluon_model(model, artifact_path):
 
                 from autogluon.tabular import TabularPredictor
 
-
-
                 artifact_path = context.artifacts["ag_model"]
 
                 artifact_path = os.path.normpath(str(artifact_path))
-
-
 
                 logger.info(f"Chargement AutoGluon depuis artefact: {artifact_path}")
 
@@ -341,21 +292,15 @@ def _log_autogluon_model(model, artifact_path):
 
                 logger.info("AutoGluon TabularPredictor chargé depuis artefact")
 
-
-
             def predict(self, context, model_input):
 
                 return self.predictor.predict(model_input)
-
-
 
         # Utiliser le chemin direct du répertoire temporaire pour l'upload MLflow
 
         # MLflow uploadera automatiquement les fichiers vers le serveur distant
 
         logger.info(f"Chemin de l'artefact AutoGluon pour upload: {predictor_dir}")
-
-
 
         # Enregistrer le modèle via mlflow.pyfunc
 
@@ -371,8 +316,6 @@ def _log_autogluon_model(model, artifact_path):
 
         logger.info("Modèle AutoGluon enregistré comme artefact pyfunc portable")
 
-
-
         # Attendre que MLflow finisse l'upload avant de supprimer le temp_dir
 
         # Le répertoire temporaire sera nettoyé plus tard par le pipeline
@@ -380,8 +323,6 @@ def _log_autogluon_model(model, artifact_path):
         logger.info(f"Répertoire temporaire conservé pour upload MLflow: {temp_dir}")
 
         return temp_dir  # Retourner le chemin pour nettoyage ultérieur
-
-
 
     except Exception as e:
 
@@ -392,7 +333,6 @@ def _log_autogluon_model(model, artifact_path):
         shutil.rmtree(temp_dir, ignore_errors=True)
 
         raise
-
 
 
 def _log_skops_model(model, artifact_path):
@@ -417,15 +357,11 @@ def _log_skops_model(model, artifact_path):
 
             return None  # Pas de nettoyage nécessaire
 
-
-
         # Créer le chemin du fichier .skops
 
         skops_file = os.path.join(temp_dir, f"{artifact_path}.skops")
 
         logger.info(f"Sauvegarde du modèle au format skops: {skops_file}")
-
-
 
         # Sauvegarder avec skops
 
@@ -433,27 +369,19 @@ def _log_skops_model(model, artifact_path):
 
         logger.info(f"Modèle sauvegardé en format skops: {skops_file}")
 
-
-
         # Logger le fichier .skops comme artefact MLflow
 
         mlflow.log_artifact(skops_file, artifact_path=artifact_path)
 
         logger.info(f"Fichier .skops enregistré dans MLflow: {artifact_path}")
 
-
-
         # Garder aussi une version sklearn pour compatibilité
 
         mlflow.sklearn.log_model(model, name=f"{artifact_path}_sklearn")
 
-        logger.info(f"Version sklearn également enregistrée pour compatibilité")
-
-
+        logger.info("Version sklearn également enregistrée pour compatibilité")
 
         return temp_dir  # Retourner le chemin pour nettoyage ultérieur
-
-
 
     except Exception as e:
 
@@ -474,9 +402,6 @@ def _log_skops_model(model, artifact_path):
         return None  # Pas de nettoyage nécessaire
 
 
-
-
-
 def log_artifact(file_path, artifact_path=None, artifact_location=None):
 
     """Enregistre un artefact (fichier) dans MLflow et copie une copie locale."""
@@ -491,15 +416,11 @@ def log_artifact(file_path, artifact_path=None, artifact_location=None):
 
         local_dir.mkdir(parents=True, exist_ok=True)
 
-
-
         local_dest = local_dir / Path(file_path).name
 
         shutil.copy2(file_path, local_dest)
 
         logger.info(f"Artefact copié localement: {local_dest}")
-
-
 
         mlflow.log_artifact(file_path, artifact_path)
 
@@ -508,9 +429,6 @@ def log_artifact(file_path, artifact_path=None, artifact_location=None):
     except Exception as e:
 
         logger.error(f"Erreur lors de l'enregistrement de l'artefact: {e}")
-
-
-
 
 
 def end_mlflow_run():
@@ -528,16 +446,11 @@ def end_mlflow_run():
         logger.error(f"Erreur lors de la terminaison de la run: {e}")
 
 
-
-
-
 def log_training_session(model, metrics, params, artifact_path="model", experiment_name="default", tracking_uri=None, artifact_location=None):
 
     """
 
     Fonction utilitaire pour enregistrer une session complète
-
-
 
     Args:
 
@@ -577,12 +490,7 @@ def log_training_session(model, metrics, params, artifact_path="model", experime
 
         logger.error(f"Erreur lors de l'enregistrement de la session: {e}")
 
-
-
 # ============= GESTION DES ALIASES MLFLOW =============
-
-
-
 
 
 def register_model_version(model_name, run_id, artifact_path="model", description=None):
@@ -590,8 +498,6 @@ def register_model_version(model_name, run_id, artifact_path="model", descriptio
     """
 
     Enregistre une version de modèle dans le Model Registry
-
-
 
     Args:
 
@@ -602,8 +508,6 @@ def register_model_version(model_name, run_id, artifact_path="model", descriptio
         artifact_path: Chemin de l'artefact du modèle
 
         description: Description du modèle (optionnel)
-
-
 
     Returns:
 
@@ -616,8 +520,6 @@ def register_model_version(model_name, run_id, artifact_path="model", descriptio
         client = mlflow.tracking.MlflowClient()
 
         model_uri = f"runs:/{run_id}/{artifact_path}"
-
-
 
         # Créer le registered model s'il n'existe pas
 
@@ -647,8 +549,6 @@ def register_model_version(model_name, run_id, artifact_path="model", descriptio
 
                 raise
 
-
-
         # Create a new model version in the registry
 
         model_version = client.create_model_version(
@@ -660,8 +560,6 @@ def register_model_version(model_name, run_id, artifact_path="model", descriptio
             run_id=run_id
 
         )
-
-
 
         # If a description was provided, update the model version with it
 
@@ -683,13 +581,9 @@ def register_model_version(model_name, run_id, artifact_path="model", descriptio
 
                 logger.warning(f"Impossible de mettre à jour la description du modèle: {e_update}")
 
-
-
         logger.info(f"Modèle {model_name} v{model_version.version} enregistré dans le registry")
 
         return model_version
-
-
 
     except Exception as e:
 
@@ -698,16 +592,11 @@ def register_model_version(model_name, run_id, artifact_path="model", descriptio
         return None
 
 
-
-
-
 def set_model_alias(model_name, version, alias):
 
     """
 
     Définit un alias pour une version de modèle
-
-
 
     Args:
 
@@ -716,8 +605,6 @@ def set_model_alias(model_name, version, alias):
         version: Version du modèle
 
         alias: Alias à attribuer (ex: "prod", "staging", "test")
-
-
 
     Returns:
 
@@ -739,13 +626,9 @@ def set_model_alias(model_name, version, alias):
 
         )
 
-
-
         logger.info(f"Alias '{alias}' assigné à {model_name} v{version}")
 
         return True
-
-
 
     except Exception as e:
 
@@ -754,24 +637,17 @@ def set_model_alias(model_name, version, alias):
         return False
 
 
-
-
-
 def get_model_version_by_alias(model_name, alias):
 
     """
 
     Récupère la version d'un modèle pour un alias spécifique
 
-
-
     Args:
 
         model_name: Nom du modèle
 
         alias: Alias à chercher (ex: "prod", "staging")
-
-
 
     Returns:
 
@@ -787,16 +663,11 @@ def get_model_version_by_alias(model_name, alias):
 
         return model_version
 
-
-
     except Exception as e:
 
         logger.warning(f"Alias '{alias}' non trouvé pour {model_name}: {e}")
 
         return None
-
-
-
 
 
 def list_model_aliases(model_name):
@@ -805,13 +676,9 @@ def list_model_aliases(model_name):
 
     Liste tous les aliases d'un modèle
 
-
-
     Args:
 
         model_name: Nom du modèle
-
-
 
     Returns:
 
@@ -825,8 +692,6 @@ def list_model_aliases(model_name):
 
         model = client.get_registered_model(model_name)
 
-
-
         # Construire un dict {alias: version}
 
         aliases_dict = {}
@@ -837,20 +702,13 @@ def list_model_aliases(model_name):
 
                 aliases_dict[alias] = version
 
-
-
         return aliases_dict
-
-
 
     except Exception as e:
 
         logger.warning(f"Erreur lors de la récupération des aliases: {e}")
 
         return {}
-
-
-
 
 
 def compare_model_metrics(model_name, version_new, alias_current="prod", metric_keys=None):
@@ -860,8 +718,6 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
     Compare les métriques de deux versions de modèle
 
     Support de plusieurs métriques avec priorité
-
-
 
     Args:
 
@@ -879,8 +735,6 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
 
                     Les métriques doivent correspondre exactement aux noms dans MLflow
 
-
-
     Returns:
 
         Dict avec les métriques et le résultat de comparaison
@@ -895,17 +749,11 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
 
             metric_keys = ["mae", "rmse", "accuracy"]
 
-
-
         if isinstance(metric_keys, str):
 
             metric_keys = [metric_keys]
 
-
-
         client = mlflow.tracking.MlflowClient()
-
-
 
         # Récupérer les infos des versions
 
@@ -914,8 +762,6 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
         run_id_new = model_version_new.run_id
 
         run_new = mlflow.get_run(run_id_new)
-
-
 
         # Chercher les métriques
 
@@ -927,11 +773,7 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
 
         available_metrics = list(run_new.data.metrics.keys()) if run_new.data.metrics else []
 
-
-
         logger.info(f"  → Métriques disponibles pour v{version_new}: {available_metrics}")
-
-
 
         # Essayer chaque métrique directement
 
@@ -943,8 +785,6 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
 
                 metrics_new[metric_key] = value
 
-
-
                 # Première métrique trouvée = celle à utiliser pour la comparaison
 
                 if metric_used is None:
@@ -953,17 +793,11 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
 
                     metric_value = value
 
-
-
                 logger.info(f"    ✓ {metric_key} = {value:.4f}")
-
-
 
         # Récupérer la version courante par alias
 
         model_version_current = get_model_version_by_alias(model_name, alias_current)
-
-
 
         if model_version_current is None:
 
@@ -987,15 +821,11 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
 
             }
 
-
-
         # Récupérer les métriques de la version courante
 
         run_id_current = model_version_current.run_id
 
         run_current = mlflow.get_run(run_id_current)
-
-
 
         metrics_current = {}
 
@@ -1003,11 +833,7 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
 
         available_metrics_current = list(run_current.data.metrics.keys()) if run_current.data.metrics else []
 
-
-
         logger.info(f"  → Métriques disponibles pour v{model_version_current.version} ({alias_current}): {available_metrics_current}")
-
-
 
         for metric_key in metric_keys:
 
@@ -1017,13 +843,9 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
 
                 metrics_current[metric_key] = value
 
-
-
                 if metric_key == metric_used:
 
                     metric_current_value = value
-
-
 
                 logger.info(f"    ✓ {metric_key} = {value:.4f}")
 
@@ -1035,13 +857,9 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
 
         improvement_pct = None
 
-
-
         if metric_value is not None and metric_current_value is not None:
 
             improvement = metric_value - metric_current_value
-
-
 
             # Pour MAE/RMSE/MAPE plus petit c'est mieux (négatif = amélioration)
 
@@ -1059,13 +877,9 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
 
                 improvement_pct = (improvement / abs(metric_current_value)) * 100 if metric_current_value != 0 else 0
 
-
-
         elif metric_value is not None:
 
             is_better = True
-
-
 
         result = {
 
@@ -1089,8 +903,6 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
 
         }
 
-
-
         # Log de comparaison
 
         if metric_used and improvement is not None:
@@ -1103,11 +915,7 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
 
             logger.info(f"  ⚠️  Comparaison {model_name}: Comparison impossible (métrique manquante)")
 
-
-
         return result
-
-
 
     except Exception as e:
 
@@ -1120,9 +928,6 @@ def compare_model_metrics(model_name, version_new, alias_current="prod", metric_
         return None
 
 
-
-
-
 def promote_model_to_production(model_name, version, alias_prod="prod", metric_keys=None, min_improvement=0.0):
 
     """
@@ -1130,8 +935,6 @@ def promote_model_to_production(model_name, version, alias_prod="prod", metric_k
     Promeut automatiquement un modèle en Production via Alias
 
     Support de plusieurs métriques avec priorité
-
-
 
     Args:
 
@@ -1149,8 +952,6 @@ def promote_model_to_production(model_name, version, alias_prod="prod", metric_k
 
         min_improvement: Amélioration minimale requise en % (défaut: 0.0)
 
-
-
     Returns:
 
         Dict avec le résultat de la promotion
@@ -1161,19 +962,13 @@ def promote_model_to_production(model_name, version, alias_prod="prod", metric_k
 
         logger.info(f"=== PROMOTION EN PRODUCTION: {model_name} v{version} ===")
 
-
-
         # Normaliser metric_keys - support list ou str
 
         metric_keys_normalized = metric_keys if isinstance(metric_keys, list) else [metric_keys] if metric_keys else ["mae", "rmse", "accuracy"]
 
-
-
         # Comparer avec la version courante en prod
 
         comparison = compare_model_metrics(model_name, version, alias_current=alias_prod, metric_keys=metric_keys_normalized)
-
-
 
         if comparison is None:
 
@@ -1181,11 +976,7 @@ def promote_model_to_production(model_name, version, alias_prod="prod", metric_k
 
             return {"success": False, "reason": "comparison_failed"}
 
-
-
         logger.info(f"Métrique utilisée: {comparison['metric_used']}")
-
-
 
         # Afficher toutes les métriques trouvées
 
@@ -1197,8 +988,6 @@ def promote_model_to_production(model_name, version, alias_prod="prod", metric_k
 
                 logger.info(f"  • {key}: {val:.4f}")
 
-
-
         if comparison['metrics_current']:
 
             logger.info(f"Métriques version avec alias '{alias_prod}':")
@@ -1206,8 +995,6 @@ def promote_model_to_production(model_name, version, alias_prod="prod", metric_k
             for key, val in comparison['metrics_current'].items():
 
                 logger.info(f"  • {key}: {val:.4f}")
-
-
 
         # Vérifier si on doit promouvoir
 
@@ -1228,8 +1015,6 @@ def promote_model_to_production(model_name, version, alias_prod="prod", metric_k
                 "metric_used": comparison["metric_used"]
 
             }
-
-
 
         # Vérifier l'amélioration minimale
 
@@ -1253,8 +1038,6 @@ def promote_model_to_production(model_name, version, alias_prod="prod", metric_k
 
             }
 
-
-
         # Assigner l'alias Production
 
         try:
@@ -1268,8 +1051,6 @@ def promote_model_to_production(model_name, version, alias_prod="prod", metric_k
             logger.error(f"Erreur lors de l'assignation de l'alias: {e}")
 
             return {"success": False, "reason": "alias_assignment_failed", "error": str(e)}
-
-
 
         return {
 
@@ -1289,8 +1070,6 @@ def promote_model_to_production(model_name, version, alias_prod="prod", metric_k
 
         }
 
-
-
     except Exception as e:
 
         logger.error(f"Erreur lors de la promotion: {e}")
@@ -1302,24 +1081,17 @@ def promote_model_to_production(model_name, version, alias_prod="prod", metric_k
         return {"success": False, "reason": str(e)}
 
 
-
-
-
 def delete_model_alias(model_name, alias):
 
     """
 
     Supprime un alias d'un modèle
 
-
-
     Args:
 
         model_name: Nom du modèle
 
         alias: Alias à supprimer
-
-
 
     Returns:
 
