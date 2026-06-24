@@ -132,7 +132,17 @@ def generate_inference_data(
             data[col] = np.random.standard_normal(total_samples)
 
     df_inference = pd.DataFrame(data)
+    
+    # Add date-based features that the model expects (Heure and Jour)
+    # These features are created during training via transform_date_columns
+    # but the model was trained with specific column names 'Heure' and 'Jour'
+    if "Horodate" in df_inference.columns:
+        df_inference["Heure"] = df_inference["Horodate"].dt.hour
+        df_inference["Jour"] = df_inference["Horodate"].dt.day
+        logger.info(f"Features temporelles ajoutées: Heure, Jour")
+    
     logger.info(f"Données d'inférence générées: {df_inference.shape[0]} échantillons")
+    logger.info(f"Colonnes finales: {list(df_inference.columns)}")
     return df_inference
 
 
