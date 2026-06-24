@@ -10,7 +10,7 @@ on:
         description: 'Date de fin (YYYY-MM-DD)'
         required: false
       raw_path:
-        description: 'Chemin vers le fichier brut PRM (optionnel, utilise le dernier fichier ingéré si non fourni)'
+        description: 'Chemin vers le fichier brut PRM (optionnel, utilise data/templates/raw_consumption.csv par défaut)'
         required: false
       output_dir:
         description: 'Répertoire de sortie local'
@@ -59,25 +59,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
       
-      - name: Fetch consumption data from PostgreSQL
-        env:
-          PREDICTIONS_POSTGRES_URI: ${{ secrets.PREDICTIONS_POSTGRES_URI }}
-        run: |
-          # Déterminer les dates automatiquement si non fournies
-          if [ "${{ github.event_name }}" = "schedule" ] || [ -z "${{ github.event.inputs.start_date }}" ]; then
-            # Pour l'exécution quotidienne: utiliser hier comme date de fin
-            END_DATE=$(date -d "yesterday" +%Y-%m-%d)
-            START_DATE=$(date -d "yesterday" +%Y-%m-%d)
-          else
-            END_DATE="${{ github.event.inputs.end_date }}"
-            START_DATE="${{ github.event.inputs.start_date }}"
-          fi
-          
-          python scripts/fetch_consumption_from_db.py \
-            --start_date "$START_DATE" \
-            --end_date "$END_DATE" \
-            --output_path "data/processed/raw_consumption_latest.csv"
-
       - name: Run prepare consumption pipeline
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -96,9 +77,9 @@ jobs:
             START_DATE="${{ github.event.inputs.start_date }}"
           fi
           
-          # Déterminer le raw_path: utiliser le dernier fichier ingéré si non fourni
+          # Déterminer le raw_path: utiliser le template PRM par défaut
           if [ -z "${{ github.event.inputs.raw_path }}" ]; then
-            RAW_PATH="data/processed/raw_consumption_latest.csv"
+            RAW_PATH="data/templates/raw_consumption.csv"
           else
             RAW_PATH="${{ github.event.inputs.raw_path }}"
           fi

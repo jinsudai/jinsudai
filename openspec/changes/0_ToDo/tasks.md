@@ -5,6 +5,9 @@
 On ne souhaite pas utiliser prefect dans ce projet
 Eviter les sauts de ligne inutiles
 
+# A faire
+- grafana
+
 
 # A Nettoyer
 
@@ -16,35 +19,35 @@ fetch_consumption_from_db.py (ligne 78) -> A deplacer je pense
 
 ## Evidently
 - J'ai un server EvidentlyAi deployé je pense qu'il faut juste uploader les rapports dans le bucket s3 evidently-reports
+- Faire marcher la detection de drift avec S3
 - Est-ce que l'on compare bien les bons datasets?
 - Data Drift (Drift Detection Action) -> Tester la documentation
 
+## Data 
+- Verifier les fichiers sources
+- Vérifier les fichier généré dans S3
+- Vérifier la creation des parquet dans S3
+
 ## slidev
 - Verifier la Documentation pour bloc 4
-
-## Airflow
-- Créer les dags correspondant aux pipelines les étapes devront faire appel aux GitHubActions
-- Schedule?
 
 ## Db
 - Quels informations sont stockée en base de données? Quels pipelines utilise la base de données predictions?
 - Il y a t'il un documentation pour documenter les interraction avec la table prediction?  
 
 
+# Fait?
+
+deployement (ou streamlit) fait via le lancement des pipeline Retraining et Prediction provoqué par les Workflows?
+
+
 # Nice to have
 
 ## Orchestration
 Ordonnancement dans GitHub? -> En cours
+Airflow appelant Github Action -> A controler
 
-A faire
-- Ordonnancement dans GitHub ou via Airflow?
-- Utilisation de FastAPI par Streamlit -> A tester
-- grafana
 
-A tester
-- Faire marcher la detection de drift avec S3
-Streamlit
-deployement
 
 A vérifier
 - prepare consumption pipelines
