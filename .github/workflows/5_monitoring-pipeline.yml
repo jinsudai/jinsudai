@@ -48,9 +48,6 @@ push:
     - 'src/ml/utils/s3_handler.py'
     - 'src/ml/utils/notifications/email_notifier.py'
     - 'src/ml/config/**'
-  paths-ignore:
-    - '**.md'
-    - '**/__pycache__/**'
 
 jobs:
   drift_detection:

@@ -63,9 +63,6 @@ on:
       - 'src/ml/pipelines/database_handler.py'
       - 'src/ml/connectors/sftp/**'
       - 'src/ml/config/**'
-    paths-ignore:
-      - '**.md'
-      - '**/__pycache__/**'
 
 jobs:
   actuals_ingestion:

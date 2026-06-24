@@ -32,9 +32,6 @@ on:
       - 'src/ml/utils/s3_handler.py'
       - 'src/ml/consumption/training_tasks.py'
       - 'data/templates/**'
-    paths-ignore:
-      - '**.md'
-      - '**/__pycache__/**'
 
 jobs:
   training:

@@ -38,9 +38,6 @@ on:
       - 'src/ml/utils/data/**'
       - 'src/ml/utils/models/models_inference.py'
       - 'src/ml/config/**'
-    paths-ignore:
-      - '**.md'
-      - '**/__pycache__/**'
 
 jobs:
   prediction:

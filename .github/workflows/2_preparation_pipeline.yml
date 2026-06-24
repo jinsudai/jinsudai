@@ -40,9 +40,6 @@ on:
       - 'src/ml/connectors/holidays/**'
       - 'src/ml/config/**'
       - 'data/templates/**'
-    paths-ignore:
-      - '**.md'
-      - '**/__pycache__/**'
 
 jobs:
   prepare_consumption:
