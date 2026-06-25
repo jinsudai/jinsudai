@@ -196,9 +196,9 @@ def prepare_consumption_features_pipeline(
                         logger.info(f"  Concaténation de {len(downloaded_files)} fichiers existants + nouveau dataframe...")
                         dfs = []
                         for file in downloaded_files:
-                            df = pd.read_parquet(file)egistrements")
+                            df = pd.read_parquet(file)
                             logger.info(f"  Fichier {file.name}: {len(df)} enregistrements")
-                            dfs.append(df)                        
+                            dfs.append(df)
                         logger.info(f"  Nouveau dataframe: {len(features_df)} enregistrements")
                         
                         # Ajouter le nouveau dataframe
