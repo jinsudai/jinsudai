@@ -161,15 +161,15 @@ def prepare_consumption_features_pipeline(
             s3_handler = S3Handler(bucket=s3_bucket)
             
             if s3_handler.s3_enabled:
-                # Télécharger tous les fichiers train existants depuis S3
+                # Télécharger tous les fichiers train existants depuis le préfixe dédié
                 concat_temp_dir = output_dir / "temp_concat"
                 concat_temp_dir.mkdir(parents=True, exist_ok=True)
                 
-                files = s3_handler.list_files(prefix="consumption")
+                files = s3_handler.list_files(prefix="consumption/prepared")
                 train_files = [f for f in files if 'train' in f and f.endswith('.parquet')]
                 
                 if train_files:
-                    logger.info(f"  {len(train_files)} fichiers train existants trouvés sur S3")
+                    logger.info(f"  {len(train_files)} fichiers train existants trouvés dans consumption/prepared")
                     
                     # Télécharger tous les fichiers existants
                     downloaded_files = []
@@ -197,7 +197,21 @@ def prepare_consumption_features_pipeline(
                         # Remplacer features_df par le dataframe concaténé
                         features_df = concatenated_df
                         
-                        # Sauvegarder le fichier concaténé avec le nom original
+                        # Extraire les dates réelles du dataframe concaténé
+                        if 'Horodate' in features_df.columns:
+                            min_date = features_df['Horodate'].min()
+                            max_date = features_df['Horodate'].max()
+                            min_date_str = min_date.strftime('%Y-%m-%d')
+                            max_date_str = max_date.strftime('%Y-%m-%d')
+                            logger.info(f"  Dates du dataframe concaténé: {min_date_str} à {max_date_str}")
+                            
+                            # Mettre à jour le nom du fichier avec les dates réelles
+                            train_path = output_dir / f"{min_date_str}_to_{max_date_str}_train.parquet"
+                            logger.info(f"  Nom du fichier mis à jour: {train_path}")
+                        else:
+                            logger.warning("  ⚠️ Colonne 'Horodate' non trouvée, conservation du nom original")
+                        
+                        # Sauvegarder le fichier concaténé
                         features_df.to_parquet(train_path)
                         logger.info(f"  Fichier concaténé sauvegardé: {train_path}")
                         
@@ -206,7 +220,7 @@ def prepare_consumption_features_pipeline(
                             file.unlink()
                         concat_temp_dir.rmdir()
                 else:
-                    logger.info("  ℹ️ Aucun fichier train existant, pas de concaténation")
+                    logger.info("  ℹ️ Aucun fichier train existant dans consumption/prepared, pas de concaténation")
             else:
                 logger.info("  ℹ️ S3 non disponible, pas de concaténation")
         except Exception as e:
@@ -234,8 +248,10 @@ def prepare_consumption_features_pipeline(
                 }
             )
             
-            # Upload du fichier train avec le préfixe consumption
-            s3_key_train = f"consumption/{start_date}_to_{end_date}_train.parquet"
+            # Upload du fichier train avec le préfixe consumption/prepared
+            # Utiliser le nom de fichier réel (mis à jour avec les dates réelles après concaténation)
+            train_filename = train_path.name
+            s3_key_train = f"consumption/prepared/{train_filename}"
             s3_result_train = s3_handler.upload_file(
                 local_path=str(train_path),
                 s3_key=s3_key_train,

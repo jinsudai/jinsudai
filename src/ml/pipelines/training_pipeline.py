@@ -146,7 +146,7 @@ class MLPipeline:
 
             result = s3_handler.download_latest_train_file(
                 local_path=local_path,
-                prefix="consumption",
+                prefix="consumption/prepared",
                 prioritize_dated=True
             )
 

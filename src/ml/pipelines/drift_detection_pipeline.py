@@ -181,8 +181,8 @@ class DriftDetectionPipeline:
 
             bucket = s3_config.get('bucket', 'data-store')
 
-            # Chercher dans le préfixe consumption pour les fichiers train générés
-            prefix = "consumption"
+            # Chercher dans le préfixe consumption/prepared pour les fichiers train générés
+            prefix = "consumption/prepared"
 
             # Initialiser le handler S3
             s3_handler = S3Handler(bucket=bucket)
