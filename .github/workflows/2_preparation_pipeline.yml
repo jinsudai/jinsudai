@@ -106,7 +106,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: holidays-data
-          path: data/processed/holidays_*.parquet
+          path: data/processed/*_holidays.parquet
           retention-days: 1
 
       - name: Upload train artifact

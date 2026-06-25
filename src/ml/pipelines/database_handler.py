@@ -300,21 +300,28 @@ class DatabaseHandler:
             logger.error(f"Erreur lors de l'insertion des enregistrements: {e}")
             return False
 
-    def get_production_data(self, limit=None):
+    def get_production_data(self, limit=None, include_prediction=True):
         """
         Récupère les données de production avec valeurs réelles.
         Args:
             limit: Nombre maximum d'enregistrements (optionnel)
+            include_prediction: Si True, inclut la colonne prediction (défaut: True)
         Returns:
-            DataFrame avec les colonnes target_timestamp, prediction, actual_value
+            DataFrame avec les colonnes target_timestamp, actual_value
+            (et prediction si include_prediction=True)
             ou None en cas d'erreur
         """
         if not self.db_uri:
             logger.warning("DB URI non fournie, récupération des données de production ignorée")
             return None
+
+        columns = ["target_timestamp", "actual_value"]
+        if include_prediction:
+            columns.append("prediction")
+
         if limit:
-            query = """
-            SELECT target_timestamp, prediction, actual_value
+            query = f"""
+            SELECT {', '.join(columns)}
             FROM consumption_predictions
             WHERE actual_value IS NOT NULL
             ORDER BY target_timestamp DESC
@@ -322,8 +329,8 @@ class DatabaseHandler:
             """
             params = (limit,)
         else:
-            query = """
-            SELECT target_timestamp, prediction, actual_value
+            query = f"""
+            SELECT {', '.join(columns)}
             FROM consumption_predictions
             WHERE actual_value IS NOT NULL
             ORDER BY target_timestamp DESC

@@ -149,7 +149,7 @@ class ConsumptionDataPreparer:
             raise ValueError("URI de base de données non fournie (paramètre, variable d'environnement PREDICTIONS_POSTGRES_URI ou config)")
 
         db_handler = DatabaseHandler(db_uri=db_uri)
-        df = db_handler.get_production_data(limit=limit)
+        df = db_handler.get_production_data(limit=limit, include_prediction=False)
 
         if df is None or df.empty:
             raise ValueError("Aucune donnée trouvée dans la base de données")
