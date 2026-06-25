@@ -124,6 +124,51 @@ class ConsumptionDataPreparer:
         logger.info(f"Données calendrier chargées: {len(df)} enregistrements")
         return df
 
+    def load_consumption_from_database(self, db_uri: Optional[str] = None, limit: Optional[int] = None) -> pd.DataFrame:
+        """
+        Charge les données de consommation depuis la base de données PostgreSQL.
+
+        Args:
+            db_uri: URI de connexion PostgreSQL. Si non fourni, utilise la variable d'environnement
+                    PREDICTIONS_POSTGRES_URI, puis la config.
+            limit: Nombre maximum d'enregistrements à récupérer.
+
+        Returns:
+            DataFrame avec Horodate et Valeur (actual_value)
+        """
+        from ml.pipelines.database_handler import DatabaseHandler
+        import os
+
+        if db_uri is None:
+            db_uri = os.getenv('PREDICTIONS_POSTGRES_URI')
+
+        if db_uri is None:
+            db_uri = self.config.get("database", {}).get("uri")
+
+        if not db_uri:
+            raise ValueError("URI de base de données non fournie (paramètre, variable d'environnement PREDICTIONS_POSTGRES_URI ou config)")
+
+        db_handler = DatabaseHandler(db_uri=db_uri)
+        df = db_handler.get_production_data_for_retraining(limit=limit)
+
+        if df is None or df.empty:
+            raise ValueError("Aucune donnée trouvée dans la base de données")
+
+        # Renommer les colonnes pour correspondre au format attendu
+        df = df.rename(columns={"target_timestamp": "Horodate", "actual_value": "Valeur"})
+
+        # Convertir Horodate en datetime si nécessaire
+        if not pd.api.types.is_datetime64_any_dtype(df["Horodate"]):
+            df["Horodate"] = pd.to_datetime(df["Horodate"])
+
+        # Nettoyer Valeur (convertir en numérique)
+        target_col = self.config.get("data", {}).get("target_column", "Valeur")
+        df[target_col] = pd.to_numeric(df[target_col], errors="coerce")
+        df = df.dropna(subset=[target_col])
+
+        logger.info(f"Données consommation chargées depuis la base: {len(df)} enregistrements")
+        return df
+
     def _clean_column_names(self, df: pd.DataFrame) -> pd.DataFrame:
         """Nettoie les noms de colonnes (espaces, accents)."""
         df = df.copy()
@@ -271,7 +316,10 @@ class ConsumptionDataPreparer:
         raw_path: Optional[Union[str, Path]] = None,
         weather_path: Optional[Union[str, Path]] = None,
         holidays_path: Optional[Union[str, Path]] = None,
-        output_path: Optional[Union[str, Path]] = None
+        output_path: Optional[Union[str, Path]] = None,
+        db_uri: Optional[str] = None,
+        db_limit: Optional[int] = None,
+        use_database: bool = False
     ) -> pd.DataFrame:
         """
         Pipeline complet de préparation des données consommation.
@@ -282,12 +330,21 @@ class ConsumptionDataPreparer:
             weather_path: Chemin vers le Parquet météo. Si non fourni, utilise config (data.weather_file).
             holidays_path: Chemin vers le Parquet vacances/jours fériés. Si non fourni, utilise config (data.holidays_file).
             output_path: Chemin pour sauvegarder le résultat. Si non fourni, utilise config (data.train_path).
+            db_uri: URI de connexion PostgreSQL pour charger les données depuis la base.
+                    Si fourni, prioritaire sur raw_path.
+            db_limit: Nombre maximum d'enregistrements à récupérer depuis la base.
+            use_database: Si True, force l'utilisation de la base de données (utilise db_uri si fourni,
+                         sinon variable d'environnement PREDICTIONS_POSTGRES_URI).
 
         Returns:
             DataFrame: Données prêtes pour l'entraînement
         """
-        # 1. Charger données brutes consommation
-        consumption_df = self.load_raw_consumption(raw_path)
+        # 1. Charger données brutes consommation (depuis fichier ou base de données)
+        if use_database or db_uri:
+            logger.info("Chargement des données depuis la base de données PostgreSQL")
+            consumption_df = self.load_consumption_from_database(db_uri=db_uri, limit=db_limit)
+        else:
+            consumption_df = self.load_raw_consumption(raw_path)
 
         # 2. Charger données météo
         weather_df = self.load_weather_data(weather_path)

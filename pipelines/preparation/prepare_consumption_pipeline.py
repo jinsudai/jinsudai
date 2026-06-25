@@ -37,24 +37,32 @@ logger = logging.getLogger(__name__)
 def prepare_consumption_features_pipeline(
     start_date: str,
     end_date: str,
-    raw_path: str,
+    raw_path: str = None,
     output_dir: str = "data/processed/",
     upload_to_s3: bool = True,
     s3_bucket: str = None,
-    s3_prefix: str = "consumption/features/"
+    s3_prefix: str = "consumption/features/",
+    db_uri: str = None,
+    db_limit: int = None,
+    use_database: bool = False
 ) -> dict:
     """
     Pipeline complet pour préparer les features consommation.
-    
+
     Args:
         start_date: Date de début (YYYY-MM-DD)
         end_date: Date de fin (YYYY-MM-DD)
-        raw_path: Chemin vers le fichier brut PRM
+        raw_path: Chemin vers le fichier brut PRM (optionnel si db_uri ou use_database)
         output_dir: Répertoire de sortie local
         upload_to_s3: Si True, upload sur S3
         s3_bucket: Nom du bucket S3 (défaut: depuis env)
         s3_prefix: Préfixe S3 pour les fichiers
-        
+        db_uri: URI de connexion PostgreSQL pour charger les données depuis la base
+                (prioritaire sur raw_path si fourni)
+        db_limit: Nombre maximum d'enregistrements à récupérer depuis la base
+        use_database: Si True, charge les données depuis la base de données en utilisant
+                     la variable d'environnement PREDICTIONS_POSTGRES_URI (ou db_uri si fourni)
+
     Returns:
         dict: Résultat du pipeline avec chemins locaux et S3
     """
@@ -106,7 +114,7 @@ def prepare_consumption_features_pipeline(
     
     # 2. Générer les données vacances/jours fériés
     logger.info("\n[2/4] Génération des données vacances/jours fériés...")
-    holidays_path = output_dir / f"holidays_{start_date}_to_{end_date}.parquet"
+    holidays_path = output_dir / f"{start_date}_to_{end_date}_holidays.parquet"
     
     # Vérifier si le fichier existe et a la bonne structure
     holidays_valid = False
@@ -141,7 +149,10 @@ def prepare_consumption_features_pipeline(
             raw_path=raw_path,
             weather_path=str(weather_path),
             holidays_path=str(holidays_path) if holidays_path else None,
-            output_path=str(train_path)
+            output_path=str(train_path),
+            db_uri=db_uri,
+            db_limit=db_limit,
+            use_database=use_database
         )
         logger.info(f"  ✅ Features préparées: {train_path}")
         logger.info(f"  ℹ️ Shape: {features_df.shape}")
@@ -186,7 +197,10 @@ def prepare_consumption_features_pipeline(
                         dfs = []
                         for file in downloaded_files:
                             df = pd.read_parquet(file)
+                            logger.info(f"  Fichier {file.name}: {len(df)} enregistrements")
                             dfs.append(df)
+                        
+                        logger.info(f"  Nouveau dataframe: {len(features_df)} enregistrements")
                         
                         # Ajouter le nouveau dataframe
                         dfs.append(features_df)
@@ -325,14 +339,21 @@ def main():
     )
     parser.add_argument('--start_date', type=str, required=True, help='Date de début (YYYY-MM-DD)')
     parser.add_argument('--end_date', type=str, required=True, help='Date de fin (YYYY-MM-DD)')
-    parser.add_argument('--raw_path', type=str, required=True, help='Chemin vers le fichier brut PRM')
+    parser.add_argument('--raw_path', type=str, required=False, help='Chemin vers le fichier brut PRM (optionnel si --db_uri ou --use_database)')
     parser.add_argument('--output_dir', type=str, default='data/processed/', help='Répertoire de sortie local')
     parser.add_argument('--no_upload_s3', action='store_true', help='Désactiver l\'upload S3')
     parser.add_argument('--s3_bucket', type=str, help='Nom du bucket S3 (défaut: depuis env)')
     parser.add_argument('--s3_prefix', type=str, default='consumption/features/', help='Préfixe S3')
-    
+    parser.add_argument('--db_uri', type=str, help='URI de connexion PostgreSQL pour charger les données depuis la base')
+    parser.add_argument('--db_limit', type=int, help='Nombre maximum d\'enregistrements à récupérer depuis la base')
+    parser.add_argument('--use_database', action='store_true', help='Utiliser la base de données (lit PREDICTIONS_POSTGRES_URI depuis l\'environnement)')
+
     args = parser.parse_args()
-    
+
+    # Vérifier que soit raw_path soit db_uri soit use_database est fourni
+    if not args.raw_path and not args.db_uri and not args.use_database:
+        parser.error("Au moins l'un des arguments --raw_path, --db_uri ou --use_database doit être fourni")
+
     try:
         result = prepare_consumption_features_pipeline(
             start_date=args.start_date,
@@ -341,7 +362,10 @@ def main():
             output_dir=args.output_dir,
             upload_to_s3=not args.no_upload_s3,
             s3_bucket=args.s3_bucket,
-            s3_prefix=args.s3_prefix
+            s3_prefix=args.s3_prefix,
+            db_uri=args.db_uri,
+            db_limit=args.db_limit,
+            use_database=args.use_database
         )
         
         if result["status"] == "success":

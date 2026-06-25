@@ -49,6 +49,7 @@ fetch_consumption_from_db.py (ligne 78) -> A deplacer je pense
 # Nice to have
 
 A faire (later)
+- Clean vacances etc...
 - Réparer base de donnée neon airflai (via un import de celle de jinsudai? Essayer plutot airflow db reset --yes)
 - Faire fonctionner prefect en local
 - Faire en sorte que chaque pipeline soit un service ?
