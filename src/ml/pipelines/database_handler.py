@@ -300,9 +300,9 @@ class DatabaseHandler:
             logger.error(f"Erreur lors de l'insertion des enregistrements: {e}")
             return False
 
-    def get_production_data_for_retraining(self, limit=None):
+    def get_production_data(self, limit=None):
         """
-        Récupère les données de production avec valeurs réelles pour le retraining.
+        Récupère les données de production avec valeurs réelles.
         Args:
             limit: Nombre maximum d'enregistrements (optionnel)
         Returns:

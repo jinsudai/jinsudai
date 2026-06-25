@@ -245,13 +245,52 @@ def prepare_consumption_features_pipeline(
             import traceback
             logger.error(traceback.format_exc())
     
-    # 5. Upload sur S3
-    s3_result = None
+    # 5. Archiver les anciens fichiers sur S3
     if upload_to_s3:
-        logger.info("\n[5/6] Upload sur S3...")
+        logger.info("\n[5/6] Archivage des anciens fichiers sur S3...")
         try:
             s3_handler = S3Handler(bucket=s3_bucket)
-            
+
+            if s3_handler.s3_enabled:
+                # Lister les fichiers existants dans consumption/prepared
+                files = s3_handler.list_files(prefix="consumption/prepared")
+                # Filtrer pour exclure le dossier archived
+                old_files = [f for f in files if not f.startswith("consumption/archived/")]
+
+                if old_files:
+                    logger.info(f"  {len(old_files)} fichiers à archiver dans consumption/prepared")
+
+                    # Déplacer chaque fichier vers consumption/archived/prepared/
+                    for s3_key in old_files:
+                        filename = s3_key.split('/')[-1]
+                        archived_key = f"consumption/archived/prepared/{filename}"
+
+                        # Copier vers archived
+                        copy_result = s3_handler.copy_file(s3_key, archived_key)
+                        if copy_result["status"] == "success":
+                            logger.info(f"  ✅ Archivé: {s3_key} -> {archived_key}")
+                            # Supprimer l'original
+                            delete_result = s3_handler.delete_file(s3_key)
+                            if delete_result["status"] != "success":
+                                logger.warning(f"  ⚠️ Échec suppression original: {s3_key}")
+                        else:
+                            logger.warning(f"  ⚠️ Échec archivage: {s3_key}")
+                else:
+                    logger.info("  ℹ️ Aucun fichier à archiver")
+            else:
+                logger.info("  ℹ️ S3 non disponible, pas d'archivage")
+        except Exception as e:
+            logger.error(f"  ❌ Erreur archivage: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+
+    # 6. Upload sur S3
+    s3_result = None
+    if upload_to_s3:
+        logger.info("\n[6/6] Upload sur S3...")
+        try:
+            s3_handler = S3Handler(bucket=s3_bucket)
+
             # Upload du fichier weather avec le préfixe weather
             s3_key_weather = f"weather/{start_date}_to_{end_date}_weather.parquet"
             s3_result_weather = s3_handler.upload_file(

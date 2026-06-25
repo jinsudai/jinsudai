@@ -1,19 +1,15 @@
 # Pour Devin
 
-
 ## Tâches de fond:
 On ne souhaite pas utiliser prefect dans ce projet
 Eviter les sauts de ligne inutiles
 
+
 # A faire
-- datadrift récupérer le fichier depuis S3 dans trained
-- grafana
+- datadrift récupérer le fichier depuis S3 dans trained -> A tester
+- Avant d'uploader le nouveau ..._train.parquet uploadé. Il faut déplacer les anciens fichiers prefix "prepared" vers "prepared/archived"
+- grafana 
 
-
-# A Nettoyer
-
-Dossier script (workflow appelant un script directement ou un pipeline).
-fetch_consumption_from_db.py (ligne 78) -> A deplacer je pense
 
 
 # A tester
@@ -46,19 +42,23 @@ fetch_consumption_from_db.py (ligne 78) -> A deplacer je pense
 - deployement (ou streamlit) fait via le lancement des pipeline Retraining et Prediction provoqué par les Workflows?
 
 
+
 # Nice to have
 
-A faire (later)
-- Gérer correctement la preparation du premier training
+# A Nettoyer
+- get_production_data_for_retraining peut être renommé en get_production_data
 - Clean vacances etc...
+- Renommer les fichiers initiaux pour suivre le format date_xxx.parquet
+
+# A faire
+- Gérer correctement la preparation du premier training
+-- Identifier que c'est le premier training
+
+# Plus tard
 - Réparer base de donnée neon airflai (via un import de celle de jinsudai? Essayer plutot airflow db reset --yes)
 - Faire fonctionner prefect en local
 - Faire en sorte que chaque pipeline soit un service ?
 - Loki pour collecter les logs ?
-- Renommer les fichiers initiaux pour suivre le format date_xxx.parquet
-
-Idées
-- Renomage de FastAPI en inference-service
 - Fast API qui contient tout le ML pour une orchestration peu gourmande avec l'orchestrateur qui appelle les endpoints
 
 

@@ -228,6 +228,86 @@ class S3Handler:
             logger.error(f"❌ Erreur liste S3: {e}")
             return []
 
+    def copy_file(self, source_key: str, dest_key: str) -> Dict[str, Any]:
+        """
+        Copie un fichier S3 vers un autre emplacement.
+
+        Args:
+            source_key: Clé S3 source
+            dest_key: Clé S3 destination
+
+        Returns:
+            dict: Résultat de l'opération
+        """
+        if not self.s3_enabled:
+            return {
+                "status": "skipped",
+                "reason": "S3 credentials not available"
+            }
+
+        try:
+            copy_source = {
+                'Bucket': self.bucket,
+                'Key': source_key
+            }
+
+            self.s3_client.copy_object(
+                CopySource=copy_source,
+                Bucket=self.bucket,
+                Key=dest_key
+            )
+
+            logger.info(f"✅ Fichier copié: s3://{self.bucket}/{source_key} -> s3://{self.bucket}/{dest_key}")
+
+            return {
+                "status": "success",
+                "bucket": self.bucket,
+                "source_key": source_key,
+                "dest_key": dest_key
+            }
+        except Exception as e:
+            logger.error(f"❌ Erreur copie S3: {e}")
+            return {
+                "status": "error",
+                "reason": str(e)
+            }
+
+    def delete_file(self, s3_key: str) -> Dict[str, Any]:
+        """
+        Supprime un fichier S3.
+
+        Args:
+            s3_key: Clé S3
+
+        Returns:
+            dict: Résultat de l'opération
+        """
+        if not self.s3_enabled:
+            return {
+                "status": "skipped",
+                "reason": "S3 credentials not available"
+            }
+
+        try:
+            self.s3_client.delete_object(
+                Bucket=self.bucket,
+                Key=s3_key
+            )
+
+            logger.info(f"✅ Fichier supprimé: s3://{self.bucket}/{s3_key}")
+
+            return {
+                "status": "success",
+                "bucket": self.bucket,
+                "key": s3_key
+            }
+        except Exception as e:
+            logger.error(f"❌ Erreur suppression S3: {e}")
+            return {
+                "status": "error",
+                "reason": str(e)
+            }
+
     def download_latest_train_file(
         self,
         local_path: str,

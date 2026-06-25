@@ -7,7 +7,6 @@ on:
       - main
     paths:
       - 'pipelines/training/training_pipeline.py'
-      - 'pipelines/preparation/prepare_consumption_pipeline.py'
       - 'src/ml/pipelines/training_pipeline.py'
       - 'src/ml/config/**'
       - 'src/ml/utils/models/**'
