@@ -132,7 +132,7 @@ def prepare_consumption_features_pipeline(
             return {"status": "error", "step": "holidays", "error": str(e)}
     
     # 3. Préparer les features consommation
-    logger.info("\n[3/4] Préparation des features consommation...")
+    logger.info("\n[3/6] Préparation des features consommation...")
     train_path = output_dir / f"{start_date}_to_{end_date}_train.parquet"
     
     try:
@@ -151,10 +151,73 @@ def prepare_consumption_features_pipeline(
         logger.error(traceback.format_exc())
         return {"status": "error", "step": "features", "error": str(e)}
     
-    # 4. Upload sur S3
+    # 4. Concaténer avec les fichiers train existants sur S3 (si upload activé)
+    if upload_to_s3:
+        logger.info("\n[4/6] Concaténation avec les fichiers train existants sur S3...")
+        try:
+            import pandas as pd
+            
+            # Initialiser le handler S3
+            s3_handler = S3Handler(bucket=s3_bucket)
+            
+            if s3_handler.s3_enabled:
+                # Télécharger tous les fichiers train existants depuis S3
+                concat_temp_dir = output_dir / "temp_concat"
+                concat_temp_dir.mkdir(parents=True, exist_ok=True)
+                
+                files = s3_handler.list_files(prefix="consumption")
+                train_files = [f for f in files if 'train' in f and f.endswith('.parquet')]
+                
+                if train_files:
+                    logger.info(f"  {len(train_files)} fichiers train existants trouvés sur S3")
+                    
+                    # Télécharger tous les fichiers existants
+                    downloaded_files = []
+                    for s3_key in train_files:
+                        filename = s3_key.split('/')[-1]
+                        temp_file = concat_temp_dir / filename
+                        result = s3_handler.download_file(s3_key=s3_key, local_path=str(temp_file), overwrite=True)
+                        if result["status"] == "success":
+                            downloaded_files.append(temp_file)
+                    
+                    # Concaténer avec le nouveau dataframe
+                    if downloaded_files:
+                        logger.info(f"  Concaténation de {len(downloaded_files)} fichiers existants + nouveau dataframe...")
+                        dfs = []
+                        for file in downloaded_files:
+                            df = pd.read_parquet(file)
+                            dfs.append(df)
+                        
+                        # Ajouter le nouveau dataframe
+                        dfs.append(features_df)
+                        
+                        concatenated_df = pd.concat(dfs, ignore_index=True)
+                        logger.info(f"  DataFrame concaténé: {len(concatenated_df)} enregistrements")
+                        
+                        # Remplacer features_df par le dataframe concaténé
+                        features_df = concatenated_df
+                        
+                        # Sauvegarder le fichier concaténé avec le nom original
+                        features_df.to_parquet(train_path)
+                        logger.info(f"  Fichier concaténé sauvegardé: {train_path}")
+                        
+                        # Nettoyer les fichiers temporaires
+                        for file in downloaded_files:
+                            file.unlink()
+                        concat_temp_dir.rmdir()
+                else:
+                    logger.info("  ℹ️ Aucun fichier train existant, pas de concaténation")
+            else:
+                logger.info("  ℹ️ S3 non disponible, pas de concaténation")
+        except Exception as e:
+            logger.error(f"  ❌ Erreur concaténation: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+    
+    # 5. Upload sur S3
     s3_result = None
     if upload_to_s3:
-        logger.info("\n[4/4] Upload sur S3...")
+        logger.info("\n[5/6] Upload sur S3...")
         try:
             s3_handler = S3Handler(bucket=s3_bucket)
             

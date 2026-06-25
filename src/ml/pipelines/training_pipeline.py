@@ -127,7 +127,7 @@ class MLPipeline:
 
     def _download_train_from_s3(self, local_path: str) -> bool:
         """
-        Télécharge le dernier fichier train (combiné ou individuel) depuis S3.
+        Télécharge le dernier fichier train concaténé depuis S3.
 
         Args:
             local_path: Chemin local de destination
