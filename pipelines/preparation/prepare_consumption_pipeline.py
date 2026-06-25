@@ -44,7 +44,7 @@ def prepare_consumption_features_pipeline(
     s3_prefix: str = "consumption/features/",
     db_uri: str = None,
     db_limit: int = None,
-    use_database: bool = False
+    use_database: bool = True
 ) -> dict:
     """
     Pipeline complet pour préparer les features consommation.
