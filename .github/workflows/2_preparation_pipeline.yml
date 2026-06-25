@@ -66,6 +66,7 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
           AWS_BUCKET: ${{ secrets.AWS_BUCKET }}
+          PREDICTIONS_POSTGRES_URI : ${{ secrets.PREDICTIONS_POSTGRES_URI }}
         run: |
           # Déterminer les dates automatiquement si non fournies
           if [ "${{ github.event_name }}" = "schedule" ] || [ -z "${{ github.event.inputs.start_date }}" ]; then

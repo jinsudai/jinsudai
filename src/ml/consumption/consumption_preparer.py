@@ -319,7 +319,7 @@ class ConsumptionDataPreparer:
         output_path: Optional[Union[str, Path]] = None,
         db_uri: Optional[str] = None,
         db_limit: Optional[int] = None,
-        use_database: bool = False
+        use_database: bool = True
     ) -> pd.DataFrame:
         """
         Pipeline complet de préparation des données consommation.

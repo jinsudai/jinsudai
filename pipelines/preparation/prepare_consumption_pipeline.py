@@ -48,7 +48,7 @@ def prepare_consumption_features_pipeline(
 ) -> dict:
     """
     Pipeline complet pour préparer les features consommation.
-
+    
     Args:
         start_date: Date de début (YYYY-MM-DD)
         end_date: Date de fin (YYYY-MM-DD)
@@ -62,7 +62,7 @@ def prepare_consumption_features_pipeline(
         db_limit: Nombre maximum d'enregistrements à récupérer depuis la base
         use_database: Si True, charge les données depuis la base de données en utilisant
                      la variable d'environnement PREDICTIONS_POSTGRES_URI (ou db_uri si fourni)
-
+        
     Returns:
         dict: Résultat du pipeline avec chemins locaux et S3
     """
@@ -196,10 +196,9 @@ def prepare_consumption_features_pipeline(
                         logger.info(f"  Concaténation de {len(downloaded_files)} fichiers existants + nouveau dataframe...")
                         dfs = []
                         for file in downloaded_files:
-                            df = pd.read_parquet(file)
+                            df = pd.read_parquet(file)egistrements")
                             logger.info(f"  Fichier {file.name}: {len(df)} enregistrements")
-                            dfs.append(df)
-                        
+                            dfs.append(df)                        
                         logger.info(f"  Nouveau dataframe: {len(features_df)} enregistrements")
                         
                         # Ajouter le nouveau dataframe
@@ -347,9 +346,9 @@ def main():
     parser.add_argument('--db_uri', type=str, help='URI de connexion PostgreSQL pour charger les données depuis la base')
     parser.add_argument('--db_limit', type=int, help='Nombre maximum d\'enregistrements à récupérer depuis la base')
     parser.add_argument('--use_database', action='store_true', help='Utiliser la base de données (lit PREDICTIONS_POSTGRES_URI depuis l\'environnement)')
-
+    
     args = parser.parse_args()
-
+    
     # Vérifier que soit raw_path soit db_uri soit use_database est fourni
     if not args.raw_path and not args.db_uri and not args.use_database:
         parser.error("Au moins l'un des arguments --raw_path, --db_uri ou --use_database doit être fourni")
