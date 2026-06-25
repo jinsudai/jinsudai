@@ -199,6 +199,10 @@ def prepare_consumption_features_pipeline(
                         
                         # Extraire les dates réelles du dataframe concaténé
                         if 'Horodate' in features_df.columns:
+                            # S'assurer que la colonne est au format datetime
+                            if not pd.api.types.is_datetime64_any_dtype(features_df['Horodate']):
+                                features_df['Horodate'] = pd.to_datetime(features_df['Horodate'])
+                            
                             min_date = features_df['Horodate'].min()
                             max_date = features_df['Horodate'].max()
                             min_date_str = min_date.strftime('%Y-%m-%d')

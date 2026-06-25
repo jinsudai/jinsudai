@@ -98,7 +98,7 @@ jobs:
         with:
           name: weather-data
           path: data/processed/*_weather.parquet
-          retention-days: 30
+          retention-days: 1
 
       - name: Upload holidays artifact
         if: always()
@@ -106,7 +106,7 @@ jobs:
         with:
           name: holidays-data
           path: data/processed/holidays_*.parquet
-          retention-days: 30
+          retention-days: 1
 
       - name: Upload train artifact
         if: always()
@@ -114,4 +114,4 @@ jobs:
         with:
           name: train-data
           path: data/processed/*_train.parquet
-          retention-days: 30
+          retention-days: 1
