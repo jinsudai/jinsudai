@@ -18,12 +18,6 @@ Ce document présente l'architecture MLOps complète du projet de prédiction é
 
 ```mermaid
 graph TB
-    classDef orchestration fill:#1976D2,stroke:#0D47A1,color:#fff
-    classDef ml fill:#F57C00,stroke:#E65100,color:#fff
-    classDef api fill:#388E3C,stroke:#1B5E20,color:#fff
-    classDef monitoring fill:#C62828,stroke:#B71C1C,color:#fff
-    classDef storage fill:#6A1B9A,stroke:#4A148C,color:#fff
-    classDef default fill:#f5f5f5,stroke:#666,color:#333
 
     subgraph "Sources de Données"
         A[Données BRUT<br/>CSV PRM]
@@ -73,24 +67,12 @@ graph TB
     F --> M
     L --> J
 
-    class D,E orchestration
-    class F,G ml
-    class H,I api
-    class J,K monitoring
-    class L,M storage
 ```
 
 ### 1.2 Architecture détaillée des services
 
 ```mermaid
 graph TB
-    classDef mlflow fill:#C62828,stroke:#B71C1C,color:#fff
-    classDef fastapi fill:#00796B,stroke:#004D40,color:#fff
-    classDef evidently fill:#1565C0,stroke:#0D47A1,color:#fff
-    classDef grafana fill:#E65100,stroke:#BF360C,color:#fff
-    classDef prefect fill:#7B1FA2,stroke:#4A148C,color:#fff
-    classDef airflow fill:#D32F2F,stroke:#B71C1C,color:#fff
-    classDef default fill:#f5f5f5,stroke:#666,color:#333
 
     subgraph "Services Dockerisés"
         subgraph "MLflow"
@@ -139,12 +121,6 @@ graph TB
     EV1 --> GR1
     AF1 --> PF1
 
-    class ML1,ML2,ML3 mlflow
-    class FA1,FA2,FA3 fastapi
-    class EV1,EV2,EV3 evidently
-    class GR1,GR2,GR3 grafana
-    class PF1,PF2,PF3 prefect
-    class AF1,AF2,AF3 airflow
 ```
 
 ---
@@ -192,12 +168,6 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    classDef validation fill:#1976D2,stroke:#0D47A1,color:#fff
-    classDef training fill:#F57C00,stroke:#E65100,color:#fff
-    classDef evaluation fill:#388E3C,stroke:#1B5E20,color:#fff
-    classDef decision fill:#C62828,stroke:#B71C1C,color:#fff
-    classDef deployment fill:#6A1B9A,stroke:#4A148C,color:#fff
-    classDef default fill:#f5f5f5,stroke:#666,color:#333
 
     A[Données brutes CSV<br/>data/raw/] --> B[Data Validation<br/>Schéma & Valeurs]
     B --> C[Data Preparation<br/>Nettoyage & Normalisation]
@@ -212,23 +182,12 @@ flowchart TD
     I --> K[Promotion Production<br/>Alias 'prod']
     K --> L[Modèle en production]
 
-    class B validation
-    class F training
-    class G evaluation
-    class H decision
-    class I,K,L deployment
 ```
 
 ### 2.3 Flux de données d'inférence
 
 ```mermaid
 flowchart TD
-    classDef validation fill:#1976D2,stroke:#0D47A1,color:#fff
-    classDef decision fill:#C62828,stroke:#B71C1C,color:#fff
-    classDef inference fill:#F57C00,stroke:#E65100,color:#fff
-    classDef storage fill:#388E3C,stroke:#1B5E20,color:#fff
-    classDef response fill:#6A1B9A,stroke:#4A148C,color:#fff
-    classDef default fill:#f5f5f5,stroke:#666,color:#333
 
     A[Requête API<br/>Features météo + calendrier] --> B[Validation Input<br/>Schéma & Ranges]
     B --> C{Valid?}
@@ -240,11 +199,6 @@ flowchart TD
     H --> I[Logging MLflow<br/>Run ID + Métriques]
     I --> J[Response 200 OK<br/>Prédiction retournée]
 
-    class B validation
-    class C decision
-    class F inference
-    class H storage
-    class J response
 ```
 
 ---
@@ -255,10 +209,6 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    classDef setup fill:#1976D2,stroke:#0D47A1,color:#fff
-    classDef training fill:#F57C00,stroke:#E65100,color:#fff
-    classDef logging fill:#6A1B9A,stroke:#4A148C,color:#fff
-    classDef default fill:#f5f5f5,stroke:#666,color:#333
 
     subgraph "Consumption Flow"
         A1[setup_training_task<br/>Config MLflow + DB] --> A2[load_data_task<br/>Chargement CSV]
@@ -280,20 +230,12 @@ flowchart TD
         B7 --> B8[promote_to_prod_task]
     end
 
-    class A1,B1 setup
-    class A5,B5 training
-    class A7,B7 logging
 ```
 
 ### 3.2 Pipeline d'entraînement détaillé
 
 ```mermaid
 graph LR
-    classDef preparation fill:#1976D2,stroke:#0D47A1,color:#fff
-    classDef training fill:#F57C00,stroke:#E65100,color:#fff
-    classDef evaluation fill:#C62828,stroke:#B71C1C,color:#fff
-    classDef deployment fill:#388E3C,stroke:#1B5E20,color:#fff
-    classDef default fill:#f5f5f5,stroke:#666,color:#333
 
     subgraph "Phase 1: Préparation"
         P1[Chargement Config] --> P2[Connexion MLflow]
@@ -324,10 +266,6 @@ graph LR
         D3 --> D4[Promote to Prod]
     end
 
-    class P1 preparation
-    class T2 training
-    class E2 evaluation
-    class D4 deployment
 ```
 
 ---
@@ -338,12 +276,6 @@ graph LR
 
 ```mermaid
 flowchart TD
-    classDef setup fill:#1976D2,stroke:#0D47A1,color:#fff
-    classDef inference fill:#F57C00,stroke:#E65100,color:#fff
-    classDef monitoring fill:#C62828,stroke:#B71C1C,color:#fff
-    classDef retraining fill:#D32F2F,stroke:#B71C1C,color:#fff
-    classDef verification fill:#388E3C,stroke:#1B5E20,color:#fff
-    classDef default fill:#f5f5f5,stroke:#666,color:#333
 
     subgraph "Prediction Full Pipeline"
         A[setup_prediction_task<br/>Config MLflow + DB] --> B[load_model_task<br/>Modèle prod]
@@ -358,21 +290,12 @@ flowchart TD
         I --> J
     end
 
-    class A setup
-    class E inference
-    class G monitoring
-    class I retraining
-    class J verification
 ```
 
 ### 4.2 Variants de pipelines d'inférence
 
 ```mermaid
 graph TB
-    classDef full fill:#1976D2,stroke:#0D47A1,color:#fff
-    classDef inference fill:#F57C00,stroke:#E65100,color:#fff
-    classDef batch fill:#388E3C,stroke:#1B5E20,color:#fff
-    classDef default fill:#f5f5f5,stroke:#666,color:#333
 
     subgraph "prediction_full_pipeline"
         F1[Config] --> F2[Modèle]
@@ -399,9 +322,6 @@ graph TB
         B5 --> B6[Stockage BD]
     end
 
-    class F1 full
-    class I1 inference
-    class B1 batch
 ```
 
 ---
@@ -412,11 +332,6 @@ graph TB
 
 ```mermaid
 flowchart TD
-    classDef testing fill:#1976D2,stroke:#0D47A1,color:#fff
-    classDef build fill:#F57C00,stroke:#E65100,color:#fff
-    classDef integration fill:#C62828,stroke:#B71C1C,color:#fff
-    classDef deployment fill:#388E3C,stroke:#1B5E20,color:#fff
-    classDef default fill:#f5f5f5,stroke:#666,color:#333
 
     A[Push sur main] --> B[GitHub Actions Trigger]
     B --> C[Linting & Tests]
@@ -436,10 +351,6 @@ flowchart TD
     O --> P[Health Checks]
     P --> Q[Notification Success]
 
-    class C testing
-    class F build
-    class M integration
-    class O deployment
 ```
 
 ### 5.2 Workflow de déploiement
@@ -478,12 +389,6 @@ sequenceDiagram
 
 ```mermaid
 graph TB
-    classDef production fill:#1976D2,stroke:#0D47A1,color:#fff
-    classDef monitoring fill:#C62828,stroke:#B71C1C,color:#fff
-    classDef grafana fill:#F57C00,stroke:#E65100,color:#fff
-    classDef mlflow fill:#1976D2,stroke:#0D47A1,color:#fff
-    classDef alerting fill:#D32F2F,stroke:#B71C1C,color:#fff
-    classDef default fill:#f5f5f5,stroke:#666,color:#333
 
     subgraph "Production"
         A[FastAPI<br/>Prédictions]
@@ -508,22 +413,12 @@ graph TB
     C --> F
     D --> G
 
-    class C monitoring
-    class D grafana
-    class E mlflow
-    class F alerting
 ```
 
 ### 6.2 Pipeline de détection de drift
 
 ```mermaid
 flowchart TD
-    classDef comparison fill:#1976D2,stroke:#0D47A1,color:#fff
-    classDef decision fill:#C62828,stroke:#B71C1C,color:#fff
-    classDef report fill:#F57C00,stroke:#E65100,color:#fff
-    classDef alert fill:#D32F2F,stroke:#B71C1C,color:#fff
-    classDef retraining fill:#388E3C,stroke:#1B5E20,color:#fff
-    classDef default fill:#f5f5f5,stroke:#666,color:#333
 
     A[Données Production<br/>PostgreSQL] --> B[Chargement Référence<br/>Training Data]
     B --> C[Comparaison Distributions<br/>Data Drift]
@@ -540,21 +435,12 @@ flowchart TD
     M --> N[Promotion Production]
     N --> H
 
-    class C comparison
-    class F decision
-    class G report
-    class K alert
-    class M retraining
 ```
 
 ### 6.3 Métriques monitoring et seuils
 
 ```mermaid
 graph LR
-    classDef ok fill:#388E3C,stroke:#1B5E20,color:#fff
-    classDef warning fill:#F57C00,stroke:#E65100,color:#fff
-    classDef critical fill:#D32F2F,stroke:#B71C1C,color:#fff
-    classDef default fill:#f5f5f5,stroke:#666,color:#333
 
     subgraph "Consommation Électrique"
         C1[R² >= 0.90] --> C2[MAE Monitoring]
@@ -578,9 +464,6 @@ graph LR
         S8 -->|Oui| S9[🔴 Critical<br/>Retraining Immédiat]
     end
 
-    class C1,S1 ok
-    class C5,S5 warning
-    class C9,S9 critical
 ```
 
 ---
@@ -591,11 +474,6 @@ graph LR
 
 ```mermaid
 flowchart TD
-    classDef critical fill:#D32F2F,stroke:#B71C1C,color:#fff
-    classDef automatic fill:#F57C00,stroke:#E65100,color:#fff
-    classDef decision fill:#C62828,stroke:#B71C1C,color:#fff
-    classDef success fill:#388E3C,stroke:#1B5E20,color:#fff
-    classDef default fill:#f5f5f5,stroke:#666,color:#333
 
     subgraph "Triggers Automatiques"
         A1[Drift Détecté<br/>R² < Seuil] --> D[Trigger Retraining]
@@ -624,10 +502,6 @@ flowchart TD
     I -->|Oui| J[Promotion Production]
     I -->|Non| K[Conserve Ancien]
 
-    class A1 critical
-    class A2,A3 automatic
-    class E decision
-    class J success
 ```
 
 ### 7.2 Workflow de retraining automatisé
@@ -666,11 +540,6 @@ sequenceDiagram
 
 ```mermaid
 graph TB
-    classDef config fill:#1976D2,stroke:#0D47A1,color:#fff
-    classDef workflow fill:#F57C00,stroke:#E65100,color:#fff
-    classDef script fill:#388E3C,stroke:#1B5E20,color:#fff
-    classDef service fill:#C62828,stroke:#B71C1C,color:#fff
-    classDef default fill:#f5f5f5,stroke:#666,color:#333
 
     subgraph "src/"
         subgraph "ml/"
@@ -714,20 +583,12 @@ graph TB
         SVC6[Prefect/]
     end
 
-    class M1 config
-    class M9 workflow
-    class S1 script
-    class SVC1 service
 ```
 
 ### 8.2 Différenciation par configuration
 
 ```mermaid
 graph LR
-    classDef consumption fill:#1976D2,stroke:#0D47A1,color:#fff
-    classDef solar fill:#F57C00,stroke:#E65100,color:#fff
-    classDef shared fill:#388E3C,stroke:#1B5E20,color:#fff
-    classDef default fill:#f5f5f5,stroke:#666,color:#333
 
     subgraph "Config Consommation"
         C1[src/ml/consumption/<br/>configs/config.yaml]
@@ -763,9 +624,6 @@ graph LR
     C1 --> SH4
     S1 --> SH4
 
-    class C1 consumption
-    class S1 solar
-    class SH1,SH2,SH3,SH4 shared
 ```
 
 ---
@@ -776,12 +634,6 @@ graph LR
 
 ```mermaid
 graph TB
-    classDef objective1 fill:#1976D2,stroke:#0D47A1,color:#fff
-    classDef objective2 fill:#F57C00,stroke:#E65100,color:#fff
-    classDef objective3 fill:#388E3C,stroke:#1B5E20,color:#fff
-    classDef objective4 fill:#C62828,stroke:#B71C1C,color:#fff
-    classDef objective5 fill:#6A1B9A,stroke:#4A148C,color:#fff
-    classDef default fill:#f5f5f5,stroke:#666,color:#333
 
     subgraph "Objectifs Cahier des Charges"
         O1[Créer algorithme IA<br/>adapté aux données]
@@ -805,11 +657,6 @@ graph TB
     O4 --> I4
     O5 --> I5
 
-    class O1 objective1
-    class O2 objective2
-    class O3 objective3
-    class O4 objective4
-    class O5 objective5
 ```
 
 ### 9.2 Spécifications techniques respectées
