@@ -156,6 +156,7 @@ def prepare_consumption_features_pipeline(
         )
         logger.info(f"  ✅ Features préparées: {train_path}")
         logger.info(f"  ℹ️ Shape: {features_df.shape}")
+        logger.info(f"  ℹ️ Head: {features_df.head(5)}")
     except Exception as e:
         logger.error(f"  ❌ Erreur préparation features: {e}")
         import traceback
