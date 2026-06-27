@@ -140,7 +140,7 @@ class MLPipeline:
 
             global_config = load_config('config.yaml')
             s3_config = global_config.get('s3', {})
-            bucket = s3_config.get('bucket', 'data-store')
+            bucket = os.environ.get('AWS_BUCKET') or s3_config.get('bucket', 'data-store')
 
             s3_handler = S3Handler(bucket=bucket)
 
@@ -591,7 +591,7 @@ class MLPipeline:
 
             s3_config = global_config.get('s3', {})
 
-            bucket = s3_config.get('bucket', 'data-store')
+            bucket = os.environ.get('AWS_BUCKET') or s3_config.get('bucket', 'data-store')
 
             prefix = "consumption/trained/"
 

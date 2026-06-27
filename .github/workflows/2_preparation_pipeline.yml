@@ -23,9 +23,9 @@ on:
       s3_bucket:
         description: 'Nom du bucket S3 (optionnel, utilise AWS_BUCKET par défaut)'
         required: false
-  schedule:
-    # Exécution quotidienne à 2h du matin (heure UTC)
-    - cron: '0 2 * * *'
+  # schedule:
+  #   # Exécution quotidienne à 2h du matin (heure UTC)
+  #   - cron: '0 2 * * *'
   push:
     branches:
       - main

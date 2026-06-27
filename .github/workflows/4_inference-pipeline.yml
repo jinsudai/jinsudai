@@ -25,9 +25,9 @@ on:
       db_uri:
         description: "URI de connexion PostgreSQL (optionnel)"
         required: false
-  schedule:
-    # Exécution quotidienne à 6h UTC
-    - cron: '0 6 * * *'
+  # schedule:
+  #   # Exécution quotidienne à 6h UTC
+  #   - cron: '0 6 * * *'
   push:
     branches:
       - main

@@ -50,9 +50,9 @@ on:
         description: "Utiliser la configuration depuis les variables d'environnement"
         required: false
         default: 'false'
-  schedule:
-    # Exécution toutes les heures
-    - cron: '0 * * * *'
+  # schedule:
+  #   # Exécution toutes les heures
+  #   - cron: '0 * * * *'
   push:
     branches:
       - main

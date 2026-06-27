@@ -1,9 +1,9 @@
 name: 6 - Retraining - Training Pipeline
 
 on:
-  schedule:
-    # Exécution tous les jours à 2h UTC (4h heure française en hiver, 5h en été)
-    - cron: '0 2 * * *'
+  # schedule:
+  #   # Exécution tous les jours à 2h UTC (4h heure française en hiver, 5h en été)
+  #   - cron: '0 2 * * *'
   workflow_dispatch:  # Permet le déclenchement manuel depuis l'interface GitHub
     inputs:
       config:

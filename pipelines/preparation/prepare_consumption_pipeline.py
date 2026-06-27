@@ -209,19 +209,19 @@ def prepare_consumption_features_pipeline(
                         
                         # Remplacer features_df par le dataframe concaténé
                         features_df = concatenated_df
-                        
+
                         # Extraire les dates réelles du dataframe concaténé
-                        if 'Horodate' in features_df.columns:
+                        if 'Horodate' in concatenated_df.columns:
                             # S'assurer que la colonne est au format datetime
-                            if not pd.api.types.is_datetime64_any_dtype(features_df['Horodate']):
-                                features_df['Horodate'] = pd.to_datetime(features_df['Horodate'])
-                            
-                            min_date = features_df['Horodate'].min()
-                            max_date = features_df['Horodate'].max()
+                            if not pd.api.types.is_datetime64_any_dtype(concatenated_df['Horodate']):
+                                concatenated_df['Horodate'] = pd.to_datetime(concatenated_df['Horodate'])
+
+                            min_date = concatenated_df['Horodate'].min()
+                            max_date = concatenated_df['Horodate'].max()
                             min_date_str = min_date.strftime('%Y-%m-%d')
                             max_date_str = max_date.strftime('%Y-%m-%d')
                             logger.info(f"  Dates du dataframe concaténé: {min_date_str} à {max_date_str}")
-                            
+
                             # Mettre à jour le nom du fichier avec les dates réelles
                             train_path = output_dir / f"{min_date_str}_to_{max_date_str}_train.parquet"
                             logger.info(f"  Nom du fichier mis à jour: {train_path}")

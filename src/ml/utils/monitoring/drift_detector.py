@@ -425,6 +425,20 @@ def generate_evidently_report(
             logger.error("Données de référence ou courantes manquantes")
             return None, {"error": "missing_data"}
 
+        # Aligner les colonnes entre les deux DataFrames
+        # Nécessaire car nom_vacances a été retiré des features, mais les anciennes données de référence peuvent encore le contenir
+        common_columns = list(set(reference_data.columns) & set(current_data.columns))
+
+        if len(common_columns) == 0:
+            logger.error("Aucune colonne commune entre les DataFrames de référence et courant")
+            return None, {"error": "no_common_columns"}
+
+        # Garder uniquement les colonnes communes
+        reference_data_aligned = reference_data[common_columns].copy()
+        current_data_aligned = current_data[common_columns].copy()
+
+        logger.info(f"Colonnes utilisées pour le rapport Evidently: {len(common_columns)} colonnes communes")
+
         # Créer le rapport avec les presets Evidently
         report = Report(metrics=[
             DataDriftPreset(),
@@ -432,7 +446,7 @@ def generate_evidently_report(
         ])
 
         # Exécuter le rapport
-        report.run(reference_data=reference_data, current_data=current_data)
+        report.run(reference_data=reference_data_aligned, current_data=current_data_aligned)
 
         # Extraire les résultats
         report_dict = report.as_dict()

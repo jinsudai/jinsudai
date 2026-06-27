@@ -30,9 +30,9 @@ on:
         description: "Envoyer les notifications email si drift détecté"
         required: false
         default: 'true'
-  schedule:
-    # Exécution quotidienne à 7h UTC (après le pipeline de prédiction)
-    - cron: '0 7 * * *'
+  # schedule:
+  #   # Exécution quotidienne à 7h UTC (après le pipeline de prédiction)
+  #   - cron: '0 7 * * *'
   push:
     branches:
       - main
