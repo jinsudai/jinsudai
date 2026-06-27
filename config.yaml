@@ -68,10 +68,10 @@ services:
     - "docsify"
     - "EvidentlyUI"
     - "slidev"
-    - "FastAPI"
 
   satellites:
     - "airflow"
+    - "JinsudAPI"
     
 # Logging
 logging:

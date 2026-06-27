@@ -451,8 +451,13 @@ def generate_evidently_report(
         # Sauvegarder le rapport HTML si un chemin est fourni
         if output_path:
             output_file = Path(output_path) / f"{report_name}.html"
-            report.save_html(str(output_file))
-            logger.info(f"Rapport Evidently sauvegardé: {output_file}")
+            # Utiliser la nouvelle API d'Evidently pour sauvegarder en HTML
+            try:
+                report.save_html(str(output_file))
+                logger.info(f"Rapport Evidently sauvegardé: {output_file}")
+            except AttributeError:
+                # Fallback: ne pas sauvegarder en HTML (API incompatible)
+                logger.warning("Impossible de sauvegarder le rapport en HTML (API Evidently incompatible - save_html non disponible)")
 
         # Retourner le rapport et un dictionnaire vide (l'API d'Evidently a changé)
         return report, {}
@@ -488,7 +493,12 @@ def save_evidently_report_to_mlflow(
             temp_path = f.name
 
         # Sauvegarder le rapport HTML
-        report.save_html(temp_path)
+        try:
+            report.save_html(temp_path)
+        except AttributeError:
+            logger.warning("Impossible de sauvegarder le rapport en HTML (API Evidently incompatible - save_html non disponible)")
+            Path(temp_path).unlink()
+            return False
 
         # Logger les métriques dans MLflow
         if run_id:
