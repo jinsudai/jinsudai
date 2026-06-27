@@ -12,6 +12,7 @@ Eviter les sauts de ligne inutiles
 
 ## prepare Consumption prepare -> En cours
 - Date non prise en compte -> Check Head
+- vérifier si pas code en double pour récupéré les  valeurs réelle depuis la base de donnée
 
 ## Monitoring
 - datadrift récupérer le fichier depuis S3 dans trained -> A tester

@@ -8,15 +8,13 @@ Spécifications :
 - Pour l'instant, les valeurs sont générées aléatoirement
 
 Classe principale :
-- IngestionPipeline : Orchestration de l'ingestion des valeurs réelles
+- IngestionPipeline : Orchestration de la mise à jour des valeurs réelles
 """
 import logging
 from datetime import datetime, timedelta
 import random
-import pandas as pd
 
 from ..utils.data.database_handler import DatabaseHandler
-from ml.utils.data.s3_handler import S3Handler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -38,10 +36,8 @@ class IngestionPipeline:
         self.db_handler = None
         self.previous_day_predictions = None
         self.updated_count = 0
-        self.s3_handler = S3Handler()
-        self.trained_df = None
 
-        logger.info("Pipeline d'ingestion des valeurs réelles initialisé")
+        logger.info("Pipeline de valeurs réelles initialisé")
 
     def setup(self):
         """Configure le pipeline (BD)"""
@@ -66,107 +62,24 @@ class IngestionPipeline:
 
         return True
 
-    def download_latest_trained_file(self):
-        """
-        Télécharge le dernier fichier trained depuis S3 et le charge en mémoire.
-
-        Returns:
-            True si succès, False sinon
-        """
-        logger.info("=== ÉTAPE 2: TÉLÉCHARGEMENT DU DERNIER FICHIER TRAINED ===")
-
-        # Télécharger le dernier fichier trained depuis consumption/prepared
-        result = self.s3_handler.download_latest_train_file(
-            prefix="consumption/prepared",
-            prioritize_dated=True
-        )
-
-        if result["status"] != "success":
-            logger.error(f"Erreur lors du téléchargement: {result.get('reason')}")
-            return False
-
-        local_path = result["local_path"]
-        logger.info(f"Fichier téléchargé: {local_path}")
-
-        # Charger le dataframe
-        try:
-            self.trained_df = pd.read_parquet(local_path)
-            logger.info(f"DataFrame chargé: {self.trained_df.shape}")
-            logger.info(f"Colonnes: {self.trained_df.columns.tolist()}")
-            return True
-        except Exception as e:
-            logger.error(f"Erreur lors du chargement du dataframe: {e}")
-            return False
-
-    def get_date_range_from_trained_df(self):
-        """
-        Calcule la plage de dates pour les valeurs réelles à partir du dataframe trained.
-
-        La plage va de la dernière horodate du dataframe (exclue) jusqu'à la veille (incluse).
-
-        Returns:
-            tuple: (start_date, end_date) comme objets datetime, ou (None, None) si erreur
-        """
-        logger.info("=== CALCUL DE LA PLAGE DE DATES À PARTIR DU DATAFRAME TRAINED ===")
-
-        if self.trained_df is None:
-            logger.error("Aucun dataframe trained chargé")
-            return None, None
-
-        # Trouver la colonne horodate
-        horodate_col = None
-        for col in ['Horodate', 'horodate', 'timestamp', 'target_timestamp']:
-            if col in self.trained_df.columns:
-                horodate_col = col
-                break
-
-        if horodate_col is None:
-            logger.error("Aucune colonne horodate trouvée dans le dataframe")
-            return None, None
-
-        # Extraire la dernière horodate
-        try:
-            last_horodate = pd.to_datetime(self.trained_df[horodate_col]).max()
-            logger.info(f"Dernière horodate dans le dataframe: {last_horodate}")
-        except Exception as e:
-            logger.error(f"Erreur lors de l'extraction de la dernière horodate: {e}")
-            return None, None
-
-        # La date de début est la dernière horodate + 30 minutes (pas de temps)
-        start_date = last_horodate + timedelta(minutes=30)
-        start_date = datetime.combine(start_date.date(), start_date.time())
-
-        # La date de fin est la veille à 23:59:59
-        today = datetime.now().date()
-        yesterday = today - timedelta(days=1)
-        end_date = datetime.combine(yesterday, datetime.max.time())
-
-        # Vérifier que la plage de dates est valide
-        if start_date > end_date:
-            logger.warning(f"La date de début ({start_date}) est après la date de fin ({end_date})")
-            logger.info("Aucune nouvelle donnée à traiter")
-            return None, None
-
-        logger.info(f"Plage de dates calculée: {start_date} à {end_date}")
-        return start_date, end_date
-
     def get_previous_day_predictions(self):
         """
-        Récupère les prédictions pour la plage de dates calculée.
+        Récupère les prédictions de la veille
 
         Returns:
             True si succès, False si erreur critique, None si aucune prédiction
         """
-        logger.info("=== ÉTAPE 3: RÉCUPÉRATION DES PRÉDICTIONS ===")
+        logger.info("=== ÉTAPE 2: RÉCUPÉRATION DES PRÉDICTIONS DE LA VEILLE ===")
 
-        # Calculer la plage de dates depuis le dataframe trained jusqu'à la veille
-        start_date, end_date = self.get_date_range_from_trained_df()
+        # Calculer les dates de la veille
+        today = datetime.now().date()
+        yesterday = today - timedelta(days=1)
 
-        if start_date is None or end_date is None:
-            logger.info("Plage de dates invalide, aucune prédiction à récupérer")
-            return True
+        # Définir la plage de temps pour la veille (de 00:00 à 23:59)
+        start_date = datetime.combine(yesterday, datetime.min.time())
+        end_date = datetime.combine(yesterday, datetime.max.time())
 
-        logger.info(f"Récupération des prédictions du {start_date.date()} au {end_date.date()}")
+        logger.info(f"Récupération des prédictions du {yesterday}")
         logger.info(f"Plage de temps: {start_date} à {end_date}")
 
         # Récupérer les prédictions
@@ -176,15 +89,15 @@ class IngestionPipeline:
         )
 
         if self.previous_day_predictions is None or len(self.previous_day_predictions) == 0:
-            logger.warning(f"Aucune prédiction trouvée pour la plage de dates {start_date.date()} à {end_date.date()}")
+            logger.warning(f"Aucune prédiction trouvée pour la date {yesterday}")
             return True
 
-        logger.info(f"{len(self.previous_day_predictions)} prédictions récupérées")
+        logger.info(f"{len(self.previous_day_predictions)} prédictions récupérées pour la veille")
         return True
 
     def generate_random_actual_values(self, insert_if_missing=False):
         """
-        Génère des valeurs aléatoires pour les prédictions
+        Génère des valeurs aléatoires pour les prédictions de la veille
 
         Args:
             insert_if_missing: Si True, insère des enregistrements complets si aucune prédiction n'existe
@@ -192,7 +105,7 @@ class IngestionPipeline:
         Returns:
             True si succès, False sinon
         """
-        logger.info("=== ÉTAPE 4: GÉNÉRATION DES VALEURS ALÉATOIRES ===")
+        logger.info("=== ÉTAPE 3: GÉNÉRATION DES VALEURS ALÉATOIRES ===")
 
         if self.previous_day_predictions is None or len(self.previous_day_predictions) == 0:
             if insert_if_missing:
@@ -233,48 +146,30 @@ class IngestionPipeline:
     def _generate_and_insert_records(self):
         """
         Génère et insère des enregistrements complets (prediction + actual_value)
-        pour la plage de dates calculée lorsqu'aucune prédiction n'existe en base
+        pour la veille lorsqu'aucune prédiction n'existe en base
 
         Returns:
             True si succès, False sinon
         """
         logger.info("=== GÉNÉRATION D'ENREGISTREMENTS COMPLETS ===")
 
-        # Calculer la plage de dates depuis le dataframe trained jusqu'à la veille
-        start_date, end_date = self.get_date_range_from_trained_df()
+        # Calculer les dates de la veille
+        today = datetime.now().date()
+        yesterday = today - timedelta(days=1)
 
-        if start_date is None or end_date is None:
-            logger.info("Plage de dates invalide, aucun enregistrement à générer")
-            return True
-
-        logger.info(f"Génération d'enregistrements du {start_date.date()} au {end_date.date()}")
-
-        # Générer des enregistrements au pas de 30 minutes pour toute la plage de dates
+        # Générer 48 enregistrements au pas de 30 minutes pour la veille
         target_timestamps = []
         actual_values = []
 
-        current_date = start_date.date()
-        end_date_only = end_date.date()
+        for half_hour in range(48):
+            timestamp = datetime.combine(yesterday, datetime.min.time()) + timedelta(minutes=30 * half_hour)
+            target_timestamps.append(timestamp)
 
-        while current_date <= end_date_only:
-            for half_hour in range(48):
-                timestamp = datetime.combine(current_date, datetime.min.time()) + timedelta(minutes=30 * half_hour)
-                # S'assurer que le timestamp ne dépasse pas end_date
-                if timestamp > end_date:
-                    break
-                target_timestamps.append(timestamp)
-
-                # Générer une valeur réelle aléatoire entre 100 et 500
-                actual_value = random.uniform(100, 500)
-                actual_values.append(actual_value)
-
-            current_date += timedelta(days=1)
+            # Générer une valeur réelle aléatoire entre 100 et 500
+            actual_value = random.uniform(100, 500)
+            actual_values.append(actual_value)
 
         logger.info(f"{len(target_timestamps)} enregistrements générés")
-
-        if len(target_timestamps) == 0:
-            logger.warning("Aucun enregistrement généré (plage de dates vide)")
-            return True
 
         # Insérer dans la base de données
         entity_id = "550e8400-e29b-41d4-a716-446655440000"
@@ -295,14 +190,13 @@ class IngestionPipeline:
         Returns:
             DataFrame des prédictions mises à jour ou None
         """
-        logger.info("=== ÉTAPE 5: VÉRIFICATION DES MISES À JOUR ===")
+        logger.info("=== ÉTAPE 4: VÉRIFICATION DES MISES À JOUR ===")
 
-        # Récupérer à nouveau les prédictions pour la plage de dates pour vérifier
-        start_date, end_date = self.get_date_range_from_trained_df()
-
-        if start_date is None or end_date is None:
-            logger.info("Plage de dates invalide, impossible de vérifier")
-            return None
+        # Récupérer à nouveau les prédictions de la veille pour vérifier
+        today = datetime.now().date()
+        yesterday = today - timedelta(days=1)
+        start_date = datetime.combine(yesterday, datetime.min.time())
+        end_date = datetime.combine(yesterday, datetime.max.time())
 
         updated_predictions = self.db_handler.get_predictions_by_date(
             start_date=start_date,
@@ -327,15 +221,12 @@ class IngestionPipeline:
             Tuple (succès: bool, DataFrame des prédictions mises à jour ou None)
         """
         logger.info("####################################################")
-        logger.info("### PIPELINE D'INGESTION DES VALEURS RÉELLES ###")
+        logger.info("### PIPELINE DE MISE À JOUR DES VALEURS RÉELLES ###")
         logger.info(f"### Date/Heure: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ###")
         logger.info("####################################################\n")
 
         # Exécuter chaque étape
         if not self.setup():
-            return False, None
-
-        if not self.download_latest_trained_file():
             return False, None
 
         predictions_result = self.get_previous_day_predictions()

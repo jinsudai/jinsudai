@@ -29,6 +29,7 @@ from ml.consumption.consumption_preparer import ConsumptionDataPreparer
 from ml.connectors.weather.weather_api import WeatherAPI
 from ml.connectors.holidays.holidays_api import HolidaysCombinedAPI
 from ml.utils.data.s3_handler import S3Handler
+from ml.utils.data.database_handler import DatabaseHandler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -165,24 +166,24 @@ def prepare_consumption_features_pipeline(
     
     # 4. Concaténer avec les fichiers train existants sur S3 (si upload activé)
     if upload_to_s3:
-        logger.info("\n[4/6] Concaténation avec les fichiers train existants sur S3...")
+        logger.info("\n[4/7] Concaténation avec les fichiers train existants sur S3...")
         try:
             import pandas as pd
-            
+
             # Initialiser le handler S3
             s3_handler = S3Handler(bucket=s3_bucket)
-            
+
             if s3_handler.s3_enabled:
                 # Télécharger tous les fichiers train existants depuis le préfixe dédié
                 concat_temp_dir = output_dir / "temp_concat"
                 concat_temp_dir.mkdir(parents=True, exist_ok=True)
-                
+
                 files = s3_handler.list_files(prefix="consumption/prepared")
                 train_files = [f for f in files if 'train' in f and f.endswith('.parquet')]
-                
+
                 if train_files:
                     logger.info(f"  {len(train_files)} fichiers train existants trouvés dans consumption/prepared")
-                    
+
                     # Télécharger tous les fichiers existants
                     downloaded_files = []
                     for s3_key in train_files:
@@ -191,7 +192,7 @@ def prepare_consumption_features_pipeline(
                         result = s3_handler.download_file(s3_key=s3_key, local_path=str(temp_file), overwrite=True)
                         if result["status"] == "success":
                             downloaded_files.append(temp_file)
-                    
+
                     # Concaténer avec le nouveau dataframe
                     if downloaded_files:
                         logger.info(f"  Concaténation de {len(downloaded_files)} fichiers existants + nouveau dataframe...")
@@ -201,13 +202,13 @@ def prepare_consumption_features_pipeline(
                             logger.info(f"  Fichier {file.name}: {len(df)} enregistrements")
                             dfs.append(df)
                         logger.info(f"  Nouveau dataframe: {len(features_df)} enregistrements")
-                        
+
                         # Ajouter le nouveau dataframe
                         dfs.append(features_df)
-                        
+
                         concatenated_df = pd.concat(dfs, ignore_index=True)
                         logger.info(f"  DataFrame concaténé: {len(concatenated_df)} enregistrements")
-                        
+
                         # Remplacer features_df par le dataframe concaténé
                         features_df = concatenated_df
 
@@ -228,11 +229,11 @@ def prepare_consumption_features_pipeline(
                             logger.info(f"  Nom du fichier mis à jour: {train_path}")
                         else:
                             logger.warning("  ⚠️ Colonne 'Horodate' non trouvée, conservation du nom original")
-                        
+
                         # Sauvegarder le fichier concaténé
                         features_df.to_parquet(train_path)
                         logger.info(f"  Fichier concaténé sauvegardé: {train_path}")
-                        
+
                         # Nettoyer les fichiers temporaires
                         for file in downloaded_files:
                             file.unlink()
@@ -245,10 +246,98 @@ def prepare_consumption_features_pipeline(
             logger.error(f"  ❌ Erreur concaténation: {e}")
             import traceback
             logger.error(traceback.format_exc())
+
+    # 5. Récupérer les données réelles depuis la base de données
+    if db_uri or use_database:
+        logger.info("\n[5/7] Récupération des données réelles depuis la base de données...")
+        try:
+            import pandas as pd
+            from datetime import datetime, timedelta
+
+            # Initialiser le handler de base de données
+            if db_uri:
+                db_handler = DatabaseHandler(db_uri)
+            elif use_database:
+                import os
+                db_uri_env = os.environ.get('PREDICTIONS_POSTGRES_URI')
+                if db_uri_env:
+                    db_handler = DatabaseHandler(db_uri_env)
+                else:
+                    logger.warning("  ⚠️ Variable d'environnement PREDICTIONS_POSTGRES_URI non trouvée")
+                    db_handler = None
+                if db_handler and not db_handler.verify_connection():
+                    logger.warning("  ⚠️ Impossible de se connecter à la base de données")
+                    db_handler = None
+            else:
+                db_handler = None
+
+            if db_handler:
+                # Extraire la dernière horodate du dataframe
+                if 'Horodate' in features_df.columns:
+                    if not pd.api.types.is_datetime64_any_dtype(features_df['Horodate']):
+                        features_df['Horodate'] = pd.to_datetime(features_df['Horodate'])
+
+                    last_horodate = features_df['Horodate'].max()
+                    logger.info(f"  Dernière horodate dans le dataframe: {last_horodate}")
+
+                    # Calculer la date de début pour récupérer les données réelles
+                    # On récupère les données depuis la dernière horodate + 30 min jusqu'à la veille
+                    start_date = last_horodate + timedelta(minutes=30)
+                    today = datetime.now().date()
+                    yesterday = today - timedelta(days=1)
+                    end_date = datetime.combine(yesterday, datetime.max.time())
+
+                    logger.info(f"  Récupération des données réelles du {start_date} au {end_date}")
+
+                    # Récupérer les prédictions avec les valeurs réelles
+                    actuals_df = db_handler.get_predictions_by_date(
+                        start_date=start_date,
+                        end_date=end_date
+                    )
+
+                    if actuals_df is not None and len(actuals_df) > 0:
+                        logger.info(f"  {len(actuals_df)} enregistrements avec valeurs réelles récupérés")
+
+                        # Filtrer pour ne garder que les enregistrements avec des valeurs réelles
+                        actuals_with_values = actuals_df[actuals_df['actual_value'].notna()]
+                        logger.info(f"  {len(actuals_with_values)} enregistrements avec des valeurs réelles non nulles")
+
+                        if len(actuals_with_values) > 0:
+                            # Ajouter les données réelles au dataframe de features
+                            # On fusionne sur Horodate
+                            if 'target_timestamp' in actuals_with_values.columns:
+                                actuals_with_values = actuals_with_values.rename(columns={'target_timestamp': 'Horodate'})
+
+                            # S'assurer que Horodate est au même format
+                            if not pd.api.types.is_datetime64_any_dtype(actuals_with_values['Horodate']):
+                                actuals_with_values['Horodate'] = pd.to_datetime(actuals_with_values['Horodate'])
+
+                            # Fusionner les dataframes
+                            features_df = pd.merge(
+                                features_df,
+                                actuals_with_values[['Horodate', 'actual_value']],
+                                on='Horodate',
+                                how='left'
+                            )
+
+                            logger.info(f"  DataFrame après fusion: {features_df.shape}")
+                            logger.info(f"  Colonnes: {features_df.columns.tolist()}")
+                        else:
+                            logger.warning("  ⚠️ Aucune valeur réelle non nulle trouvée")
+                    else:
+                        logger.warning("  ⚠️ Aucune donnée réelle trouvée dans la base")
+                else:
+                    logger.warning("  ⚠️ Colonne 'Horodate' non trouvée dans le dataframe")
+            else:
+                logger.info("  ℹ️ Base de données non disponible, pas de récupération de données réelles")
+        except Exception as e:
+            logger.error(f"  ❌ Erreur récupération données réelles: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
     
-    # 5. Archiver les anciens fichiers sur S3
+    # 6. Archiver les anciens fichiers sur S3
     if upload_to_s3:
-        logger.info("\n[5/6] Archivage des anciens fichiers sur S3...")
+        logger.info("\n[6/7] Archivage des anciens fichiers sur S3...")
         try:
             s3_handler = S3Handler(bucket=s3_bucket)
 
@@ -285,10 +374,10 @@ def prepare_consumption_features_pipeline(
             import traceback
             logger.error(traceback.format_exc())
 
-    # 6. Upload sur S3
+    # 7. Upload sur S3
     s3_result = None
     if upload_to_s3:
-        logger.info("\n[6/6] Upload sur S3...")
+        logger.info("\n[7/7] Upload sur S3...")
         try:
             s3_handler = S3Handler(bucket=s3_bucket)
 
