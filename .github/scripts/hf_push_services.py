@@ -66,40 +66,27 @@ def check_critical_files_changed():
     return False
 
 def push_service_to_hf(api, service, username):
-    """Push service directory to HuggingFace Space (includes .env)"""
+    """Push service directory to HuggingFace Space"""
     service_path = Path(__file__).parent.parent.parent / "Services" / service
     repo_root = Path(__file__).parent.parent.parent
-    env_file = repo_root / ".env"
-    toml_file = repo_root / "pyproject.toml"
-    
+
     if not service_path.exists():
         print(f"[ERR] Service directory not found: {service_path}")
         return False
-    
+
     try:
-        # Copier .env dans le dossier service avant upload
-        if env_file.exists():
-            service_env_path = service_path / ".env"
-            shutil.copy2(env_file, service_env_path)
-            print(f"[*] Copied .env to {service}")
+        # Copier src uniquement pour FastApi
+        if service == "FastApi":
+            src_dir = repo_root / "src"
+            service_src_path = service_path / "src"
+            if src_dir.exists():
+                if service_src_path.exists():
+                    shutil.rmtree(service_src_path)
+                shutil.copytree(src_dir, service_src_path)
+                print(f"[*] Copied src to {service}")
 
-        # Copier pyproject.toml dans le dossier service avant upload
-        #if toml_file.exists():
-        #    service_toml_path = service_path / "pyproject.toml"
-        #    shutil.copy2(toml_file, service_toml_path)
-        #    print(f"[*] Copied pyproject.toml to {service}")
-
-        # Copier le répertoire src dans le dossier service avant upload
-        #src_dir = repo_root / "src"
-        #service_src_path = service_path / "src"
-        #if src_dir.exists():
-        #    if service_src_path.exists():
-        #        shutil.rmtree(service_src_path)
-        #    shutil.copytree(src_dir, service_src_path)
-        #    print(f"[*] Copied src to {service}")
-        
         space_id = f"{username}/{service}"
-        
+
         # Upload the entire service directory to the space
         api.upload_folder(
             folder_path=str(service_path),
@@ -107,12 +94,13 @@ def push_service_to_hf(api, service, username):
             repo_type="space",
             commit_message=f"Update {service} from repository"
         )
-        
-        # Nettoyer: supprimer le .env copié localement (ne pas les commiter)
-        service_env_path = service_path / ".env"
-        if service_env_path.exists():
-            service_env_path.unlink()
-        
+
+        # Nettoyer: supprimer src copié localement (ne pas les commiter)
+        if service == "FastApi":
+            service_src_path = service_path / "src"
+            if service_src_path.exists():
+                shutil.rmtree(service_src_path)
+
         print(f"[OK] '{service}' pushed to HuggingFace Space")
         return True
     except Exception as e:
