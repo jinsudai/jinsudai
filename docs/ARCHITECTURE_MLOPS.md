@@ -26,8 +26,7 @@ graph TB
     end
 
     subgraph "Orchestration"
-        D[Prefect Server<br/>Workflows]
-        E[Airflow<br/>Scheduling]
+        D[Airflow<br/>Workflows & Scheduling]
     end
 
     subgraph "ML & Tracking"
@@ -99,11 +98,6 @@ graph TB
             GR3[Datasources]
         end
 
-        subgraph "Prefect"
-            PF1[Prefect Server<br/>Port 4200]
-            PF2[Prefect Worker]
-            PF3[Work Pool]
-        end
 
         subgraph "Airflow"
             AF1[Airflow Webserver<br/>Port 8080]
@@ -132,7 +126,7 @@ graph TB
 ```mermaid
 sequenceDiagram
     participant Source as Sources Externes
-    participant Ingest as Ingestion Prefect
+    participant Ingest as Ingestion Airflow
     participant Process as Traitement
     participant Train as Training
     participant MLflow as MLflow
@@ -205,7 +199,7 @@ flowchart TD
 
 ## 3. Pipeline d'Entraînement
 
-### 3.1 Workflow Prefect d'entraînement
+### 3.1 Workflow Airflow d'entraînement
 
 ```mermaid
 flowchart TD
@@ -272,7 +266,7 @@ graph LR
 
 ## 4. Pipeline d'Inférence
 
-### 4.1 Workflow Prefect de prédiction
+### 4.1 Workflow Airflow de prédiction
 
 ```mermaid
 flowchart TD
@@ -343,8 +337,7 @@ flowchart TD
     H --> I[Deploy FastAPI]
     I --> J[Deploy Evidently]
     J --> K[Deploy Grafana]
-    K --> L[Deploy Prefect]
-    L --> M[Integration Tests]
+    K --> L[Integration Tests]
     M --> N{Integration OK?}
     N -->|Non| E
     N -->|Oui| O[Deploy Production]
@@ -430,7 +423,7 @@ flowchart TD
     G --> I[Sauvegarde MLflow<br/>Artefact]
     I --> J[Sauvegarde Workspace<br/>Evidently UI]
     J --> K[Alerte Email<br/>Resend]
-    K --> L[Trigger Retraining<br/>Prefect Flow]
+    K --> L[Trigger Retraining<br/>Airflow DAG]
     L --> M[Nouveau Modèle]
     M --> N[Promotion Production]
     N --> H
@@ -509,8 +502,8 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant Monitor as Evidently
-    participant Trigger as Prefect Trigger
-    participant Train as Training Flow
+    participant Trigger as Airflow Trigger
+    participant Train as Training Pipeline
     participant MLflow as MLflow
     participant Eval as Evaluation
     participant Prod as Production
@@ -551,7 +544,7 @@ graph TB
             M6[monitoring/<br/>Drift Detection]
             M7[pipelines/<br/>Orchestration]
             M8[utils/<br/>Utilitaires]
-            M9[workflows/<br/>Flows Prefect]
+            M9[dags/<br/>DAGs Airflow]
         end
 
         subgraph "connectors/"
@@ -580,7 +573,6 @@ graph TB
         SVC3[EvidentlyAI/]
         SVC4[Grafana/]
         SVC5[Airflow/]
-        SVC6[Prefect/]
     end
 
 ```
@@ -647,7 +639,7 @@ graph TB
         I1[AutoGluon Training<br/>Multi-domaines]
         I2[FastAPI REST API<br/>+ Streamlit UI]
         I3[GitHub Actions<br/>+ Docker Compose]
-        I4[Prefect Flows<br/>+ Drift Detection]
+        I4[Airflow DAGs<br/>+ Drift Detection]
         I5[Evidently AI<br/>+ Grafana Dashboards]
     end
 
@@ -668,7 +660,7 @@ graph TB
 | **Temps inférence** | < 100ms par requête (FastAPI) | ✅ |
 | **API Production** | FastAPI avec endpoints /predict et /predict/batch | ✅ |
 | **CI/CD** | GitHub Actions avec Docker + Hugging Face Spaces | ✅ |
-| **Réentraînement auto** | Prefect flows avec triggers drift + cycle hebdo | ✅ |
+| **Réentraînement auto** | Airflow DAGs avec triggers drift + cycle hebdo | ✅ |
 | **Monitoring** | Evidently AI + Grafana dashboards | ✅ |
 | **Alertes** | Email via Resend + Slack webhooks | ✅ |
 | **Stockage modèles** | MLflow Model Registry avec promotion prod | ✅ |
@@ -713,7 +705,7 @@ Voir [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) pour la documentation complète av
 
 ```mermaid
 mindmap
-  root((Flows Prefect))
+  root((DAGs Airflow))
     prediction
       prediction_full_pipeline
       prediction_inference_only_pipeline
@@ -737,7 +729,6 @@ mindmap
   root((Services))
     MLOps_Core
       MLflow
-      Prefect
       Airflow
     Inference
       FastAPI
@@ -761,7 +752,7 @@ Cette architecture MLOps complète respecte l'intégralité du cahier des charge
 1. **Créant des algorithmes IA adaptés** : AutoGluon avec configurations spécifiques par domaine (consommation, production solaire)
 2. **Adaptant l'infrastructure** : API FastAPI pour production, avec UI Streamlit pour accessibilité
 3. **Concevant des pipelines CI/CD** : GitHub Actions automatisant le déploiement sur Hugging Face Spaces
-4. **Développant des scripts de réentraînement** : Flows Prefect avec triggers automatiques (drift, cycle hebdo)
+4. **Développant des scripts de réentraînement** : Airflow DAGs avec triggers automatiques (drift, cycle hebdo)
 5. **Pilotant la performance** : Evidently AI pour drift detection + Grafana pour monitoring continu
 
 L'architecture est modulaire, scalable et conforme aux meilleures pratiques MLOps, avec une séparation claire des responsabilités entre les différents services.

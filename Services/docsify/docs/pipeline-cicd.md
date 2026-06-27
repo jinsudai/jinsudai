@@ -19,13 +19,12 @@ graph LR
     H --> I[Deploy FastAPI]
     I --> J[Deploy Evidently]
     J --> K[Deploy Grafana]
-    K --> L[Deploy Airflow]
-    L --> M[Integration Tests]
-    M --> N{Integration OK?}
-    N -->|Non| E
-    N -->|Oui| O[Deploy Production]
-    O --> P[Health Checks]
-    P --> Q[Notification Success]
+    K --> L[Integration Tests]
+    L --> M{Integration OK?}
+    M -->|Non| E
+    M -->|Oui| N[Deploy Production]
+    N --> O[Health Checks]
+    O --> P[Notification Success]
     
     style C fill:#e1f5ff
     style F fill:#fff4e1
@@ -88,11 +87,6 @@ sequenceDiagram
 ### Grafana
 - **Port**: 3000
 - **Dashboards**: Monitoring ML
-- **Health Check**: `/api/health`
-
-### Prefect
-- **Port**: 4200
-- **Components**: Server, Worker, Work Pool
 - **Health Check**: `/api/health`
 
 ### Airflow

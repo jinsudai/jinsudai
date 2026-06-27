@@ -18,7 +18,7 @@ graph LR
         A6 --> A7[log_to_mlflow_task]
         A7 --> A8[promote_to_prod_task]
     end
-    
+
     style A1 fill:#e1f5ff
     style A5 fill:#fff4e1
     style A7 fill:#d1c4e9

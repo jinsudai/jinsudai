@@ -193,7 +193,6 @@ graph LR
         SVC3[EvidentlyAI/]
         SVC4[Grafana/]
         SVC5[Airflow/]
-        SVC6[Prefect/]
     end
     
     style M1 fill:#e1f5ff
@@ -312,7 +311,7 @@ graph LR
         I1[AutoGluon Training<br/>Multi-domaines]
         I2[FastAPI REST API<br/>+ Streamlit UI]
         I3[GitHub Actions<br/>+ Docker Compose]
-        I4[Prefect Flows<br/>+ Drift Detection]
+        I4[Airflow DAGs<br/>+ Drift Detection]
         I5[Evidently AI<br/>+ Grafana Dashboards]
     end
 
@@ -338,7 +337,7 @@ graph LR
 | **Temps inférence** | < 100ms par requête (FastAPI) | ✅ |
 | **API Production** | FastAPI avec endpoints /predict et /predict/batch | ✅ |
 | **CI/CD** | GitHub Actions avec Docker + Hugging Face Spaces | ✅ |
-| **Réentraînement auto** | Prefect flows avec triggers drift + cycle hebdo | ✅ |
+| **Réentraînement auto** | Airflow DAGs avec triggers drift + cycle hebdo | ✅ |
 | **Monitoring** | Evidently AI + Grafana dashboards | ✅ |
 | **Alertes** | Email via Resend + Slack webhooks | ✅ |
 | **Stockage modèles** | MLflow Model Registry avec promotion prod | ✅ |
@@ -349,7 +348,7 @@ graph LR
 ```mermaid
 %%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#e1f5ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#0ea5e9', 'lineColor': '#64748b', 'secondaryColor': '#fff4e1', 'tertiaryColor': '#fce4ec', 'background': '#1e293b', 'mainBkg': '#e1f5ff', 'nodeBorder': '#0ea5e9', 'clusterBkg': '#334155', 'clusterBorder': '#475569', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b'}}}%%
 mindmap
-  root((Flows Prefect))
+  root((DAGs Airflow))
     prediction
       prediction_full_pipeline
       prediction_inference_only_pipeline

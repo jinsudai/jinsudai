@@ -77,7 +77,7 @@ Eviter les sauts de ligne inutiles
 CI & CD issues
 
 deployement docker avec:
-Streamlit / EvidentlyAI ou UI / Prefect interne
+Streamlit / EvidentlyAI ou UI / Airflow
 Base de donnée externes / Mlflow Externe
 
 EvidentlyUI -> Erreur dockerfile
@@ -144,13 +144,13 @@ Manque:
 
 Pas de solar_production_tasks.py (équivalent de consumption_tasks.py)
 Pas de solar_production_preparer.py (équivalent de consumption_preparer.py)
-Pas de flow Prefect pour production solaire
+Pas de DAG Airflow pour production solaire
 Pas de tests spécifiques pour production solaire
 Action requise: Implémenter le module solar_production/ avec:
 
 Tâches d'entraînement
 Tâches de préparation features
-Flow Prefect complet
+DAG Airflow complet
 Tests unitaires
 4. Monitoring avec Evidently/Aporia ⚠️ PARTIEL
 État actuel: Code existe mais notebooks Evidently dans _disabled

@@ -45,7 +45,7 @@ style: |
 ```mermaid
 %%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e3a5f', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#4a90d9', 'lineColor': '#8b9dc3', 'secondaryColor': '#2d4a6f', 'tertiaryColor': '#3d5a7f', 'background': '#0f172a', 'mainBkg': '#1e3a5f', 'nodeBorder': '#4a90d9', 'clusterBkg': '#1e293b', 'clusterBorder': '#334155', 'titleColor': '#f1f5f9', 'edgeLabelBackground': '#1e3a5f'}}}%%
 graph LR
-    A[Données BRUT<br/>CSV PRM] --> D[Prefect Server]
+    A[Données BRUT<br/>CSV PRM] --> D[Airflow]
     B[Données Météo<br/>API Open-Meteo] --> D
     C[Données Vacances<br/>API] --> D
     D --> F[MLflow<br/>Model Registry]
@@ -69,14 +69,12 @@ graph LR
     ML1[MLflow Server<br/>Port 7860] --> FA1[FastAPI Service<br/>Port 8000]
     FA1 --> EV1[Evidently AI<br/>Port 8501]
     EV1 --> GR1[Grafana<br/>Port 3000]
-    GR1 --> PF1[Prefect Server<br/>Port 4200]
-    PF1 --> AF1[Airflow Webserver<br/>Port 8080]
+    GR1 --> AF1[Airflow Webserver<br/>Port 8080]
     
     style ML1 fill:#ff6b6b
     style FA1 fill:#4ecdc4
     style EV1 fill:#45b7d1
     style GR1 fill:#f39c12
-    style PF1 fill:#9b59b6
     style AF1 fill:#e74c3c
 ```
 
@@ -87,7 +85,7 @@ graph LR
 ```mermaid
 %%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e3a5f', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#4a90d9', 'lineColor': '#8b9dc3', 'secondaryColor': '#2d4a6f', 'tertiaryColor': '#3d5a7f', 'background': '#0f172a', 'mainBkg': '#1e3a5f', 'nodeBorder': '#4a90d9', 'clusterBkg': '#1e293b', 'clusterBorder': '#334155', 'titleColor': '#f1f5f9', 'edgeLabelBackground': '#1e3a5f'}}}%%
 graph LR
-    A[Données BRUT<br/>CSV PRM] --> D[Prefect Server]
+    A[Données BRUT<br/>CSV PRM] --> D[Airflow]
     B[Données Météo<br/>API Open-Meteo] --> D
     C[Données Vacances<br/>API] --> D
     D --> E[Validation]
@@ -221,8 +219,7 @@ graph LR
     H --> I[Deploy FastAPI]
     I --> J[Deploy Evidently]
     J --> K[Deploy Grafana]
-    K --> L[Deploy Prefect]
-    L --> M[Integration Tests]
+    K --> L[Integration Tests]
     M --> N{Integration OK?}
     N -->|Non| E
     N -->|Oui| O[Deploy Production]
@@ -337,7 +334,7 @@ graph LR
 | Temps inférence | < 100ms | ✅ |
 | API Production | FastAPI endpoints | ✅ |
 | CI/CD | GitHub Actions + Docker | ✅ |
-| Réentraînement auto | Prefect flows | ✅ |
+| Réentraînement auto | Airflow DAGs | ✅ |
 | Monitoring | Evidently AI + Grafana | ✅ |
 | Alertes | Email + Slack webhooks | ✅ |
 
@@ -350,7 +347,7 @@ Cette architecture MLOps complète respecte l'intégralité du cahier des charge
 1. **Algorithmes IA adaptés** - AutoGluon avec configurations spécifiques
 2. **Infrastructure adaptée** - API FastAPI + UI Streamlit
 3. **Pipelines CI/CD** - GitHub Actions automatisés
-4. **Scripts réentraînement** - Flows Prefect avec triggers automatiques
+4. **Scripts réentraînement** - Airflow DAGs avec triggers automatiques
 5. **Pilotage performance** - Evidently AI + Grafana
 
 Architecture modulaire, scalable et conforme aux meilleures pratiques MLOps.

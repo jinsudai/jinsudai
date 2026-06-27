@@ -21,7 +21,7 @@ graph LR
         H -->|Non| J[verify_results_task<br/>Vérification]
         I --> J
     end
-    
+
     style A fill:#e1f5ff
     style E fill:#fff4e1
     style G fill:#fce4ec
@@ -65,7 +65,7 @@ graph LR
         F6 --> F7[Retraining]
         F7 --> F8[Vérification]
     end
-    
+
     style F1 fill:#e1f5ff
 ```
 

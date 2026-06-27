@@ -44,10 +44,10 @@ src/
     │   ├── __init__.py
     │   └── [futures classes]
     │
-    └── workflows/                # 🎯 Orchestration
-        ├── consumption_flow.py    # Flow: données → entraînement → monitoring (consumption)
-        ├── solar_production_flow.py
-        ├── shared_flows.py        # Workflows communs aux 2 domaines
+    └── dags/                     # 🎯 Orchestration Airflow
+        ├── consumption_dag.py     # DAG: données → entraînement → monitoring (consumption)
+        ├── solar_production_dag.py
+        ├── shared_dags.py         # DAGs communs aux 2 domaines
         └── utils.py               # Helpers (hooks, callbacks)
 ```
 
@@ -60,11 +60,11 @@ src/
 |------------|----------------|----------|
 | `utils/` | Code générique réutilisable | Chargement CSV, prétraitement, tracking MLflow |
 | `consumption/` / `solar_production/` | Logique métier spécifique | Validation domaine, métriques custom |
-| `workflows/` | Orchestration | Flows, scheduling, dépendances |
+| `dags/` | Orchestration Airflow | DAGs, scheduling, dépendances |
 
 ### 2. **Flux de données**
 ```
-workflows/        → Orchestre
+dags/              → Orchestre (Airflow)
     │
     ├──→ utils/data/          → Charge et valide données
     │       │
@@ -80,7 +80,7 @@ workflows/        → Orchestre
 ### 3. **Règles de dépendance**
 - ⬆️ **`utils/`** ne dépend **jamais** de `consumption/` ou `solar_production/`
 - ⬇️ **`consumption/` et `solar_production/`** peuvent importer depuis `utils/`
-- ⬇️ **`workflows/`** importe depuis `utils/` ET les répertoires domaine
+- ⬇️ **`dags/`** importe depuis `utils/` ET les répertoires domaine
 
 ---
 
@@ -89,15 +89,15 @@ workflows/        → Orchestre
 ### Ajouter un nouveau domaine (ex: `battery_storage/`)
 1. Créer `src/configs/battery_storage.yaml`
 2. Implémenter la logique métier dans `src/ml/battery_storage/`
-3. Ajouter un flow dans `src/ml/workflows/battery_storage_flow.py`
+3. Ajouter un DAG dans `src/ml/dags/battery_storage_dag.py`
 4. **Ne pas** modifier `utils/` sauf si le code est réutilisable par tous
 
 ### Étendre une fonctionnalité partagée
 - Ajouter/modifier dans `utils/` (ex: nouveau type de prétraitement)
 - **Tester** l'impact sur tous les domaines avant merge
 
-### Créer un workflow
-- **Toujours** dans `workflows/`
+### Créer un DAG Airflow
+- **Toujours** dans `dags/`
 - Importer la logique depuis les répertoires domaine
 - Exemple minimal :
   ```python
@@ -115,7 +115,7 @@ workflows/        → Orchestre
 
 ### Cas 1: Entraînement d'un modèle de consommation
 ```python
-# src/ml/workflows/consumption_flow.py
+# src/ml/dags/consumption_dag.py
 from ml.config import load_config  # Chargeur central
 from ml.utils.data.data_loader import load_data
 from ml.pipelines.training_pipeline import MLPipeline
@@ -128,7 +128,7 @@ def consumption_full_pipeline():
 
 ### Cas 2: Inférence en production
 ```python
-# src/ml/workflows/inference_flow.py (partagé)
+# src/ml/dags/inference_dag.py (partagé)
 from ml.config import load_config
 from ml.utils.models.inference_model import InferenceModel
 from ml.consumption.models import ConsumptionInferenceModel  # Spécialisation
@@ -143,7 +143,7 @@ def predict_consumption():
 
 ## 🚀 Prochaines étapes
 
-1. **Créer `src/ml/workflows/`** et y déplacer l'orchestration existante
+1. **Créer `src/ml/dags/`** et y déplacer l'orchestration Airflow existante
 2. **Documenter** chaque classe dans son fichier avec docstring (ex: voir `InferenceModel`)
 3. **Valider** que tous les imports respectent les règles de dépendance
 4. **Ajouter** un `__init__.py` dans chaque répertoire pour des imports propres

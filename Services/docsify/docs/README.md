@@ -26,31 +26,31 @@ graph LR
         B[Données Météo<br/>API Open-Meteo]
         C[Données Vacances<br/>API]
     end
-    
+
     subgraph "Orchestration"
         D[Airflow<br/>Workflows & Scheduling]
     end
-    
+
     subgraph "ML & Tracking"
         F[MLflow<br/>Model Registry]
         G[AutoGluon<br/>Training]
     end
-    
+
     subgraph "API & Inference"
         H[FastAPI<br/>REST API]
         I[Streamlit<br/>UI Prédictions]
     end
-    
+
     subgraph "Monitoring"
         J[Evidently AI<br/>Drift Detection]
         K[Grafana<br/>Dashboards]
     end
-    
+
     subgraph "Stockage"
         L[PostgreSQL<br/>Prédictions]
         M[S3<br/>Artefacts MLflow]
     end
-    
+
     A --> D
     B --> D
     C --> D
@@ -63,7 +63,7 @@ graph LR
     J --> K
     F --> M
     L --> J
-    
+
     style D fill:#e1f5ff
     style F fill:#fff4e1
     style H fill:#e8f5e9
