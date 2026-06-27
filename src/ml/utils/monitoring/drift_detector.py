@@ -121,7 +121,7 @@ def detect_data_drift(
             return {"drift_detected": False, "error": "missing_data"}
 
         if feature_columns is None:
-            # Utiliser toutes les colonnes numériques communes (exclure datetime)
+            # Utiliser toutes les colonnes numériques communes (exclure datetime, string, object)
             ref_cols = set(reference_data.select_dtypes(include=[np.number]).columns)
             curr_cols = set(current_data.select_dtypes(include=[np.number]).columns)
             feature_columns = list(ref_cols.intersection(curr_cols))
@@ -129,6 +129,12 @@ def detect_data_drift(
             # Exclure explicitement les colonnes datetime
             datetime_cols = reference_data.select_dtypes(include=['datetime64[ns]', 'datetime64']).columns
             feature_columns = [col for col in feature_columns if col not in datetime_cols]
+
+            # Exclure les colonnes object/string (vérification supplémentaire)
+            for col in feature_columns[:]:
+                if reference_data[col].dtype == 'object' or current_data[col].dtype == 'object':
+                    feature_columns.remove(col)
+                    logger.warning(f"Colonne {col} exclue (type object/string non supporté pour PSI)")
 
         results = {
             "drift_detected": False,
@@ -286,6 +292,14 @@ def calculate_psi(expected: np.ndarray, actual: np.ndarray, bins: int = 10) -> f
         PSI score
     """
     try:
+        # Convertir en numérique si possible
+        expected = pd.to_numeric(expected, errors='coerce').dropna().values
+        actual = pd.to_numeric(actual, errors='coerce').dropna().values
+
+        if len(expected) == 0 or len(actual) == 0:
+            logger.warning("Pas assez de données numériques pour calculer le PSI")
+            return 0.0
+
         # Définir les bins basés sur les données attendues
         min_val = min(expected.min(), actual.min())
         max_val = max(expected.max(), actual.max())
