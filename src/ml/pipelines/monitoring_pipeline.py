@@ -16,7 +16,7 @@ Spécifications (voir SPECIFICATIONS.md) :
 - Output : Métriques drift + rapport HTML
 
 Classe principale :
-- DriftDetectionPipeline : Orchestration complète du cycle de détection de drift
+- MonitoringPipeline : Orchestration complète du cycle de monitoring
 """
 import logging
 from datetime import datetime
@@ -41,7 +41,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class DriftDetectionPipeline:
+class MonitoringPipeline:
     """Pipeline complet pour la détection de drift"""
 
     def __init__(self, config_name: str = "consumption", db_uri: Optional[str] = None):

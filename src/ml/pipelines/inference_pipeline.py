@@ -15,7 +15,7 @@ Spécifications (voir SPECIFICATIONS.md) :
 - Output : Valeur prédite en kWh
 
 Classe principale :
-- PredictionPipeline : Orchestration complète du cycle prédiction
+- InferencePipeline : Orchestration complète du cycle d'inférence
 """
 import logging
 from datetime import datetime
@@ -31,7 +31,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class PredictionPipeline:
+class InferencePipeline:
     """Pipeline complet pour l'inférence et le stockage des prédictions"""
 
     def __init__(self, mlflow_uri, experiment_name, db_uri, config=None):

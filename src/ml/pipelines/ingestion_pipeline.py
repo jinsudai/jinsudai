@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class ActualValuesPipeline:
+class IngestionPipeline:
     """Pipeline pour la mise à jour quotidienne des valeurs réelles"""
 
     def __init__(self, db_uri, config=None):

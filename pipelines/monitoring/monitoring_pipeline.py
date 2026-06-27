@@ -1,10 +1,10 @@
 """
-Script simple pour exécuter le pipeline de détection de drift.
+Script simple pour exécuter le pipeline de monitoring.
 
 Usage:
-    python pipelines/drift_detection/drift_detection_pipeline.py --reference_path data/dev/train_consumption.parquet
-    python pipelines/drift_detection/drift_detection_pipeline.py --reference_path data/dev/train_consumption.parquet --current_data_path data/processed/current_data.parquet
-    python pipelines/drift_detection/drift_detection_pipeline.py --reference_path data/dev/train_consumption.parquet --db_uri postgresql://user:pass@host:port/db
+    python pipelines/monitoring/monitoring_pipeline.py --reference_path data/dev/train_consumption.parquet
+    python pipelines/monitoring/monitoring_pipeline.py --reference_path data/dev/train_consumption.parquet --current_data_path data/processed/current_data.parquet
+    python pipelines/monitoring/monitoring_pipeline.py --reference_path data/dev/train_consumption.parquet --db_uri postgresql://user:pass@host:port/db
 """
 import argparse
 import sys
@@ -16,10 +16,10 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
-from ml.pipelines.drift_detection_pipeline import DriftDetectionPipeline
+from ml.pipelines.monitoring_pipeline import MonitoringPipeline
 
 def main():
-    parser = argparse.ArgumentParser(description='Exécute le pipeline de détection de drift')
+    parser = argparse.ArgumentParser(description='Exécute le pipeline de monitoring')
     parser.add_argument('--config_name', type=str, default='consumption', 
                         help='Nom de la config (consumption, solar_production)')
     parser.add_argument('--reference_path', type=str, default=None, 
@@ -59,7 +59,7 @@ def main():
     end_date = datetime.now()
     start_date = end_date - timedelta(days=7)
 
-    print(f"=== Pipeline de détection de drift ===")
+    print(f"=== Pipeline de monitoring ===")
     print(f"Config: {config_name_to_use}")
     print(f"Données référence: {args.reference_path or 'Depuis config/S3'}")
     print(f"Données courantes: {args.current_data_path or 'Base de données'}")
@@ -75,7 +75,7 @@ def main():
     
     try:
         # Initialiser le pipeline
-        pipeline = DriftDetectionPipeline(
+        pipeline = MonitoringPipeline(
             config_name=config_name_to_use,
             db_uri=args.db_uri
         )

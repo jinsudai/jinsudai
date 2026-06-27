@@ -1,8 +1,8 @@
 """
-Script simple pour exécuter le pipeline de mise à jour des valeurs réelles.
+Script simple pour exécuter le pipeline d'ingestion des valeurs réelles.
 
 Usage:
-    python pipelines/actual_values/actual_values_pipeline.py --db_uri postgresql://user:password@host:port/database
+    python pipelines/ingestion/ingestion_pipeline.py --db_uri postgresql://user:password@host:port/database
 """
 import argparse
 import sys
@@ -14,18 +14,18 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
-from ml.pipelines.Actual_values_pipeline import ActualValuesPipeline
+from ml.pipelines.ingestion_pipeline import IngestionPipeline
 from ml.config.global_config import load_config_with_environment
 
 def main():
-    parser = argparse.ArgumentParser(description='Exécute le pipeline de mise à jour des valeurs réelles')
+    parser = argparse.ArgumentParser(description='Exécute le pipeline d\'ingestion des valeurs réelles')
     parser.add_argument('--db_uri', type=str, required=False, help='URI de connexion PostgreSQL')
     parser.add_argument('--config_name', type=str, default='consumption', help='Nom de la config (consumption, solar_production)')
     parser.add_argument('--use_env_config', action='store_true', help='Utiliser la configuration depuis les variables d\'environnement')
     
     args = parser.parse_args()
     
-    print(f"=== Pipeline de mise à jour des valeurs réelles ===")
+    print(f"=== Pipeline d'ingestion des valeurs réelles ===")
     print(f"Config: {args.config_name}")
     print()
     
@@ -49,7 +49,7 @@ def main():
     
     try:
         # Initialiser le pipeline avec la configuration
-        pipeline = ActualValuesPipeline(db_uri=db_uri, config=config)
+        pipeline = IngestionPipeline(db_uri=db_uri, config=config)
         
         # Exécuter le pipeline complet
         success, results = pipeline.run_full_pipeline()

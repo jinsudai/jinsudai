@@ -1,8 +1,8 @@
 """
-Script de test pour le pipeline de détection de drift.
+Script de test pour le pipeline de monitoring.
 
 Usage:
-    python scripts/run_drift_detection_pipeline.py
+    python scripts/run_monitoring_pipeline.py
 """
 import sys
 from pathlib import Path
@@ -14,7 +14,7 @@ sys.path.insert(0, str(project_root / 'src'))
 
 import pandas as pd
 import numpy as np
-from ml.pipelines.drift_detection_pipeline import DriftDetectionPipeline
+from ml.pipelines.monitoring_pipeline import MonitoringPipeline
 from ml.config import load_config
 
 def create_test_data():
@@ -87,7 +87,7 @@ def test_pipeline_no_drift():
         current_path = data_dir / 'test_current_no_drift.parquet'
         current_data.to_parquet(current_path, index=False)
     
-    pipeline = DriftDetectionPipeline(config_name='consumption')
+    pipeline = MonitoringPipeline(config_name='consumption')
     
     results = pipeline.run_full_pipeline(
         reference_path=str(reference_path),
@@ -139,7 +139,7 @@ def test_pipeline_with_drift():
         current_path = data_dir / 'test_current_with_drift.parquet'
         current_data.to_parquet(current_path, index=False)
     
-    pipeline = DriftDetectionPipeline(config_name='consumption')
+    pipeline = MonitoringPipeline(config_name='consumption')
     
     results = pipeline.run_full_pipeline(
         reference_path=str(reference_path),
@@ -165,7 +165,7 @@ def test_pipeline_with_drift():
     return True
 
 def main():
-    print("=== TEST DU PIPELINE DE DÉTECTION DE DRIFT ===\n")
+    print("=== TEST DU PIPELINE DE MONITORING ===\n")
     
     results = {}
     

@@ -32,8 +32,8 @@ on:
     branches:
       - main
     paths:
-      - 'pipelines/inference/prediction_pipeline.py'
-      - 'src/ml/pipelines/Prediction_pipeline.py'
+      - 'pipelines/inference/inference_pipeline.py'
+      - 'src/ml/pipelines/inference_pipeline.py'
       - 'src/ml/pipelines/database_handler.py'
       - 'src/ml/utils/data/**'
       - 'src/ml/utils/models/models_inference.py'
@@ -67,7 +67,7 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
           MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
         run: |
-          python pipelines/inference/prediction_pipeline.py \
+          python pipelines/inference/inference_pipeline.py \
             --model_name "${{ github.event.inputs.model_name || '' }}" \
             --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
             --n_days "${{ github.event.inputs.n_days || '3' }}" \

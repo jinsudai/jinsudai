@@ -1,8 +1,8 @@
 """
-Script simple pour exécuter le pipeline de prédiction.
+Script simple pour exécuter le pipeline d'inférence.
 
 Usage:
-    python scripts/run_prediction_pipeline.py --model_name consumption_model_dev --n_days 3
+    python scripts/run_inference_pipeline.py --model_name consumption_model_dev --n_days 3
 """
 import argparse
 import sys
@@ -13,11 +13,11 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
-from ml.pipelines.Prediction_pipeline import PredictionPipeline
+from ml.pipelines.inference_pipeline import InferencePipeline
 from ml.config import load_config
 
 def main():
-    parser = argparse.ArgumentParser(description='Exécute le pipeline de prédiction')
+    parser = argparse.ArgumentParser(description='Exécute le pipeline d\'inférence')
     parser.add_argument('--model_name', type=str, required=True, help='Nom du modèle dans MLflow')
     parser.add_argument('--config_name', type=str, default='consumption', help='Nom de la config (consumption, solar_production)')
     parser.add_argument('--n_days', type=int, default=3, help='Nombre de jours de prédictions')
@@ -27,7 +27,7 @@ def main():
     
     args = parser.parse_args()
     
-    print(f"=== Pipeline de prédiction ===")
+    print(f"=== Pipeline d'inférence ===")
     print(f"Modèle: {args.model_name}")
     print(f"Config: {args.config_name}")
     print(f"Jours: {args.n_days}")
@@ -47,7 +47,7 @@ def main():
     
     try:
         # Initialiser le pipeline
-        pipeline = PredictionPipeline(
+        pipeline = InferencePipeline(
             mlflow_uri=mlflow_uri,
             experiment_name=experiment_name,
             db_uri=db_uri
