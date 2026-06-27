@@ -448,8 +448,11 @@ def generate_evidently_report(
         # Exécuter le rapport
         report.run(reference_data=reference_data_aligned, current_data=current_data_aligned)
 
-        # Extraire les résultats
-        report_dict = report.to_dict()
+        # Extraire les résultats via les métriques
+        report_dict = {"metrics": []}
+        for metric in report.metrics:
+            metric_result = metric.get_result()
+            report_dict["metrics"].append(metric_result)
 
         # Sauvegarder le rapport HTML si un chemin est fourni
         if output_path:
