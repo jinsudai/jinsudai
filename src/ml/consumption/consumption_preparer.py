@@ -219,9 +219,12 @@ class ConsumptionDataPreparer:
 
         # Remplir les NaN pour les colonnes calendrier
         merged_df["is_vacances"] = merged_df.get("is_vacances", 0).fillna(0).astype(int)
-        merged_df["nom_vacances"] = merged_df.get("nom_vacances", "").fillna("")
         merged_df["jour de la semaine"] = merged_df.get("jour de la semaine", "").fillna("")
         merged_df["jour férié"] = merged_df.get("jour férié", 0).fillna(0).astype(int)
+
+        # Supprimer nom_vacances si présent (non nécessaire pour le modèle)
+        if "nom_vacances" in merged_df.columns:
+            merged_df = merged_df.drop(columns=["nom_vacances"])
 
         # Remplir les NaN pour les colonnes météo (avec des valeurs par défaut)
         merged_df["temperature_2m_mean"] = merged_df.get("temperature_2m_mean", 15.0).fillna(15.0)
@@ -251,9 +254,6 @@ class ConsumptionDataPreparer:
 
         # Colonnes attendues = Horodate + target + features
         expected_columns = ["Horodate", target_col] + required_features
-        # Ajouter nom_vacances qui est utilisé dans le template
-        if "nom_vacances" not in expected_columns:
-            expected_columns.append("nom_vacances")
 
         # Vérifier colonnes
         missing = [col for col in expected_columns if col not in df.columns]
@@ -268,7 +268,7 @@ class ConsumptionDataPreparer:
         # Vérifier types des features
         float_features = ["temperature_2m_mean", "relative_humidity_mean", "precipitation_sum"]
         int_features = ["is_vacances", "jour férié"]
-        str_features = ["nom_vacances", "jour de la semaine"]
+        str_features = ["jour de la semaine"]
 
         for col in float_features:
             if col in df.columns:
@@ -297,7 +297,7 @@ class ConsumptionDataPreparer:
         # Vérifier valeurs manquantes (max 5%)
         cols_to_check = ["Horodate", target_col] + required_features
         for col in cols_to_check:
-            if col in df.columns and col not in ["nom_vacances"]:
+            if col in df.columns:
                 null_pct = df[col].isnull().mean() * 100
                 if null_pct > 5:
                     raise ValueError(f"{col} a {null_pct:.1f}% de valeurs manquantes (max 5%)")
