@@ -34,7 +34,7 @@ import logging
 from datetime import datetime
 
 from .sftp_connector import SFTPConnector
-from ml.pipelines.database_handler import DatabaseHandler
+from ml.utils.data.database_handler import DatabaseHandler
 from ml.utils.notifications.email_notifier import EmailNotifier
 
 logging.basicConfig(level=logging.INFO)

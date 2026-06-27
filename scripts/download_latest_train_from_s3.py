@@ -15,7 +15,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
-from ml.utils.s3_handler import S3Handler
+from ml.utils.data.s3_handler import S3Handler
 from ml.config import load_config
 
 

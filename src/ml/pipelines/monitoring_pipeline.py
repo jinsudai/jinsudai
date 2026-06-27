@@ -34,8 +34,8 @@ from ml.utils.monitoring.drift_detector import (
 )
 from ml.config import load_config
 from ml.config.global_config import get_database_uri
-from .database_handler import DatabaseHandler
-from ml.utils.s3_handler import S3Handler
+from ..utils.data.database_handler import DatabaseHandler
+from ml.utils.data.s3_handler import S3Handler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -85,7 +85,7 @@ jobs:
             RAW_PATH="${{ github.event.inputs.raw_path }}"
           fi
           
-          python scripts/run_prepare_consumption_pipeline.py \
+          python pipelines/preparation_pipeline.py \
             --start_date "$START_DATE" \
             --end_date "$END_DATE" \
             --raw_path "$RAW_PATH" \

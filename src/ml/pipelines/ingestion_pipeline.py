@@ -14,8 +14,8 @@ import logging
 from datetime import datetime, timedelta
 import random
 
-from .database_handler import DatabaseHandler
-from ml.utils.s3_handler import S3Handler
+from ..utils.data.database_handler import DatabaseHandler
+from ml.utils.data.s3_handler import S3Handler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -324,7 +324,7 @@ class IngestionPipeline:
         if sftp_enabled:
             logger.info("=== SFTP ACTIVÉ - LANCEMENT DE L'INGESTION SFTP ===")
             try:
-                from ml.pipelines.sftp_ingestion_pipeline import (
+                from ml.utils.data.sftp_ingestion_pipeline import (
                     run_sftp_ingestion_pipeline,
                     load_sftp_config
                 )

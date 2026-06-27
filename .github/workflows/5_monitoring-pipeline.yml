@@ -73,7 +73,7 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION || 'eu-west-3' }}
           AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
         run: |
-          python pipelines/monitoring/monitoring_pipeline.py \
+          python pipelines/monitoring_pipeline.py \
             --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
             --reference_path "${{ github.event.inputs.reference_path || 'data/dev/train_consumption.parquet' }}" \
             ${{ github.event.inputs.current_data_path && format('--current_data_path "{0}"', github.event.inputs.current_data_path) || '' }} \

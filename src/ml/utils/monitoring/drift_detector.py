@@ -638,7 +638,7 @@ def save_evidently_report_to_s3(
         bool: True si succès, False sinon
     """
     try:
-        from ml.utils.s3_handler import S3Handler
+        from ml.utils.data.s3_handler import S3Handler
 
         # Générer le nom du rapport si non fourni
         if report_name is None:

@@ -60,7 +60,7 @@ from ml.utils.monitoring.performance_monitor import (
 
 )
 
-from ml.utils.s3_handler import S3Handler
+from ml.utils.data.s3_handler import S3Handler
 
 # Utiliser ml.config pour load_config et constantes
 

@@ -120,7 +120,7 @@ jobs:
               ${{ github.event.inputs.db_uri && format('--db_uri "{0}"', github.event.inputs.db_uri) || '' }}
           else
             # Default to use_env_config
-            python pipelines/ingestion/ingestion_pipeline.py \
+            python pipelines/ingestion_pipeline.py \
               --use_env_config \
               --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
               ${{ github.event.inputs.db_uri && format('--db_uri "{0}"', github.event.inputs.db_uri) || '' }}

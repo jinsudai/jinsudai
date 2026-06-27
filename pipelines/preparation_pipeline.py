@@ -28,7 +28,7 @@ sys.path.insert(0, str(project_root / 'src'))
 from ml.consumption.consumption_preparer import ConsumptionDataPreparer
 from ml.connectors.weather.weather_api import WeatherAPI
 from ml.connectors.holidays.holidays_api import HolidaysCombinedAPI
-from ml.utils.s3_handler import S3Handler
+from ml.utils.data.s3_handler import S3Handler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

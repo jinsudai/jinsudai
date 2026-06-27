@@ -13,7 +13,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
-from pipelines.preparation.prepare_consumption_pipeline import prepare_consumption_features_pipeline
+from pipelines.preparation_pipeline import prepare_consumption_features_pipeline
 
 
 def main():

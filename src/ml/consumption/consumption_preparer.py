@@ -136,7 +136,7 @@ class ConsumptionDataPreparer:
         Returns:
             DataFrame avec Horodate et Valeur (actual_value)
         """
-        from ml.pipelines.database_handler import DatabaseHandler
+        from ml.utils.data.database_handler import DatabaseHandler
         import os
 
         if db_uri is None:

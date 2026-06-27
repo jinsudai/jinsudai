@@ -27,8 +27,8 @@ sys.path.insert(0, str(project_root / 'src'))
 from ml.config import load_config
 from ml.pipelines.drift_detection_pipeline import DriftDetectionPipeline
 from ml.pipelines.training_pipeline import MLPipeline
-from ml.pipelines.database_handler import DatabaseHandler
-from ml.utils.s3_handler import S3Handler
+from ml.utils.data.database_handler import DatabaseHandler
+from ml.utils.data.s3_handler import S3Handler
 import mlflow
 
 
