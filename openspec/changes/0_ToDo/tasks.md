@@ -7,17 +7,21 @@ Eviter les sauts de ligne inutiles
 
 # A faire
 
+## documentation
+- actualiser la documentation
+
+## prepare Consumption prepare -> En cours
+- Date non prise en compte -> Check Head
+
 ## Monitoring
 - datadrift récupérer le fichier depuis S3 dans trained -> A tester
+- generation du rapport... -> failed demander GitHub Copilot -> Later
 - visualisation dans Evidently AI
 - grafana avec donnée actuelles
 
 
 
 # A tester
-
-## prepare Consumption prepare -> En cours
-- prepare consumption
 
 ## Evidently
 - J'ai un server EvidentlyAi deployé je pense qu'il faut juste uploader les rapports dans le bucket s3 evidently-reports
