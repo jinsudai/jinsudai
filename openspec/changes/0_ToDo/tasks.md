@@ -7,10 +7,6 @@ Eviter les sauts de ligne inutiles
 
 # A faire
 
-
-## Preparation
-- Avant d'uploader le nouveau ..._train.parquet uploadé. Il faut déplacer les anciens fichiers prefix "prepared" vers "archived/prepared/" -> en test
-
 ## Monitoring
 - datadrift récupérer le fichier depuis S3 dans trained -> A tester
 - visualisation dans Evidently AI

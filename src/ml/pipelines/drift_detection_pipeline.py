@@ -102,10 +102,14 @@ class DriftDetectionPipeline:
 
             if download_from_s3_if_missing:
                 logger.info("Tentative de téléchargement depuis S3...")
-                success = self._download_reference_from_s3(reference_path)
-                if not success:
+                # Utiliser le répertoire parent comme destination
+                local_dir = Path(reference_path).parent
+                downloaded_path = self._download_reference_from_s3(str(local_dir))
+                if downloaded_path is None:
                     logger.error("Impossible de télécharger le fichier depuis S3")
                     return False
+                # Mettre à jour reference_path avec le chemin réel du fichier téléchargé
+                reference_path = downloaded_path
             else:
                 logger.error("Fichier de référence non trouvé et téléchargement S3 désactivé")
                 return False
@@ -126,15 +130,15 @@ class DriftDetectionPipeline:
         logger.info(f"Données de référence chargées: {len(self.reference_data)} enregistrements")
         return True
 
-    def _download_reference_from_s3(self, local_path: str) -> bool:
+    def _download_reference_from_s3(self, local_dir: str) -> Optional[str]:
         """
-        Télécharge le dernier fichier train.parquet depuis S3.
+        Télécharge le dernier fichier train.parquet depuis S3 en conservant son nom original.
 
         Args:
-            local_path: Chemin local de destination
+            local_dir: Répertoire local de destination
 
         Returns:
-            True si succès, False sinon
+            Chemin complet du fichier téléchargé si succès, None sinon
         """
         try:
             # Charger la configuration S3
@@ -149,23 +153,23 @@ class DriftDetectionPipeline:
             # Initialiser le handler S3
             s3_handler = S3Handler(bucket=bucket)
 
-            # Utiliser la méthode partagée
+            # Télécharger avec le nom original depuis S3 dans le répertoire de destination
             result = s3_handler.download_latest_train_file(
-                local_path=local_path,
+                local_path=local_dir,
                 prefix=prefix,
                 prioritize_dated=True
             )
 
-            if result["status"] == "success":
-                logger.info(f"Fichier téléchargé depuis S3: {local_path}")
-                return True
-            else:
+            if result["status"] != "success":
                 logger.error(f"Erreur lors du téléchargement: {result.get('reason')}")
-                return False
+                return None
+
+            logger.info(f"Fichier téléchargé depuis S3: {result.get('local_path')}")
+            return result.get('local_path')
 
         except Exception as e:
             logger.error(f"Erreur lors du téléchargement depuis S3: {e}")
-            return False
+            return None
 
     def _download_latest_train_from_s3(self) -> bool:
         """

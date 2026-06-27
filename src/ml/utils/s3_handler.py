@@ -310,7 +310,7 @@ class S3Handler:
 
     def download_latest_train_file(
         self,
-        local_path: str,
+        local_path: Optional[str] = None,
         prefix: str = "consumption",
         prioritize_dated: bool = True
     ) -> Dict[str, Any]:
@@ -318,7 +318,10 @@ class S3Handler:
         Télécharge le dernier fichier train.parquet depuis S3 avec priorité aux fichiers datés.
 
         Args:
-            local_path: Chemin local de destination
+            local_path: Chemin local de destination (optionnel)
+                       - Si None: utilise le nom original depuis S3 dans le répertoire courant
+                       - Si pointe vers un répertoire: utilise le nom original depuis S3 dans ce répertoire
+                       - Si pointe vers un fichier: utilise ce chemin complet
             prefix: Préfixe S3 pour la recherche (défaut: "consumption")
             prioritize_dated: Si True, priorise les fichiers avec format YYYY-MM-DD_to_YYYY-MM-DD_train.parquet
 
@@ -357,6 +360,17 @@ class S3Handler:
             latest_file = train_files_sorted[0]
 
             logger.info(f"Fichier le plus récent sur S3: {latest_file}")
+
+            # Construire le chemin local
+            if local_path is None:
+                # Utiliser le nom original dans le répertoire courant
+                filename = Path(latest_file).name
+                local_path = str(Path.cwd() / filename)
+            elif Path(local_path).is_dir() or local_path.endswith('/') or local_path.endswith('\\'):
+                # Si c'est un répertoire, utiliser le nom original dans ce répertoire
+                filename = Path(latest_file).name
+                local_path = str(Path(local_path) / filename)
+            # Sinon, utiliser le chemin complet tel quel
 
             # Télécharger le fichier
             result = self.download_file(
