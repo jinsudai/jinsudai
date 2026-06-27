@@ -448,19 +448,14 @@ def generate_evidently_report(
         # Exécuter le rapport
         report.run(reference_data=reference_data_aligned, current_data=current_data_aligned)
 
-        # Extraire les résultats via les métriques
-        report_dict = {"metrics": []}
-        for metric in report.metrics:
-            metric_result = metric.get_result()
-            report_dict["metrics"].append(metric_result)
-
         # Sauvegarder le rapport HTML si un chemin est fourni
         if output_path:
             output_file = Path(output_path) / f"{report_name}.html"
             report.save_html(str(output_file))
             logger.info(f"Rapport Evidently sauvegardé: {output_file}")
 
-        return report, report_dict
+        # Retourner le rapport et un dictionnaire vide (l'API d'Evidently a changé)
+        return report, {}
 
     except Exception as e:
         logger.error(f"Erreur lors de la génération du rapport Evidently: {e}")
@@ -524,8 +519,8 @@ def _log_metrics_and_artifacts(
     """Fonction helper pour logger les métriques et artefacts dans MLflow."""
     import mlflow
 
-    # Extraire et logger les métriques de drift
-    if "metrics" in report_dict and len(report_dict["metrics"]) > 0:
+    # Extraire et logger les métriques de drift (si disponibles)
+    if report_dict and "metrics" in report_dict and len(report_dict["metrics"]) > 0:
         first_metric = report_dict["metrics"][0]
         if "result" in first_metric:
             result = first_metric["result"]
@@ -539,6 +534,8 @@ def _log_metrics_and_artifacts(
             if "drift_by_columns" in result:
                 for col, metrics in result["drift_by_columns"].items():
                     mlflow.log_metric(f"drift_{col}", int(metrics.get("drift_detected", False)))
+    else:
+        logger.warning("Impossible d'extraire les métriques du rapport Evidently (API changée)")
 
     # Logger le rapport HTML comme artefact
     mlflow.log_artifact(html_path, artifact_path)
@@ -740,14 +737,19 @@ def run_evidently_drift_detection(
         results["evidently_report"] = report
         results["evidently_results"] = report_dict
 
-        # Extraire les résultats de drift
-        if "metrics" in report_dict and len(report_dict["metrics"]) > 0:
+        # Extraire les résultats de drift (si disponibles)
+        if report_dict and "metrics" in report_dict and len(report_dict["metrics"]) > 0:
             first_metric = report_dict["metrics"][0]
             if "result" in first_metric:
                 result = first_metric["result"]
                 results["overall_drift_detected"] = result.get("dataset_drift", False)
                 results["drifted_features_count"] = result.get("number_of_drifted_columns", 0)
                 results["total_features_analyzed"] = result.get("number_of_columns", 0)
+        else:
+            logger.warning("Impossible d'extraire les résultats de drift du rapport Evidently (API changée)")
+            results["overall_drift_detected"] = False
+            results["drifted_features_count"] = 0
+            results["total_features_analyzed"] = 0
 
         # Sauvegarder dans MLflow si demandé
         if save_to_mlflow and report is not None:
