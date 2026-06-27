@@ -9,7 +9,7 @@ Le pipeline d'ingestion collecte les données depuis différentes sources extern
 ```mermaid
 %%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#e1f5ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#0ea5e9', 'lineColor': '#64748b', 'secondaryColor': '#fff4e1', 'tertiaryColor': '#fce4ec', 'background': '#1e293b', 'mainBkg': '#e1f5ff', 'nodeBorder': '#0ea5e9', 'clusterBkg': '#334155', 'clusterBorder': '#475569', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b'}}}%%
 graph LR
-    A[Données BRUT<br/>CSV PRM] --> D[Prefect Server]
+    A[Données BRUT<br/>CSV PRM] --> D[Airflow]
     B[Données Météo<br/>API Open-Meteo] --> D
     C[Données Vacances<br/>API] --> D
     D --> E[Validation]
@@ -33,10 +33,9 @@ graph LR
         S3[API Vacances]
     end
     
-    subgraph "Orchestration Prefect"
-        O1[weather_flow]
-        O2[holidays_flow]
-        O3[sftp_ingestion_flow]
+    subgraph "Orchestration Airflow"
+        O1[sftp_ingestion_pipeline]
+        O2[actuals_ingestion_pipeline]
     end
     
     subgraph "Validation"
@@ -49,12 +48,11 @@ graph LR
         ST2[data/processed/]
     end
     
-    S1 --> O3
+    S1 --> O1
     S2 --> O1
     S3 --> O2
     O1 --> V1
     O2 --> V1
-    O3 --> V1
     V1 --> V2
     V2 --> ST1
     ST1 --> ST2
@@ -67,19 +65,14 @@ graph LR
     style ST2 fill:#ffcccb
 ```
 
-## Workflows Prefect
+## DAGs Airflow
 
-### weather_flow
-- **Source**: API Open-Meteo
-- **Fréquence**: Quotidienne
-- **Output**: Données météorologiques (température, humidité, précipitations)
-
-### holidays_flow
-- **Source**: API vacances
-- **Fréquence**: Mensuelle
-- **Output**: Calendrier des jours fériés
-
-### sftp_ingestion_flow
+### sftp_ingestion_pipeline
 - **Source**: SFTP (CSV PRM)
 - **Fréquence**: Quotidienne
 - **Output**: Données de consommation brutes
+
+### actuals_ingestion_pipeline
+- **Source**: API valeurs réelles
+- **Fréquence**: Quotidienne
+- **Output**: Données de valeurs réelles pour monitoring

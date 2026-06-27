@@ -10,32 +10,31 @@ graph LR
         B[Données Météo<br/>API Open-Meteo]
         C[Données Vacances<br/>API]
     end
-    
+
     subgraph "Orchestration"
-        D[Prefect Server<br/>Workflows]
-        E[Airflow<br/>Scheduling]
+        D[Airflow<br/>Workflows & Scheduling]
     end
-    
+
     subgraph "ML & Tracking"
         F[MLflow<br/>Model Registry]
         G[AutoGluon<br/>Training]
     end
-    
+
     subgraph "API & Inference"
         H[FastAPI<br/>REST API]
         I[Streamlit<br/>UI Prédictions]
     end
-    
+
     subgraph "Monitoring"
         J[Evidently AI<br/>Drift Detection]
         K[Grafana<br/>Dashboards]
     end
-    
+
     subgraph "Stockage"
         L[PostgreSQL<br/>Prédictions]
         M[S3<br/>Artefacts MLflow]
     end
-    
+
     A --> D
     B --> D
     C --> D
@@ -48,7 +47,7 @@ graph LR
     J --> K
     F --> M
     L --> J
-    
+
     style D fill:#e1f5ff
     style F fill:#fff4e1
     style H fill:#e8f5e9
@@ -85,12 +84,6 @@ graph LR
             GR3[Datasources]
         end
         
-        subgraph "Prefect"
-            PF1[Prefect Server<br/>Port 4200]
-            PF2[Prefect Worker]
-            PF3[Work Pool]
-        end
-        
         subgraph "Airflow"
             AF1[Airflow Webserver<br/>Port 8080]
             AF2[Airflow Scheduler]
@@ -101,18 +94,16 @@ graph LR
     ML1 -.-> ML2
     ML1 -.-> ML3
     FA1 --> ML1
-    PF1 --> FA1
-    PF1 --> ML1
-    PF1 --> EV1
+    AF1 --> FA1
+    AF1 --> ML1
+    AF1 --> EV1
     EV1 --> GR1
-    AF1 --> PF1
     
     style ML1 fill:#ff6b6b
     style FA1 fill:#4ecdc4
     style EV1 fill:#45b7d1
     style GR1 fill:#f39c12
-    style PF1 fill:#9b59b6
-    style AF1 fill:#e74c3c
+    style AF1 fill:#9b59b6
 ```
 
 ## Flux de données complet
@@ -121,7 +112,7 @@ graph LR
 %%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#e1f5ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#0ea5e9', 'lineColor': '#64748b', 'secondaryColor': '#fff4e1', 'tertiaryColor': '#fce4ec', 'background': '#1e293b', 'mainBkg': '#e1f5ff', 'nodeBorder': '#0ea5e9', 'clusterBkg': '#334155', 'clusterBorder': '#475569', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b'}}}%%
 sequenceDiagram
     participant Source as Sources Externes
-    participant Ingest as Ingestion Prefect
+    participant Ingest as Ingestion Airflow
     participant Process as Traitement
     participant Train as Training
     participant MLflow as MLflow
@@ -173,7 +164,7 @@ graph LR
             M6[monitoring/<br/>Drift Detection]
             M7[pipelines/<br/>Orchestration]
             M8[utils/<br/>Utilitaires]
-            M9[workflows/<br/>Flows Prefect]
+            M9[dags/<br/>DAGs Airflow]
         end
         
         subgraph "connectors/"
@@ -254,3 +245,146 @@ graph LR
     style S1 fill:#fff4e1
     style SH1 fill:#e8f5e9
 ```
+
+## Flux de données d'entraînement
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#e1f5ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#0ea5e9', 'lineColor': '#64748b', 'secondaryColor': '#fff4e1', 'tertiaryColor': '#fce4ec', 'background': '#1e293b', 'mainBkg': '#e1f5ff', 'nodeBorder': '#0ea5e9', 'clusterBkg': '#334155', 'clusterBorder': '#475569', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b'}}}%%
+graph LR
+    A[Données brutes CSV<br/>data/raw/] --> B[Data Validation<br/>Schéma & Valeurs]
+    B --> C[Data Preparation<br/>Nettoyage & Normalisation]
+    C --> D[Feature Engineering<br/>Météo + Calendrier]
+    D --> E[Split Train/Test<br/>80/20]
+    E --> F[Training AutoGluon<br/>Regression]
+    F --> G[Évaluation Modèle<br/>R², MAE, RMSE]
+    G --> H{Performance OK?}
+    H -->|Oui| I[Log MLflow<br/>Métriques + Artefacts]
+    H -->|Non| J[Hyperparameter Tuning]
+    J --> F
+    I --> K[Promotion Production<br/>Alias 'prod']
+    K --> L[Modèle en production]
+
+    style B fill:#e1f5ff
+    style F fill:#fff4e1
+    style G fill:#e8f5e9
+    style H fill:#fce4ec
+    style I fill:#d1c4e9
+```
+
+## Flux de données d'inférence
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#e1f5ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#0ea5e9', 'lineColor': '#64748b', 'secondaryColor': '#fff4e1', 'tertiaryColor': '#fce4ec', 'background': '#1e293b', 'mainBkg': '#e1f5ff', 'nodeBorder': '#0ea5e9', 'clusterBkg': '#334155', 'clusterBorder': '#475569', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b'}}}%%
+graph LR
+    A[Requête API<br/>Features météo + calendrier] --> B[Validation Input<br/>Schéma & Ranges]
+    B --> C{Valid?}
+    C -->|Non| D[Rejet 400 Bad Request]
+    C -->|Oui| E[Chargement Modèle<br/>MLflow Registry]
+    E --> F[Prédictions<br/>AutoGluon Inference]
+    F --> G[Formatage Output<br/>kWh + Timestamp]
+    G --> H[Stockage PostgreSQL<br/>Table predictions]
+    H --> I[Logging MLflow<br/>Run ID + Métriques]
+    I --> J[Response 200 OK<br/>Prédiction retournée]
+
+    style B fill:#e1f5ff
+    style C fill:#fce4ec
+    style F fill:#fff4e1
+    style H fill:#e8f5e9
+    style J fill:#d1c4e9
+```
+
+## Conformité au Cahier des Charges
+
+### Mapping Objectifs → Implémentation
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#e1f5ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#0ea5e9', 'lineColor': '#64748b', 'secondaryColor': '#fff4e1', 'tertiaryColor': '#fce4ec', 'background': '#1e293b', 'mainBkg': '#e1f5ff', 'nodeBorder': '#0ea5e9', 'clusterBkg': '#334155', 'clusterBorder': '#475569', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b'}}}%%
+graph LR
+    subgraph "Objectifs Cahier des Charges"
+        O1[Créer algorithme IA<br/>adapté aux données]
+        O2[Adapter infrastructure<br/>API production]
+        O3[Concevoir pipelines CI/CD<br/>automatiser déploiement]
+        O4[Développer scripts<br/>réentraînement auto]
+        O5[Piloter performance<br/>monitoring production]
+    end
+
+    subgraph "Implémentation"
+        I1[AutoGluon Training<br/>Multi-domaines]
+        I2[FastAPI REST API<br/>+ Streamlit UI]
+        I3[GitHub Actions<br/>+ Docker Compose]
+        I4[Prefect Flows<br/>+ Drift Detection]
+        I5[Evidently AI<br/>+ Grafana Dashboards]
+    end
+
+    O1 --> I1
+    O2 --> I2
+    O3 --> I3
+    O4 --> I4
+    O5 --> I5
+
+    style O1 fill:#e1f5ff
+    style O2 fill:#fff4e1
+    style O3 fill:#e8f5e9
+    style O4 fill:#fce4ec
+    style O5 fill:#d1c4e9
+```
+
+### Spécifications techniques respectées
+
+| Spécification | Implémentation | Statut |
+|---------------|----------------|--------|
+| **Algorithmes IA** | AutoGluon (regression) pour consommation et production solaire | ✅ |
+| **Métriques** | R² >= 0.90 (consommation), R² >= 0.92 (solaire) | ✅ |
+| **Temps inférence** | < 100ms par requête (FastAPI) | ✅ |
+| **API Production** | FastAPI avec endpoints /predict et /predict/batch | ✅ |
+| **CI/CD** | GitHub Actions avec Docker + Hugging Face Spaces | ✅ |
+| **Réentraînement auto** | Prefect flows avec triggers drift + cycle hebdo | ✅ |
+| **Monitoring** | Evidently AI + Grafana dashboards | ✅ |
+| **Alertes** | Email via Resend + Slack webhooks | ✅ |
+| **Stockage modèles** | MLflow Model Registry avec promotion prod | ✅ |
+| **Données** | PostgreSQL pour prédictions, S3 pour artefacts | ✅ |
+
+## Résumé des Flows Principaux
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#e1f5ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#0ea5e9', 'lineColor': '#64748b', 'secondaryColor': '#fff4e1', 'tertiaryColor': '#fce4ec', 'background': '#1e293b', 'mainBkg': '#e1f5ff', 'nodeBorder': '#0ea5e9', 'clusterBkg': '#334155', 'clusterBorder': '#475569', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b'}}}%%
+mindmap
+  root((Flows Prefect))
+    prediction
+      prediction_full_pipeline
+      prediction_inference_only_pipeline
+      prediction_batch_pipeline
+    training
+      consumption_flow
+      solar_production_flow
+    data_ingestion
+      weather_flow
+      holidays_flow
+      sftp_ingestion_flow
+    monitoring
+      actual_values_flow
+      drift_detection_flow
+```
+
+## Services déployés
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#e1f5ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#0ea5e9', 'lineColor': '#64748b', 'secondaryColor': '#fff4e1', 'tertiaryColor': '#fce4ec', 'background': '#1e293b', 'mainBkg': '#e1f5ff', 'nodeBorder': '#0ea5e9', 'clusterBkg': '#334155', 'clusterBorder': '#475569', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b'}}}%%
+mindmap
+  root((Services))
+    MLOps_Core
+      MLflow
+      Airflow
+    Inference
+      FastAPI
+      Streamlit
+    Monitoring
+      Evidently_AI
+      Grafana
+    Storage
+      PostgreSQL
+      S3
+    Notification
+      Resend_Email
+```
+

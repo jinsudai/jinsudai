@@ -53,7 +53,7 @@ graph LR
     G --> I[Sauvegarde MLflow<br/>Artefact]
     I --> J[Sauvegarde Workspace<br/>Evidently UI]
     J --> K[Alerte Email<br/>Resend]
-    K --> L[Trigger Retraining<br/>Prefect Flow]
+    K --> L[Trigger Retraining<br/>Airflow DAG]
     L --> M[Nouveau Modèle]
     M --> N[Promotion Production]
     N --> H

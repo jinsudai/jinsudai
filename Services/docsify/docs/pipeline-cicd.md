@@ -19,7 +19,7 @@ graph LR
     H --> I[Deploy FastAPI]
     I --> J[Deploy Evidently]
     J --> K[Deploy Grafana]
-    K --> L[Deploy Prefect]
+    K --> L[Deploy Airflow]
     L --> M[Integration Tests]
     M --> N{Integration OK?}
     N -->|Non| E

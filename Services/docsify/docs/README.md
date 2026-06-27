@@ -28,8 +28,7 @@ graph LR
     end
     
     subgraph "Orchestration"
-        D[Prefect Server<br/>Workflows]
-        E[Airflow<br/>Scheduling]
+        D[Airflow<br/>Workflows & Scheduling]
     end
     
     subgraph "ML & Tracking"

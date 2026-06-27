@@ -6,3 +6,4 @@
 - [Pipeline CI/CD](pipeline-cicd.md)
 - [Monitoring et Drift Detection](monitoring-drift.md)
 - [Automatisation du Retraining](retraining-auto.md)
+- [Schéma de Base de Données](database-schema.md)

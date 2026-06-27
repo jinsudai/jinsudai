@@ -4,12 +4,12 @@
 
 Le pipeline d'inférence charge les modèles en production, génère des prédictions, et stocke les résultats dans PostgreSQL avec monitoring de drift.
 
-## Workflow Prefect de prédiction
+## DAG Airflow de prédiction
 
 ```mermaid
 %%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#e1f5ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#0ea5e9', 'lineColor': '#64748b', 'secondaryColor': '#fff4e1', 'tertiaryColor': '#fce4ec', 'background': '#1e293b', 'mainBkg': '#e1f5ff', 'nodeBorder': '#0ea5e9', 'clusterBkg': '#334155', 'clusterBorder': '#475569', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b'}}}%%
 graph LR
-    subgraph "Prediction Full Pipeline"
+    subgraph "inference_pipeline"
         A[setup_prediction_task] --> B[load_model_task<br/>Modèle prod]
         B --> C[generate_inference_data_task<br/>Génération features]
         C --> D[prepare_features_task<br/>Préparation]
@@ -56,7 +56,7 @@ graph LR
 ```mermaid
 %%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#e1f5ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#0ea5e9', 'lineColor': '#64748b', 'secondaryColor': '#fff4e1', 'tertiaryColor': '#fce4ec', 'background': '#1e293b', 'mainBkg': '#e1f5ff', 'nodeBorder': '#0ea5e9', 'clusterBkg': '#334155', 'clusterBorder': '#475569', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b'}}}%%
 graph LR
-    subgraph "prediction_full_pipeline"
+    subgraph "inference_pipeline"
         F1[Config] --> F2[Modèle]
         F2 --> F3[Données]
         F3 --> F4[Prédictions]
@@ -66,24 +66,7 @@ graph LR
         F7 --> F8[Vérification]
     end
     
-    subgraph "prediction_inference_only_pipeline"
-        I1[Config] --> I2[Modèle]
-        I2 --> I3[Données existantes]
-        I3 --> I4[Prédictions]
-        I4 --> I5[Output direct]
-    end
-    
-    subgraph "prediction_batch_pipeline"
-        B1[Config] --> B2[Modèle]
-        B2 --> B3[Batch 1]
-        B3 --> B4[Batch 2]
-        B4 --> B5[Batch N]
-        B5 --> B6[Stockage BD]
-    end
-    
     style F1 fill:#e1f5ff
-    style I1 fill:#fff4e1
-    style B1 fill:#e8f5e9
 ```
 
 ## Endpoints FastAPI

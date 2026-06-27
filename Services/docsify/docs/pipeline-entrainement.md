@@ -4,12 +4,12 @@
 
 Le pipeline d'entraînement prépare les données, entraîne les modèles avec AutoGluon, et déploie les meilleurs modèles en production via MLflow.
 
-## Workflow Prefect d'entraînement
+## DAG Airflow d'entraînement
 
 ```mermaid
 %%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#e1f5ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#0ea5e9', 'lineColor': '#64748b', 'secondaryColor': '#fff4e1', 'tertiaryColor': '#fce4ec', 'background': '#1e293b', 'mainBkg': '#e1f5ff', 'nodeBorder': '#0ea5e9', 'clusterBkg': '#334155', 'clusterBorder': '#475569', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b'}}}%%
 graph LR
-    subgraph "Consumption Flow"
+    subgraph "training_pipeline"
         A1[setup_training_task] --> A2[load_data_task]
         A2 --> A3[validate_data_task]
         A3 --> A4[prepare_data_task]
@@ -19,21 +19,9 @@ graph LR
         A7 --> A8[promote_to_prod_task]
     end
     
-    subgraph "Solar Production Flow"
-        B1[setup_training_task] --> B2[load_data_task]
-        B2 --> B3[validate_data_task]
-        B3 --> B4[prepare_data_task<br/>+ Irradiance]
-        B4 --> B5[train_model_task]
-        B5 --> B6[evaluate_model_task<br/>R² >= 0.92]
-        B6 --> B7[log_to_mlflow_task]
-        B7 --> B8[promote_to_prod_task]
-    end
-    
     style A1 fill:#e1f5ff
     style A5 fill:#fff4e1
     style A7 fill:#d1c4e9
-    style B5 fill:#fff4e1
-    style B7 fill:#d1c4e9
 ```
 
 ## Pipeline d'entraînement détaillé
