@@ -19,6 +19,8 @@ Eviter les sauts de ligne inutiles
 - visualisation dans Evidently AI
 - grafana avec donnée actuelles
 
+# cleaning
+**Ajouter** un `__init__.py` dans chaque répertoire pour des imports propres
 
 
 # A tester
@@ -61,6 +63,7 @@ Eviter les sauts de ligne inutiles
 -- Identifier que c'est le premier training
 
 # Plus tard
+- config.yaml pour les différents environnements
 - Réparer base de donnée neon airflai (via un import de celle de jinsudai? Essayer plutot airflow db reset --yes)
 - Faire fonctionner prefect en local
 - Faire en sorte que chaque pipeline soit un service ?

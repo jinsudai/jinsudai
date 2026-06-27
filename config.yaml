@@ -15,14 +15,13 @@ email:
   # Configuration Resend (utilisé si provider = "resend")
   resend:
     api_key: null  # Clé API Resend (à définir via variable d'environnement RESEND_API_KEY)
-    from_email: "noreply@yourdomain.com"  # Email expéditeur par défaut
+    from_email: "jinsudai@free.fr"  # Email expéditeur par défaut
   
   # Configuration commune
-  sender_email: "sender@example.com"  # Email expéditeur (pour SMTP)
+  sender_email: "jinsudai@free.fr"  # Email expéditeur (pour SMTP)
   sender_password: null  # Mot de passe (pour SMTP, à définir via variable d'environnement)
   recipient_emails:
-    - "recipient1@example.com"
-    - "recipient2@example.com"
+    - "jinsudai@free.fr"
 
 # Configuration de la base de données
 database:
@@ -35,7 +34,7 @@ mlflow:
 
 # Configuration FastAPI
 fastapi:
-  url: "http://localhost:8000"
+  url: "https://jetestai-jinsudAPI.hf.space/"
   predict_endpoint: "/predict/batch"
 
 # Configuration SFTP

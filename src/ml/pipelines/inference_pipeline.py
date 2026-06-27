@@ -268,7 +268,7 @@ class InferencePipeline:
 
         return recent_predictions
 
-    def run_full_pipeline(self, model_name, feature_columns, n_days=3, n_samples_per_day=48, alias_prod="prod"):
+    def run_full_pipeline(self, model_name, feature_columns, n_days=1, n_samples_per_day=48, alias_prod="prod"):
         """
         Exécute le pipeline complet
 

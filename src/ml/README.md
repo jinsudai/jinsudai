@@ -15,10 +15,9 @@ src/
     ├── config.py                 # ✅ Chargeur central de configs
     ├── pipelines/                # 🔄 Pipelines ML (orchestration complète)
     │   ├── training_pipeline.py  # Classe MLPipeline (entraînement)
-    │   ├── Prediction_pipeline.py
-    │   ├── Actual_values_pipeline.py
-    │   ├── sftp_ingestion_pipeline.py
-    │   └── database_handler.py   # Gestion base de données PostgreSQL
+    │   ├── inference_pipeline.py # Pipeline d'inférence
+    │   ├── ingestion_pipeline.py  # Pipeline d'ingestion des données
+    │   └── monitoring_pipeline.py # Pipeline de monitoring et drift detection
     │
     ├── utils/                     # 🔧 Code utilitaire partagé (réutilisable)
     │   ├── data/
@@ -44,11 +43,6 @@ src/
     │   ├── __init__.py
     │   └── [futures classes]
     │
-    └── dags/                     # 🎯 Orchestration Airflow
-        ├── consumption_dag.py     # DAG: données → entraînement → monitoring (consumption)
-        ├── solar_production_dag.py
-        ├── shared_dags.py         # DAGs communs aux 2 domaines
-        └── utils.py               # Helpers (hooks, callbacks)
 ```
 
 ---
@@ -60,11 +54,11 @@ src/
 |------------|----------------|----------|
 | `utils/` | Code générique réutilisable | Chargement CSV, prétraitement, tracking MLflow |
 | `consumption/` / `solar_production/` | Logique métier spécifique | Validation domaine, métriques custom |
-| `dags/` | Orchestration Airflow | DAGs, scheduling, dépendances |
+| `pipelines/` | Orchestration des pipelines ML | Training, inference, ingestion, monitoring |
 
 ### 2. **Flux de données**
 ```
-dags/              → Orchestre (Airflow)
+pipelines/          → Orchestre les pipelines ML
     │
     ├──→ utils/data/          → Charge et valide données
     │       │
@@ -80,7 +74,7 @@ dags/              → Orchestre (Airflow)
 ### 3. **Règles de dépendance**
 - ⬆️ **`utils/`** ne dépend **jamais** de `consumption/` ou `solar_production/`
 - ⬇️ **`consumption/` et `solar_production/`** peuvent importer depuis `utils/`
-- ⬇️ **`dags/`** importe depuis `utils/` ET les répertoires domaine
+- ⬇️ **`pipelines/`** importe depuis `utils/` ET les répertoires domaine
 
 ---
 
@@ -89,15 +83,15 @@ dags/              → Orchestre (Airflow)
 ### Ajouter un nouveau domaine (ex: `battery_storage/`)
 1. Créer `src/configs/battery_storage.yaml`
 2. Implémenter la logique métier dans `src/ml/battery_storage/`
-3. Ajouter un DAG dans `src/ml/dags/battery_storage_dag.py`
+3. Ajouter un pipeline dans `src/ml/pipelines/battery_storage_pipeline.py`
 4. **Ne pas** modifier `utils/` sauf si le code est réutilisable par tous
 
 ### Étendre une fonctionnalité partagée
 - Ajouter/modifier dans `utils/` (ex: nouveau type de prétraitement)
 - **Tester** l'impact sur tous les domaines avant merge
 
-### Créer un DAG Airflow
-- **Toujours** dans `dags/`
+### Créer un pipeline ML
+- **Toujours** dans `pipelines/`
 - Importer la logique depuis les répertoires domaine
 - Exemple minimal :
   ```python
@@ -115,7 +109,7 @@ dags/              → Orchestre (Airflow)
 
 ### Cas 1: Entraînement d'un modèle de consommation
 ```python
-# src/ml/dags/consumption_dag.py
+# src/ml/pipelines/training_pipeline.py
 from ml.config import load_config  # Chargeur central
 from ml.utils.data.data_loader import load_data
 from ml.pipelines.training_pipeline import MLPipeline
@@ -128,7 +122,7 @@ def consumption_full_pipeline():
 
 ### Cas 2: Inférence en production
 ```python
-# src/ml/dags/inference_dag.py (partagé)
+# src/ml/pipelines/inference_pipeline.py (partagé)
 from ml.config import load_config
 from ml.utils.models.inference_model import InferenceModel
 from ml.consumption.models import ConsumptionInferenceModel  # Spécialisation
@@ -138,13 +132,3 @@ def predict_consumption():
     model = ConsumptionInferenceModel(config=config)  # Héritage de InferenceModel
     return model.predict(new_data)
 ```
-
----
-
-## 🚀 Prochaines étapes
-
-1. **Créer `src/ml/dags/`** et y déplacer l'orchestration Airflow existante
-2. **Documenter** chaque classe dans son fichier avec docstring (ex: voir `InferenceModel`)
-3. **Valider** que tous les imports respectent les règles de dépendance
-4. **Ajouter** un `__init__.py` dans chaque répertoire pour des imports propres
-5. **Migrer** les autres configs (ex: `solar_production.yaml`) vers `src/configs/`
