@@ -18,7 +18,7 @@ graph LR
     subgraph "Triggers Manuels"
         B1[API Trigger] --> D
         B2[CLI Command] --> D
-        B3[Airflow DAG] --> D
+        B3[Airflow Trigger] --> D
     end
     
     subgraph "Conditions Préalables"
@@ -49,15 +49,15 @@ graph LR
 %%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#e1f5ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#0ea5e9', 'lineColor': '#64748b', 'secondaryColor': '#fff4e1', 'tertiaryColor': '#fce4ec', 'background': '#1e293b', 'mainBkg': '#e1f5ff', 'nodeBorder': '#0ea5e9', 'clusterBkg': '#334155', 'clusterBorder': '#475569', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b'}}}%%
 sequenceDiagram
     participant Monitor as Evidently
-    participant Trigger as Prefect Trigger
-    participant Train as Training Flow
+    participant Trigger as Airflow Trigger
+    participant Train as Training Pipeline
     participant MLflow as MLflow
     participant Eval as Evaluation
     participant Prod as Production
     
     Monitor->>Monitor: Détection Drift
     Monitor->>Trigger: Signal Retraining
-    Trigger->>Train: Lancement Flow
+    Trigger->>Train: Lancement Pipeline
     Train->>Train: Chargement Données
     Train->>Train: Training AutoGluon
     Train->>MLflow: Log Nouveau Modèle
@@ -105,8 +105,8 @@ sequenceDiagram
 - **Commande**: `python scripts/retrain.py --domain consumption`
 - **Options**: `--force`, `--dry-run`
 
-### Airflow DAG
-- **DAG**: `retraining_dag`
+### Airflow Trigger
+- **DAG**: `retraining_pipeline`
 - **Schedule**: Manuel ou cron
 - **Paramètres**: domain, force
 

@@ -12,6 +12,8 @@ import boto3
 from pathlib import Path
 from typing import Optional, Dict, Any
 import logging
+import re
+from datetime import datetime
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -387,3 +389,61 @@ class S3Handler:
                 "status": "error",
                 "reason": str(e)
             }
+
+    def get_latest_prepared_end_date(self, prefix: str = "consumption/prepared") -> Optional[str]:
+        """
+        Récupère la date de fin du dernier fichier préparé depuis S3.
+
+        Les fichiers sont nommés selon le format: YYYY-MM-DD_to_YYYY-MM-DD_train.parquet
+        Cette méthode extrait la date de fin (après "_to_") du fichier le plus récent.
+
+        Args:
+            prefix: Préfixe S3 pour la recherche (défaut: "consumption/prepared")
+
+        Returns:
+            str: Date de fin au format YYYY-MM-DD, ou None si aucun fichier trouvé
+        """
+        if not self.s3_enabled:
+            logger.warning("S3 non disponible, impossible de récupérer la date de fin")
+            return None
+
+        try:
+            logger.info(f"Recherche du dernier fichier préparé dans s3://{self.bucket}/{prefix}/")
+
+            # Lister les fichiers train.parquet
+            files = self.list_files(prefix=prefix)
+            train_files = [f for f in files if 'train' in f and f.endswith('.parquet')]
+
+            if not train_files:
+                logger.warning(f"Aucun fichier train.parquet trouvé dans s3://{self.bucket}/{prefix}/")
+                return None
+
+            # Filtrer les fichiers avec le format date: YYYY-MM-DD_to_YYYY-MM-DD_train.parquet
+            dated_files = [f for f in train_files if '_to_' in f and '_train.parquet' in f]
+
+            if not dated_files:
+                logger.warning(f"Aucun fichier avec format de date trouvé dans s3://{self.bucket}/{prefix}/")
+                return None
+
+            # Trouver le plus récent (tri alphabétique inverse)
+            dated_files_sorted = sorted(dated_files, reverse=True)
+            latest_file = dated_files_sorted[0]
+
+            logger.info(f"Fichier le plus récent: {latest_file}")
+
+            # Extraire la date de fin du nom de fichier
+            # Format: YYYY-MM-DD_to_YYYY-MM-DD_train.parquet
+            filename = Path(latest_file).name
+            match = re.match(r'\d{4}-\d{2}-\d{2}_to_(\d{4}-\d{2}-\d{2})_train\.parquet', filename)
+
+            if match:
+                end_date = match.group(1)
+                logger.info(f"Date de fin extraite: {end_date}")
+                return end_date
+            else:
+                logger.warning(f"Impossible d'extraire la date de fin du fichier: {filename}")
+                return None
+
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération de la date de fin: {e}")
+            return None

@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 import random
 
 from .database_handler import DatabaseHandler
+from ml.utils.s3_handler import S3Handler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -36,6 +37,7 @@ class ActualValuesPipeline:
         self.db_handler = None
         self.previous_day_predictions = None
         self.updated_count = 0
+        self.s3_handler = S3Handler()
 
         logger.info("Pipeline de valeurs réelles initialisé")
 
@@ -62,24 +64,80 @@ class ActualValuesPipeline:
 
         return True
 
+    def get_date_range_from_last_preparation(self):
+        """
+        Calcule la plage de dates pour les valeurs réelles.
+        
+        La plage va de la date de fin du dernier fichier préparé (exclue) jusqu'à la veille (incluse).
+        
+        Returns:
+            tuple: (start_date, end_date) comme objets datetime, ou (None, None) si erreur
+        """
+        logger.info("=== CALCUL DE LA PLAGE DE DATES ===")
+        
+        # Récupérer la date de fin du dernier fichier préparé depuis S3
+        last_prepared_end_date = self.s3_handler.get_latest_prepared_end_date()
+        
+        if not last_prepared_end_date:
+            logger.warning("Impossible de récupérer la date de fin du dernier fichier préparé")
+            logger.info("Utilisation de la veille par défaut")
+            # Fallback: utiliser la veille
+            today = datetime.now().date()
+            yesterday = today - timedelta(days=1)
+            start_date = datetime.combine(yesterday, datetime.min.time())
+            end_date = datetime.combine(yesterday, datetime.max.time())
+            return start_date, end_date
+        
+        # Convertir la date de fin en datetime
+        try:
+            last_prepared_end = datetime.strptime(last_prepared_end_date, '%Y-%m-%d')
+            logger.info(f"Date de fin du dernier fichier préparé: {last_prepared_end_date}")
+        except ValueError as e:
+            logger.error(f"Erreur de conversion de date: {e}")
+            # Fallback: utiliser la veille
+            today = datetime.now().date()
+            yesterday = today - timedelta(days=1)
+            start_date = datetime.combine(yesterday, datetime.min.time())
+            end_date = datetime.combine(yesterday, datetime.max.time())
+            return start_date, end_date
+        
+        # Calculer la veille
+        today = datetime.now().date()
+        yesterday = today - timedelta(days=1)
+        
+        # La date de début est le lendemain de la date de fin du dernier fichier préparé
+        start_date = last_prepared_end + timedelta(days=1)
+        start_date = datetime.combine(start_date.date(), datetime.min.time())
+        
+        # La date de fin est la veille à 23:59:59
+        end_date = datetime.combine(yesterday, datetime.max.time())
+        
+        # Vérifier que la plage de dates est valide
+        if start_date > end_date:
+            logger.warning(f"La date de début ({start_date}) est après la date de fin ({end_date})")
+            logger.info("Aucune nouvelle donnée à traiter")
+            return None, None
+        
+        logger.info(f"Plage de dates calculée: {start_date.date()} à {end_date.date()}")
+        return start_date, end_date
+
     def get_previous_day_predictions(self):
         """
-        Récupère les prédictions de la veille
+        Récupère les prédictions pour la plage de dates calculée.
 
         Returns:
             True si succès, False si erreur critique, None si aucune prédiction
         """
-        logger.info("=== ÉTAPE 2: RÉCUPÉRATION DES PRÉDICTIONS DE LA VEILLE ===")
+        logger.info("=== ÉTAPE 2: RÉCUPÉRATION DES PRÉDICTIONS ===")
 
-        # Calculer les dates de la veille
-        today = datetime.now().date()
-        yesterday = today - timedelta(days=1)
+        # Calculer la plage de dates depuis le dernier fichier préparé jusqu'à la veille
+        start_date, end_date = self.get_date_range_from_last_preparation()
 
-        # Définir la plage de temps pour la veille (de 00:00 à 23:59)
-        start_date = datetime.combine(yesterday, datetime.min.time())
-        end_date = datetime.combine(yesterday, datetime.max.time())
+        if start_date is None or end_date is None:
+            logger.info("Plage de dates invalide, aucune prédiction à récupérer")
+            return True
 
-        logger.info(f"Récupération des prédictions du {yesterday}")
+        logger.info(f"Récupération des prédictions du {start_date.date()} au {end_date.date()}")
         logger.info(f"Plage de temps: {start_date} à {end_date}")
 
         # Récupérer les prédictions
@@ -89,10 +147,10 @@ class ActualValuesPipeline:
         )
 
         if self.previous_day_predictions is None or len(self.previous_day_predictions) == 0:
-            logger.warning(f"Aucune prédiction trouvée pour la date {yesterday}")
+            logger.warning(f"Aucune prédiction trouvée pour la plage de dates {start_date.date()} à {end_date.date()}")
             return True
 
-        logger.info(f"{len(self.previous_day_predictions)} prédictions récupérées pour la veille")
+        logger.info(f"{len(self.previous_day_predictions)} prédictions récupérées")
         return True
 
     def generate_random_actual_values(self, insert_if_missing=False):
@@ -146,30 +204,48 @@ class ActualValuesPipeline:
     def _generate_and_insert_records(self):
         """
         Génère et insère des enregistrements complets (prediction + actual_value)
-        pour la veille lorsqu'aucune prédiction n'existe en base
+        pour la plage de dates calculée lorsqu'aucune prédiction n'existe en base
 
         Returns:
             True si succès, False sinon
         """
         logger.info("=== GÉNÉRATION D'ENREGISTREMENTS COMPLETS ===")
 
-        # Calculer les dates de la veille
-        today = datetime.now().date()
-        yesterday = today - timedelta(days=1)
+        # Calculer la plage de dates depuis le dernier fichier préparé jusqu'à la veille
+        start_date, end_date = self.get_date_range_from_last_preparation()
 
-        # Générer 48 enregistrements au pas de 30 minutes pour la veille
+        if start_date is None or end_date is None:
+            logger.info("Plage de dates invalide, aucun enregistrement à générer")
+            return True
+
+        logger.info(f"Génération d'enregistrements du {start_date.date()} au {end_date.date()}")
+
+        # Générer des enregistrements au pas de 30 minutes pour toute la plage de dates
         target_timestamps = []
         actual_values = []
 
-        for half_hour in range(48):
-            timestamp = datetime.combine(yesterday, datetime.min.time()) + timedelta(minutes=30 * half_hour)
-            target_timestamps.append(timestamp)
+        current_date = start_date.date()
+        end_date_only = end_date.date()
 
-            # Générer une valeur réelle aléatoire entre 100 et 500
-            actual_value = random.uniform(100, 500)
-            actual_values.append(actual_value)
+        while current_date <= end_date_only:
+            for half_hour in range(48):
+                timestamp = datetime.combine(current_date, datetime.min.time()) + timedelta(minutes=30 * half_hour)
+                # S'assurer que le timestamp ne dépasse pas end_date
+                if timestamp > end_date:
+                    break
+                target_timestamps.append(timestamp)
+
+                # Générer une valeur réelle aléatoire entre 100 et 500
+                actual_value = random.uniform(100, 500)
+                actual_values.append(actual_value)
+
+            current_date += timedelta(days=1)
 
         logger.info(f"{len(target_timestamps)} enregistrements générés")
+
+        if len(target_timestamps) == 0:
+            logger.warning("Aucun enregistrement généré (plage de dates vide)")
+            return True
 
         # Insérer dans la base de données
         entity_id = "550e8400-e29b-41d4-a716-446655440000"
