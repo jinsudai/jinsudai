@@ -449,7 +449,7 @@ def generate_evidently_report(
         report.run(reference_data=reference_data_aligned, current_data=current_data_aligned)
 
         # Extraire les résultats
-        report_dict = report.as_dict()
+        report_dict = report.to_dict()
 
         # Sauvegarder le rapport HTML si un chemin est fourni
         if output_path:
