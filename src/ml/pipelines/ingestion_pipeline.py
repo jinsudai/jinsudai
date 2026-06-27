@@ -75,8 +75,11 @@ class IngestionPipeline:
         """
         logger.info("=== ÉTAPE 2: TÉLÉCHARGEMENT DU DERNIER FICHIER TRAINED ===")
 
-        # Télécharger le dernier fichier trained
-        result = self.s3_handler.download_latest_trained_file()
+        # Télécharger le dernier fichier trained depuis consumption/prepared
+        result = self.s3_handler.download_latest_train_file(
+            prefix="consumption/prepared",
+            prioritize_dated=True
+        )
 
         if result["status"] != "success":
             logger.error(f"Erreur lors du téléchargement: {result.get('reason')}")

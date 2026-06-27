@@ -70,7 +70,7 @@ jobs:
           python pipelines/inference_pipeline.py \
             --model_name "${{ github.event.inputs.model_name || '' }}" \
             --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
-            --n_days "${{ github.event.inputs.n_days || '3' }}" \
+            --n_days "${{ github.event.inputs.n_days || '1' }}" \
             --n_samples_per_day "${{ github.event.inputs.n_samples_per_day || '48' }}" \
             --alias_prod "${{ github.event.inputs.alias_prod || 'prod' }}" \
             ${{ github.event.inputs.db_uri && format('--db_uri "{0}"', github.event.inputs.db_uri) || '' }}

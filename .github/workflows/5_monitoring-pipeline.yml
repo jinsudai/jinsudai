@@ -7,10 +7,6 @@ on:
         description: "Nom de la config (consumption, solar_production)"
         required: false
         default: 'consumption'
-      reference_path:
-        description: "Chemin vers le fichier de données de référence"
-        required: false
-        default: 'data/dev/train_consumption.parquet'
       current_data_path:
         description: "Chemin vers le fichier de données courantes (optionnel, utilise BD si non fourni)"
         required: false
