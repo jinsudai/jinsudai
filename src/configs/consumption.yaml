@@ -66,6 +66,7 @@ monitoring:
   metric_name: "r2_score"  # R² pour régression
   metric_target: 0.90  # Target 90%
   alert_threshold: 0.85  # Warning si < 85%
+  report_path: "./evidently_reports"
 
 # Configuration des notifications par email
 # Note: La configuration détaillée est dans config.yaml (section email)
