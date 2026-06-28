@@ -58,6 +58,7 @@ class PreparationPipeline:
         self.features_df = None
         self.start_date = None
         self.end_date = None
+        self.old_s3_key = None
 
         logger.info("Pipeline de préparation initialisé")
 
@@ -92,7 +93,9 @@ class PreparationPipeline:
             return True
 
         local_path = result["local_path"]
+        self.old_s3_key = result.get("key")
         logger.info(f"Fichier téléchargé: {local_path}")
+        logger.info(f"Clé S3 de l'ancien fichier: {self.old_s3_key}")
 
         # Charger le dataframe
         try:
@@ -313,6 +316,61 @@ class PreparationPipeline:
             logger.error(f"Erreur récupération données réelles: {e}")
             return False
 
+    def archive_old_s3_file(self, old_s3_key: str) -> bool:
+        """
+        Archive l'ancien fichier S3 vers consumption/archived/prepared.
+
+        Args:
+            old_s3_key: Clé S3 de l'ancien fichier à archiver
+
+        Returns:
+            True si succès, False sinon
+        """
+        if not self.s3_handler.s3_enabled:
+            logger.info("S3 non disponible, pas d'archivage")
+            return False
+
+        try:
+            # Construire le chemin d'archive
+            filename = Path(old_s3_key).name
+            archive_key = f"consumption/archived/prepared/{filename}"
+
+            logger.info(f"Archivage S3: {old_s3_key} -> {archive_key}")
+
+            # Copier vers l'archive
+            copy_result = self.s3_handler.copy_file(old_s3_key, archive_key)
+
+            if copy_result["status"] == "success":
+                logger.info(f"Fichier archivé avec succès: {archive_key}")
+                return True
+            else:
+                logger.warning(f"Échec de l'archivage: {copy_result.get('reason')}")
+                return False
+        except Exception as e:
+            logger.error(f"Erreur lors de l'archivage S3: {e}")
+            return False
+
+    def concatenate_with_trained_data(self, new_features_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Concatène les nouvelles features avec les données trained existantes.
+
+        Args:
+            new_features_df: Nouvelles features générées
+
+        Returns:
+            DataFrame concaténé
+        """
+        if self.trained_df is not None and not self.trained_df.empty:
+            # Concaténer en supprimant les doublons sur Horodate
+            concatenated_df = pd.concat([self.trained_df, new_features_df], ignore_index=True)
+            concatenated_df = concatenated_df.drop_duplicates(subset=['Horodate'], keep='last')
+            concatenated_df = concatenated_df.sort_values('Horodate')
+            logger.info(f"Concaténation: {len(self.trained_df)} + {len(new_features_df)} -> {len(concatenated_df)} enregistrements")
+            return concatenated_df
+        else:
+            logger.info("Pas de données trained existantes, utilisation des nouvelles données uniquement")
+            return new_features_df
+
     def upload_to_s3(self, train_path: Path, weather_path: Path) -> Dict[str, Any]:
         """
         Upload les fichiers sur S3.
@@ -414,6 +472,19 @@ class PreparationPipeline:
         # ÉTAPE 5: Récupérer les données réelles
         if not self.fetch_actual_values():
             logger.warning("Erreur lors de la récupération des données réelles, continuation...")
+
+        # ÉTAPE 5.5: Concaténer avec les données trained existantes
+        logger.info("=== ÉTAPE 5.5: CONCATénATION DES DONNÉES ===")
+        self.features_df = self.concatenate_with_trained_data(self.features_df)
+
+        # Sauvegarder le fichier concaténé localement
+        self.features_df.to_parquet(train_path)
+        logger.info(f"Fichier concaténé sauvegardé: {train_path}")
+
+        # ÉTAPE 5.6: Archiver l'ancien fichier S3
+        if self.old_s3_key:
+            logger.info("=== ÉTAPE 5.6: ARCHIVAGE DE L'ANCIEN FICHIER S3 ===")
+            self.archive_old_s3_file(self.old_s3_key)
 
         # ÉTAPE 6: Upload sur S3
         s3_result = self.upload_to_s3(train_path, weather_path)

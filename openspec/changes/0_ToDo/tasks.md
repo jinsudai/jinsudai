@@ -41,12 +41,12 @@ Eviter les sauts de ligne inutiles
 - Il y a t'il un documentation pour documenter les interraction avec la table prediction?  
 
 
-# Fait? -> A Challenger avec le prof
+# A faire
+- deployement (ou streamlit) fait via le lancement des pipeline Retraining et Prediction provoqué par les Workflows? -> A faire
+
+# Documenter
 - Orchestration airflow qui déclenche GitHub Actions
 - Prediction (inférence) inclue dans le pipeline pour être executé une seule fois dans un environnement temporaire
-- deployement (ou streamlit) fait via le lancement des pipeline Retraining et Prediction provoqué par les Workflows?
-
-
 
 # Nice to have
 
