@@ -28,7 +28,7 @@ Spécifications (voir SPECIFICATIONS.md) :
 
 Classe principale :
 
-- MLPipeline : Orchestration complète du cycle train
+- TrainingPipeline : Orchestration complète du cycle train
 
 """
 
@@ -43,35 +43,19 @@ from pathlib import Path
 # Importer depuis ml.utils
 
 from ml.utils.data.data_loader import load_data
-
 from ml.utils.data.data_validator import validate_data_quality, create_data_validation_report
-
 from ml.utils.data.data_preparation import prepare_data, split_data
-
 from ml.utils.data.data_transformer import clean_data
-
 from ml.utils.models.model import train_model, evaluate_model
-
-from ml.utils.monitoring.performance_monitor import (
-
-    run_monitoring,
-
-    flatten_monitoring_metrics
-
-)
-
+from ml.utils.monitoring.performance_monitor import run_monitoring, flatten_monitoring_metrics
 from ml.utils.data.s3_handler import S3Handler
-
-# Utiliser ml.config pour load_config et constantes
-
 from ml.config import load_config, DEFAULT_CONSUMPTION_CONFIG
 
 logging.basicConfig(level=logging.INFO)
-
 logger = logging.getLogger(__name__)
 
 
-class MLPipeline:
+class TrainingPipeline:
 
     """Pipeline complet pour le projet MLOps"""
 
