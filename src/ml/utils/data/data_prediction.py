@@ -40,8 +40,6 @@ def generate_inference_data(
     config_name=DEFAULT_CONSUMPTION_CONFIG,
     config_path=None,
 ):
-    """Génère un jeu de données au cas ou il manquerait des donner -> A supprimer"""
-    np.random.seed(seed)
 
     if start_date is None:
         # Default to current time rounded to next 30-minute interval
@@ -163,7 +161,6 @@ def generate_inference_data(
             data[col] = [holidays_mapping.get(ts, {}).get("jour férié", 0) for ts in timestamps]
         else:
             logger.info(f"Feature manquante: {col}")
-            data[col] = np.random.standard_normal(total_samples)
 
     df_inference = pd.DataFrame(data)
     
