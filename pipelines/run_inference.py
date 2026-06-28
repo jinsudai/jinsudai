@@ -2,7 +2,7 @@
 Script simple pour exécuter le pipeline d'inférence.
 
 Usage:
-    python pipelines/inference/inference_pipeline.py --n_days 3
+    python pipelines/inference.py --n_days 3
 """
 import argparse
 import os
@@ -19,7 +19,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
-from ml.pipelines.inference_pipeline import InferencePipeline
+from ml.pipelines.inference import InferencePipeline
 from ml.config.global_config import load_config_with_environment
 
 def main():

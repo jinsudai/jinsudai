@@ -2,7 +2,7 @@
 Script simple pour exécuter le pipeline d'entraînement consommation.
 
 Usage:
-    python pipelines/training/training_pipeline.py --features_path data/processed/consumption_features.parquet
+    python pipelines/training.py --features_path data/processed/consumption_features.parquet
 """
 import argparse
 import sys
@@ -13,7 +13,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
-from ml.pipelines.training_pipeline import MLPipeline
+from ml.pipelines.training import MLPipeline
 
 def main():
     parser = argparse.ArgumentParser(description='Exécute le pipeline d\'entraînement consommation')

@@ -9,7 +9,7 @@ Ce script utilise la classe PreparationPipeline pour:
 - Upload sur S3
 
 Usage:
-    python pipelines/preparation_pipeline.py \
+    python pipelines/preparation.py \
         --raw_path data/templates/raw_consumption.csv \
         --db_uri postgresql://... \
         --output_dir data/processed/
@@ -24,7 +24,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
-from ml.pipelines.preparation_pipeline import PreparationPipeline
+from ml.pipelines.preparation import PreparationPipeline
 
 
 def main():

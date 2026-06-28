@@ -2,7 +2,7 @@
 Script simple pour exécuter le pipeline d'ingestion des valeurs réelles.
 
 Usage:
-    python pipelines/ingestion/ingestion_pipeline.py --db_uri postgresql://user:password@host:port/database
+    python pipelines/ingestion.py --db_uri postgresql://user:password@host:port/database
 """
 import argparse
 import sys
@@ -14,7 +14,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
-from ml.pipelines.ingestion_pipeline import IngestionPipeline
+from ml.pipelines.ingestion import IngestionPipeline
 from ml.config.global_config import load_config_with_environment
 
 def main():

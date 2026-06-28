@@ -2,9 +2,9 @@
 Script simple pour exécuter le pipeline de monitoring.
 
 Usage:
-    python pipelines/monitoring/monitoring_pipeline.py --reference_path data/dev/train_consumption.parquet
-    python pipelines/monitoring/monitoring_pipeline.py --reference_path data/dev/train_consumption.parquet --current_data_path data/processed/current_data.parquet
-    python pipelines/monitoring/monitoring_pipeline.py --reference_path data/dev/train_consumption.parquet --db_uri postgresql://user:pass@host:port/db
+    python pipelines/monitoring.py --reference_path data/dev/train_consumption.parquet
+    python pipelines/monitoring.py --reference_path data/dev/train_consumption.parquet --current_data_path data/processed/current_data.parquet
+    python pipelines/monitoring.py --reference_path data/dev/train_consumption.parquet --db_uri postgresql://user:pass@host:port/db
 """
 import argparse
 import sys
@@ -16,7 +16,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
-from ml.pipelines.monitoring_pipeline import MonitoringPipeline
+from ml.pipelines.monitoring import MonitoringPipeline
 
 def main():
     parser = argparse.ArgumentParser(description='Exécute le pipeline de monitoring')
