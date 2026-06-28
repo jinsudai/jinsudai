@@ -1,4 +1,4 @@
-name: 5 - Monitoring - Drift Detection Pipeline
+name: 5 - Monitoring - Consumption
 
 on:
   workflow_dispatch:

@@ -1,4 +1,4 @@
-name: 3 -Training Pipeline
+name: 3 - Training - Consumption
 
 on:
   workflow_dispatch:

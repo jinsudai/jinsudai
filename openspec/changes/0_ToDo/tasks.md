@@ -6,6 +6,7 @@ Eviter les sauts de ligne inutiles
 
 # A faire
 
+Enlever les scripts qui ne marche pas?
 Enlever reference prefect dans les notebooks
 
 ## question
@@ -63,6 +64,7 @@ Expliquer  """Génère un jeu de données d'inférence pour n jours."""
 # Nice to have
 
 # A Nettoyer
+- Faire marcher les scripts restants
 - get_production_data_for_retraining peut être renommé en get_production_data
 - Clean vacances etc...
 - Renommer les fichiers initiaux pour suivre le format date_xxx.parquet

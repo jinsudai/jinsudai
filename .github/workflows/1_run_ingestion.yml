@@ -1,4 +1,4 @@
-name: 1 - Ingestion - Actuals Ingestion Pipeline
+name: 1 - Ingestion - Consumption
 
 on:
   workflow_dispatch:

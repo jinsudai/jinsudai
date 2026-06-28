@@ -1,4 +1,4 @@
-name: 2 - Preparation - Prepare Consumption Pipeline
+name: 2 - Preparation - Consumption
 
 on:
   workflow_dispatch:
