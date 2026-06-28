@@ -16,7 +16,7 @@ from airflow.operators.python import PythonOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.operators.python import BranchPythonOperator
-from airflow.sensors.time_delta import TimeDeltaSensor
+from airflow.sensors.datetime import DateTimeSensor
 import sys
 import os
 
@@ -76,14 +76,14 @@ with DAG(
         failed_states=['failed'],
     )
     
-    # 4. Attendre 2 heures avant l'inférence
-    wait_2h = TimeDeltaSensor(
-        task_id='wait_2h',
-        delta=timedelta(hours=2),
+    # 4. Attendre jusqu'à 3h du matin pour l'inférence
+    wait_until_3h = DateTimeSensor(
+        task_id='wait_until_3h',
+        target_time=lambda dt: dt.replace(hour=3, minute=0, second=0, microsecond=0) + (timedelta(days=1) if dt.hour >= 3 else timedelta(0)),
         mode='reschedule',  # Libère le worker pendant l'attente
     )
     
-    # 5. Déclencher l'inférence (en parallèle, 2h après le début)
+    # 5. Déclencher l'inférence (en parallèle, à 3h du matin)
     trigger_inference = TriggerDagRunOperator(
         task_id='trigger_inference',
         trigger_dag_id='inference_pipeline',
@@ -129,7 +129,7 @@ with DAG(
     # Fin du pipeline training
     [trigger_training, skip_training] >> end
     
-    # Inférence en parallèle: start → wait 2h → inference → end
-    start >> wait_2h
-    wait_2h >> trigger_inference
+    # Inférence en parallèle: start → wait until 3h → inference → end
+    start >> wait_until_3h
+    wait_until_3h >> trigger_inference
     trigger_inference >> end
