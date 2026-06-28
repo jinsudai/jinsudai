@@ -33,8 +33,9 @@ on:
     branches:
       - main
     paths:
+      - '.github/workflows/5_run_monitoring.yml'
       - 'pipelines/run_monitoring.py'
-      - 'src/ml/pipelines/monitoring_pipeline.py'
+      - 'src/ml/pipelines/monitoring.py'
       - 'src/ml/pipelines/database_handler.py'
       - 'src/ml/utils/monitoring/**'
       - 'src/ml/utils/data/data_validator.py'

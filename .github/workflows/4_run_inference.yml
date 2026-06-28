@@ -32,8 +32,9 @@ on:
     branches:
       - main
     paths:
+      - '.github/workflows/4_run_inference.yml'
       - 'pipelines/run_inference.py'
-      - 'src/ml/pipelines/inference_pipeline.py'
+      - 'src/ml/pipelines/inference.py'
       - 'src/ml/pipelines/database_handler.py'
       - 'src/ml/utils/data/**'
       - 'src/ml/utils/models/models_inference.py'

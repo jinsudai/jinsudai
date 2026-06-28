@@ -30,9 +30,9 @@ on:
     branches:
       - main
     paths:
-      - '.github/workflows/2_preparation_pipeline.yml'
+      - '.github/workflows/2_run_preparation.yml'
       - 'pipelines/run_preparation.py'
-      - 'src/ml/pipelines/preparation_pipeline.py'
+      - 'src/ml/pipelines/preparation.py'
       - 'src/ml/consumption/**'
       - 'src/ml/utils/s3_handler.py'
       - 'src/ml/utils/data/**'

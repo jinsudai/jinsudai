@@ -57,6 +57,7 @@ on:
     branches:
       - main
     paths:
+      - '.github/workflows/1_run_ingestion.yml'
       - 'pipelines/run_ingestion.py'
       - 'src/ml/pipelines/ingestion.py'
       - 'src/ml/utils/data/sftp_ingestion_pipeline.py'

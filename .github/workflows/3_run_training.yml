@@ -6,6 +6,7 @@ on:
     branches:
       - main
     paths:
+      - '.github/workflows/3_run_training.yml'
       - 'pipelines/run_training.py'
       - 'src/ml/pipelines/training.py'
       - 'src/ml/config/**'
