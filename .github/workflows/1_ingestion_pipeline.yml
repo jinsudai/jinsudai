@@ -57,7 +57,7 @@ on:
     branches:
       - main
     paths:
-      - 'pipelines/ingestion/ingestion_pipeline.py'
+      - 'pipelines/run_ingestion.py'
       - 'src/ml/pipelines/ingestion_pipeline.py'
       - 'src/ml/pipelines/sftp_ingestion_pipeline.py'
       - 'src/ml/pipelines/database_handler.py'
@@ -99,13 +99,13 @@ jobs:
           ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.use_env_config }}" = "true" ]; then
-            python pipelines/ingestion/ingestion_pipeline.py \
+            python pipelines/run_ingestion.py \
               --use_env_config \
               --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
               ${{ github.event.inputs.db_uri && format('--db_uri "{0}"', github.event.inputs.db_uri) || '' }}
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.sftp_host }}" ] && [ -n "${{ github.event.inputs.sftp_username }}" ]; then
             # User provided sftp_host and sftp_username, use them
-            python pipelines/ingestion/ingestion_pipeline.py \
+            python pipelines/run_ingestion.py \
               --sftp_host "${{ github.event.inputs.sftp_host }}" \
               --sftp_username "${{ github.event.inputs.sftp_username }}" \
               --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
@@ -120,7 +120,7 @@ jobs:
               ${{ github.event.inputs.db_uri && format('--db_uri "{0}"', github.event.inputs.db_uri) || '' }}
           else
             # Default to use_env_config
-            python pipelines/ingestion_pipeline.py \
+            python pipelines/run_ingestion.py \
               --use_env_config \
               --config_name "${{ github.event.inputs.config_name || 'consumption' }}" \
               ${{ github.event.inputs.db_uri && format('--db_uri "{0}"', github.event.inputs.db_uri) || '' }}

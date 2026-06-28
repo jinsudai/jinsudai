@@ -6,7 +6,7 @@ on:
     branches:
       - main
     paths:
-      - 'pipelines/training/training_pipeline.py'
+      - 'pipelines/run_training.py'
       - 'src/ml/pipelines/training_pipeline.py'
       - 'src/ml/config/**'
       - 'src/ml/utils/models/**'
@@ -43,4 +43,4 @@ jobs:
           AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
           AWS_BUCKET: ${{ secrets.AWS_BUCKET || 'data-store' }} #Not for Mlflow, but for storing the datasets
         run: |
-          python pipelines/training_pipeline.py
+          python pipelines/run_training.py

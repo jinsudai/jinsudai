@@ -31,7 +31,8 @@ on:
       - main
     paths:
       - '.github/workflows/2_preparation_pipeline.yml'
-      - 'pipelines/preparation_pipeline.py'
+      - 'pipelines/run_preparation.py'
+      - 'src/ml/pipelines/preparation_pipeline.py'
       - 'src/ml/consumption/**'
       - 'src/ml/utils/s3_handler.py'
       - 'src/ml/utils/data/**'
@@ -66,27 +67,9 @@ jobs:
           AWS_BUCKET: ${{ secrets.AWS_BUCKET }}
           PREDICTIONS_POSTGRES_URI : ${{ secrets.PREDICTIONS_POSTGRES_URI }}
         run: |
-          # Déterminer les dates automatiquement si non fournies
-          if [ "${{ github.event_name }}" = "schedule" ] || [ -z "${{ github.event.inputs.start_date }}" ]; then
-            # Pour l'exécution quotidienne: utiliser hier comme date de fin
-            END_DATE=$(date -d "yesterday" +%Y-%m-%d)
-            START_DATE=$(date -d "yesterday" +%Y-%m-%d)
-          else
-            END_DATE="${{ github.event.inputs.end_date }}"
-            START_DATE="${{ github.event.inputs.start_date }}"
-          fi
-          
-          # Déterminer le raw_path: utiliser le template PRM par défaut
-          if [ -z "${{ github.event.inputs.raw_path }}" ]; then
-            RAW_PATH="data/templates/raw_consumption.csv"
-          else
-            RAW_PATH="${{ github.event.inputs.raw_path }}"
-          fi
-          
-          python pipelines/preparation_pipeline.py \
-            --raw_path "$RAW_PATH" \
+          python pipelines/run_preparation.py \
+            --use_database \
             --output_dir "${{ github.event.inputs.output_dir || 'data/processed/' }}" \
-            ${{ github.event.inputs.upload_s3 == 'false' && '--no_upload_s3' || '' }} \
             ${{ github.event.inputs.s3_bucket && format('--s3_bucket "{0}"', github.event.inputs.s3_bucket) || '' }}
       
       - name: Upload weather artifact
