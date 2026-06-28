@@ -1,11 +1,12 @@
 # Pour Devin
 
 ## Tâches de fond:
-On ne souhaite pas utiliser prefect dans ce projet
 Eviter les sauts de ligne inutiles
 
 
 # A faire
+
+Enlever reference prefect dans les notebooks
 
 ## question
 github_action_trigger.py est utilisé?
@@ -71,6 +72,7 @@ Expliquer  """Génère un jeu de données d'inférence pour n jours."""
 -- Identifier que c'est le premier training
 
 # Plus tard
+- email notifier
 - config.yaml pour les différents environnements
 - Réparer base de donnée neon airflai (via un import de celle de jinsudai? Essayer plutot airflow db reset --yes)
 - Faire fonctionner prefect en local
@@ -153,7 +155,6 @@ Action requise: Créer des workflows GitHub Actions pour:
 
 Manque:
 
-Pas de solar_production_tasks.py (équivalent de consumption_tasks.py)
 Pas de solar_production_preparer.py (équivalent de consumption_preparer.py)
 Pas de DAG Airflow pour production solaire
 Pas de tests spécifiques pour production solaire

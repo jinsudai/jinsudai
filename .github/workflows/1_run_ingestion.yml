@@ -58,9 +58,9 @@ on:
       - main
     paths:
       - 'pipelines/run_ingestion.py'
-      - 'src/ml/pipelines/ingestion_pipeline.py'
-      - 'src/ml/pipelines/sftp_ingestion_pipeline.py'
-      - 'src/ml/pipelines/database_handler.py'
+      - 'src/ml/pipelines/ingestion.py'
+      - 'src/ml/utils/data/sftp_ingestion_pipeline.py'
+      - 'src/ml/utils/data/database_handler.py'
       - 'src/ml/connectors/sftp/**'
       - 'src/ml/config/**'
 

@@ -7,13 +7,12 @@ on:
       - main
     paths:
       - 'pipelines/run_training.py'
-      - 'src/ml/pipelines/training_pipeline.py'
+      - 'src/ml/pipelines/training.py'
       - 'src/ml/config/**'
       - 'src/ml/utils/models/**'
       - 'src/ml/utils/data/**'
       - 'src/ml/utils/monitoring/**'
       - 'src/ml/utils/s3_handler.py'
-      - 'src/ml/consumption/training_tasks.py'
       - 'data/templates/**'
 
 jobs:
