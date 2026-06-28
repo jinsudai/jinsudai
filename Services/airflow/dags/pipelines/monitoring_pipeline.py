@@ -39,13 +39,13 @@ with DAG(
     trigger_task = PythonOperator(
         task_id='trigger_github_action',
         python_callable=trigger_github_action,
-        op_kwargs={'github_workflow': '5_monitoring-pipeline.yml'},
+        op_kwargs={'github_workflow': '5_run_monitoring.yml'},
     )
     
     wait_task = PythonSensor(
         task_id='wait_for_github_action',
         python_callable=check_github_action_status,
-        op_kwargs={'github_workflow': '5_monitoring-pipeline.yml', 'check_drift': True},
+        op_kwargs={'github_workflow': '5_run_monitoring.yml', 'check_drift': True},
         poke_interval=30,
         timeout=3600,
         mode='poke',

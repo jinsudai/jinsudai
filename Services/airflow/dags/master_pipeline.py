@@ -48,7 +48,7 @@ with DAG(
     # 1. Déclencher l'ingestion
     trigger_ingestion = TriggerDagRunOperator(
         task_id='trigger_ingestion',
-        trigger_dag_id='actuals_ingestion_pipeline',
+        trigger_dag_id='ingestion_pipeline',
         wait_for_completion=True,
         poke_interval=30,
         allowed_states=['success'],

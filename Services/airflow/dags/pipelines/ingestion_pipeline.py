@@ -28,7 +28,7 @@ default_args = {
 }
 
 with DAG(
-    'actuals_ingestion_pipeline',
+    'ingestion_pipeline',
     default_args=default_args,
     description='Déclenche le pipeline d\'ingestion des actuals via GitHub Action',
     schedule=None,  # Désactivé - orchestré par master_pipeline
@@ -39,13 +39,13 @@ with DAG(
     trigger_task = PythonOperator(
         task_id='trigger_github_action',
         python_callable=trigger_github_action,
-        op_kwargs={'github_workflow': '1_actuals_ingestion_pipeline.yml'},
+        op_kwargs={'github_workflow': '1_run_ingestion.yml'},
     )
     
     wait_task = PythonSensor(
         task_id='wait_for_github_action',
         python_callable=check_github_action_status,
-        op_kwargs={'github_workflow': '1_actuals_ingestion_pipeline.yml'},
+        op_kwargs={'github_workflow': '1_run_ingestion.yml'},
         poke_interval=30,
         timeout=3600,
         mode='poke',

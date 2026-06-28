@@ -7,6 +7,13 @@ Eviter les sauts de ligne inutiles
 
 # A faire
 
+## question
+github_action_trigger.py est utilisé?
+EmailResend.py est utilisé?
+
+Expliquer  """Génère un jeu de données d'inférence pour n jours."""
+    np.random.seed(seed)  ?
+
 ## documentation
 - actualiser la documentation
 
