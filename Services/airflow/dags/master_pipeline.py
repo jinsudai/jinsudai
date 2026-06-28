@@ -16,6 +16,7 @@ from airflow.operators.python import PythonOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.operators.python import BranchPythonOperator
+from airflow.sensors.time_delta import TimeDeltaSensor
 import sys
 import os
 
@@ -75,7 +76,14 @@ with DAG(
         failed_states=['failed'],
     )
     
-    # 4. Déclencher l'inférence (indépendant du training)
+    # 4. Attendre 2 heures avant l'inférence
+    wait_2h = TimeDeltaSensor(
+        task_id='wait_2h',
+        delta=timedelta(hours=2),
+        mode='reschedule',  # Libère le worker pendant l'attente
+    )
+    
+    # 5. Déclencher l'inférence (en parallèle, 2h après le début)
     trigger_inference = TriggerDagRunOperator(
         task_id='trigger_inference',
         trigger_dag_id='inference_pipeline',
@@ -85,13 +93,13 @@ with DAG(
         failed_states=['failed'],
     )
     
-    # 5. Vérifier si le training est nécessaire
+    # 6. Vérifier si le training est nécessaire
     check_training_needed = BranchPythonOperator(
         task_id='check_training_needed',
         python_callable=should_trigger_training,
     )
     
-    # 6. Déclencher le training (si nécessaire)
+    # 7. Déclencher le training (si nécessaire)
     trigger_training = TriggerDagRunOperator(
         task_id='trigger_training',
         trigger_dag_id='training_pipeline',
@@ -112,16 +120,16 @@ with DAG(
     trigger_ingestion >> trigger_preparation
     trigger_preparation >> trigger_monitoring
     
-    # Inférence indépendante après monitoring
-    trigger_monitoring >> trigger_inference
-    
     # Training conditionnel après monitoring
     trigger_monitoring >> check_training_needed
     
     # Branch conditionnelle pour training
     check_training_needed >> [trigger_training, skip_training]
     
-    # Fin des branches
+    # Fin du pipeline training
+    [trigger_training, skip_training] >> end
+    
+    # Inférence en parallèle: start → wait 2h → inference → end
+    start >> wait_2h
+    wait_2h >> trigger_inference
     trigger_inference >> end
-    trigger_training >> end
-    skip_training >> end
