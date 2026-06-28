@@ -210,16 +210,16 @@ src/
 ```python
 # Consommation
 from src.ml.config import load_config
-from src.ml.pipelines.training_pipeline import MLPipeline
+from src.ml.pipelines.training import TrainingPipeline
 
 config = load_config("src/ml/consumption/configs/config.yaml")
-pipeline = MLPipeline(config_path="src/ml/consumption/configs/config.yaml")
+pipeline = TrainingPipeline(config_path="src/ml/consumption/configs/config.yaml")
 ```
 
 ```python
 # Production solaire
 config = load_config("src/ml/solar_production/configs/config.yaml")
-pipeline = MLPipeline(config_path="src/ml/solar_production/configs/config.yaml")
+pipeline = TrainingPipeline(config_path="src/ml/solar_production/configs/config.yaml")
 ```
 
 ---

@@ -13,7 +13,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / 'src'))
 
-from ml.pipelines.training import MLPipeline
+from ml.pipelines.training import TrainingPipeline
 
 def main():
     parser = argparse.ArgumentParser(description='Exécute le pipeline d\'entraînement consommation')
@@ -42,7 +42,7 @@ def main():
     
     try:
         # Initialiser le pipeline avec la config spécifique à l'environnement
-        pipeline = MLPipeline(config_name=config_name_to_use)
+        pipeline = TrainingPipeline(config_name=config_name_to_use)
         
         # Exécuter le pipeline complet
         success = pipeline.run_full_pipeline(data_path=args.features_path, download_from_s3=args.download_from_s3)

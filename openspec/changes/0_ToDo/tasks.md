@@ -3,22 +3,12 @@
 ## Tâches de fond:
 Eviter les sauts de ligne inutiles
 
-
 # A faire
 
 ## question
-github_action_trigger.py est utilisé?
-EmailResend.py est utilisé?
-
-Expliquer  """Génère un jeu de données d'inférence pour n jours."""
-    np.random.seed(seed)  ?
 
 ## documentation
 - actualiser la documentation
-
-## prepare Consumption prepare -> En cours
-- Date non prise en compte -> Check Head
-- vérifier si pas code en double pour récupéré les  valeurs réelle depuis la base de donnée
 
 ## Monitoring
 - datadrift récupérer le fichier depuis S3 dans trained -> A tester
@@ -60,7 +50,14 @@ Expliquer  """Génère un jeu de données d'inférence pour n jours."""
 
 # Nice to have
 
+## prepare Consumption prepare -> En cours
+- vérifier si pas code en double pour récupéré les  valeurs réelle depuis la base de donnée -> Doublon consumption_preparer.py et preparation.py? get_predictions...
+- Enlever les exemples donnés pour les connecteurs si non pertinent -> les mettre dans Script?
+- Simplifier l'ingestion: get_predictions_by_date(start_date, end_date) non necessaire
+
+
 # A Nettoyer
+
 - Faire marcher les scripts restants
 - get_production_data_for_retraining peut être renommé en get_production_data
 - Clean vacances etc...

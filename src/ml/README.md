@@ -14,10 +14,10 @@ src/
 └── ml/
     ├── config.py                 # ✅ Chargeur central de configs
     ├── pipelines/                # 🔄 Pipelines ML (orchestration complète)
-    │   ├── training_pipeline.py  # Classe MLPipeline (entraînement)
-    │   ├── inference_pipeline.py # Pipeline d'inférence
-    │   ├── ingestion_pipeline.py  # Pipeline d'ingestion des données
-    │   └── monitoring_pipeline.py # Pipeline de monitoring et drift detection
+    │   ├── training.py  # Classe TrainingPipeline (entraînement)
+    │   ├── inference.py # Pipeline d'inférence
+    │   ├── ingestion.py  # Pipeline d'ingestion des données
+    │   └── monitoring.py # Pipeline de monitoring et drift detection
     │
     ├── utils/                     # 🔧 Code utilitaire partagé (réutilisable)
     │   ├── data/
@@ -112,11 +112,11 @@ pipelines/          → Orchestre les pipelines ML
 # src/ml/pipelines/training_pipeline.py
 from ml.config import load_config  # Chargeur central
 from ml.utils.data.data_loader import load_data
-from ml.pipelines.training_pipeline import MLPipeline
+from ml.pipelines.training import TrainingPipeline
 
 def consumption_full_pipeline():
     config = load_config("consumption.yaml")  # Charge depuis src/configs/
-    pipeline = MLPipeline(config_path=config)
+    pipeline = TrainingPipeline(config_path=config)
     pipeline.run()
 ```
 
