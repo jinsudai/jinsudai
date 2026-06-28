@@ -6,9 +6,6 @@ Eviter les sauts de ligne inutiles
 
 # A faire
 
-Enlever les scripts qui ne marche pas?
-Enlever reference prefect dans les notebooks
-
 ## question
 github_action_trigger.py est utilisé?
 EmailResend.py est utilisé?
@@ -77,7 +74,6 @@ Expliquer  """Génère un jeu de données d'inférence pour n jours."""
 - email notifier
 - config.yaml pour les différents environnements
 - Réparer base de donnée neon airflai (via un import de celle de jinsudai? Essayer plutot airflow db reset --yes)
-- Faire fonctionner prefect en local
 - Faire en sorte que chaque pipeline soit un service ?
 - Loki pour collecter les logs ?
 - Fast API qui contient tout le ML pour une orchestration peu gourmande avec l'orchestrateur qui appelle les endpoints

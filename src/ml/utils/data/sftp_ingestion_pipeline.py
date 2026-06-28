@@ -71,7 +71,7 @@ def run_sftp_ingestion_pipeline(
     file_pattern: str = '*.csv',
     temp_local_dir: str = '/tmp/sftp_temp'
 ) -> Dict[str, Any]:
-    """Exécute le pipeline SFTP sans dépendre de Prefect."""
+
     db_uri = get_default_db_uri(db_uri)
 
     if not db_uri:

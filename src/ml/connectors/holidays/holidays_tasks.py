@@ -127,7 +127,7 @@ def generate_holidays_dataframe(
         zone: Zone scolaire (A, B ou C)
 
     Returns:
-        str: Chemin temporaire (pour compatibilité Prefect)
+        str: Chemin temporaire
     """
     api = HolidaysCombinedAPI(zone=zone)
     api.generate_holidays_dataframe(start_date=start_date, end_date=end_date)
