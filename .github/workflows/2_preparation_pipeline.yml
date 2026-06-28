@@ -31,15 +31,13 @@ on:
       - main
     paths:
       - '.github/workflows/2_preparation_pipeline.yml'
-      - 'pipelines/preparation/**'
-      - 'scripts/run_prepare_consumption_pipeline.py'
+      - 'pipelines/preparation_pipeline.py'
       - 'src/ml/consumption/**'
       - 'src/ml/utils/s3_handler.py'
       - 'src/ml/utils/data/**'
       - 'src/ml/connectors/weather/**'
       - 'src/ml/connectors/holidays/**'
       - 'src/ml/config/**'
-      - 'data/templates/**'
 
 jobs:
   prepare_consumption:
@@ -86,8 +84,6 @@ jobs:
           fi
           
           python pipelines/preparation_pipeline.py \
-            --start_date "$START_DATE" \
-            --end_date "$END_DATE" \
             --raw_path "$RAW_PATH" \
             --output_dir "${{ github.event.inputs.output_dir || 'data/processed/' }}" \
             ${{ github.event.inputs.upload_s3 == 'false' && '--no_upload_s3' || '' }} \
