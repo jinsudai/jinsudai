@@ -56,7 +56,9 @@ class MonitoringPipeline:
         self.db_uri = db_uri or get_database_uri()
 
         # Charger la configuration globale pour Evidently et S3
-        global_config = load_config('config.yaml')
+        project_root = Path(__file__).parent.parent.parent.parent
+        global_config_path = project_root / 'config.yaml'
+        global_config = load_config(config_path=str(global_config_path))
         self.evidently_config = global_config.get('evidently', {})
         self.s3_config = global_config.get('s3', {})
 
@@ -354,10 +356,6 @@ class MonitoringPipeline:
         logger.info("Rapport Evidently généré avec succès")
 
         # Sauvegarder dans le workspace Evidently UI local si demandé
-        logger.info(f"save_to_workspace param: {save_to_workspace}")
-        logger.info(f"save_to_workspace config: {self.evidently_config.get('save_to_workspace', False)}")
-        logger.info(f"ui_url config: {self.evidently_config.get('ui_url')}")
-
         if save_to_workspace and self.evidently_config.get('save_to_workspace', False):
             try:
                 from ml.utils.monitoring.drift_detector import save_evidently_report_to_workspace
