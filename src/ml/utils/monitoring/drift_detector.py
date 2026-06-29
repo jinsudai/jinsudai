@@ -444,13 +444,17 @@ def generate_evidently_report(
         for col in common_columns:
             # Vérifier si la colonne est numérique
             if pd.api.types.is_numeric_dtype(reference_data_aligned[col]):
-                # Vérifier la variance
+                # Vérifier la variance avec un seuil plus strict
                 ref_std = reference_data_aligned[col].std()
                 curr_std = current_data_aligned[col].std()
-                if ref_std > 0 or curr_std > 0:
+                # Filtrer aussi si trop de NaN (>50%)
+                ref_nan_ratio = reference_data_aligned[col].isna().mean()
+                curr_nan_ratio = current_data_aligned[col].isna().mean()
+                
+                if (ref_std > 1e-6 or curr_std > 1e-6) and ref_nan_ratio < 0.5 and curr_nan_ratio < 0.5:
                     columns_to_keep.append(col)
                 else:
-                    logger.info(f"Colonne {col} exclue (variance nulle)")
+                    logger.info(f"Colonne {col} exclue (std: ref={ref_std:.2e}, curr={curr_std:.2e}, nan: ref={ref_nan_ratio:.2f}, curr={curr_nan_ratio:.2f})")
             else:
                 columns_to_keep.append(col)
 
@@ -459,6 +463,10 @@ def generate_evidently_report(
         current_data_aligned = current_data_aligned[columns_to_keep]
 
         logger.info(f"Colonnes après filtrage variance nulle: {len(columns_to_keep)}")
+
+        # Supprimer les warnings numpy pour les divisions par zéro
+        import warnings
+        warnings.filterwarnings('ignore', category=RuntimeWarning, module='numpy')
 
         # Créer le rapport avec les presets Evidently
         report = Report(metrics=[
@@ -472,13 +480,21 @@ def generate_evidently_report(
         # Sauvegarder le rapport HTML si un chemin est fourni
         if output_path:
             output_file = Path(output_path) / f"{report_name}.html"
-            # Utiliser la nouvelle API d'Evidently pour sauvegarder en HTML
+            # Utiliser l'API d'Evidently pour sauvegarder en HTML
             try:
-                report.save_html(str(output_file))
-                logger.info(f"Rapport Evidently sauvegardé: {output_file}")
-            except AttributeError:
-                # Fallback: ne pas sauvegarder en HTML (API incompatible)
-                logger.warning("Impossible de sauvegarder le rapport en HTML (API Evidently incompatible - save_html non disponible)")
+                # Essayer la méthode show_in_notebook pour obtenir le HTML
+                html_content = report.show_in_notebook(mode="auto")
+                if html_content and hasattr(html_content, 'data'):
+                    # Si c'est un IPython display object
+                    with open(output_file, 'w', encoding='utf-8') as f:
+                        f.write(html_content.data)
+                    logger.info(f"Rapport Evidently sauvegardé: {output_file}")
+                else:
+                    # Fallback: essayer save_html
+                    report.save_html(str(output_file))
+                    logger.info(f"Rapport Evidently sauvegardé: {output_file}")
+            except (AttributeError, TypeError) as e:
+                logger.warning(f"Impossible de sauvegarder le rapport en HTML: {e}")
 
         # Retourner le rapport et un dictionnaire vide (l'API d'Evidently a changé)
         return report, {}
@@ -515,9 +531,17 @@ def save_evidently_report_to_mlflow(
 
         # Sauvegarder le rapport HTML
         try:
-            report.save_html(temp_path)
-        except AttributeError:
-            logger.warning("Impossible de sauvegarder le rapport en HTML (API Evidently incompatible - save_html non disponible)")
+            # Essayer la méthode show_in_notebook pour obtenir le HTML
+            html_content = report.show_in_notebook(mode="auto")
+            if html_content and hasattr(html_content, 'data'):
+                # Si c'est un IPython display object
+                with open(temp_path, 'w', encoding='utf-8') as f:
+                    f.write(html_content.data)
+            else:
+                # Fallback: essayer save_html
+                report.save_html(temp_path)
+        except (AttributeError, TypeError) as e:
+            logger.warning(f"Impossible de sauvegarder le rapport en HTML: {e}")
             Path(temp_path).unlink()
             return False
 
