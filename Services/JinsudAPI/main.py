@@ -76,9 +76,14 @@ def get_inference_model():
     global _inference_model
     if _inference_model is None:
         try:
+            logger.info("=== Loading inference model ===")
+            
             # Load full config with environment to get model_name
             config = load_config_with_environment("consumption")
+            logger.info(f"Config loaded: {list(config.keys())}")
+            
             mlflow_config = config.get("mlflow", {})
+            logger.info(f"MLflow config: {mlflow_config}")
             
             # Initialize InferenceModel with project config
             _inference_model = InferenceModel(
@@ -90,6 +95,8 @@ def get_inference_model():
             model_name = mlflow_config.get("model_name")
             alias_prod = mlflow_config.get("prod_alias", "prod")
             
+            logger.info(f"Attempting to load model: {model_name} with alias: {alias_prod}")
+            
             if not model_name:
                 raise RuntimeError("model_name not found in configuration")
             
@@ -98,6 +105,8 @@ def get_inference_model():
                 alias_prod=alias_prod
             )
             
+            logger.info(f"Model load success: {success}")
+            
             if not success:
                 raise RuntimeError(f"Failed to load model {model_name} from MLflow")
             
@@ -105,6 +114,8 @@ def get_inference_model():
             
         except Exception as e:
             logger.error(f"Failed to load inference model: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             raise
     
     return _inference_model

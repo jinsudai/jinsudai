@@ -3,8 +3,13 @@ uvicorn[standard]
 pydantic
 pandas
 mlflow
-scikit-learn
+scikit-learn==1.7.2
 python-multipart
-numpy
+numpy==2.3.5
 PyYAML
 python-dotenv
+boto3
+botocore
+autogluon-tabular==1.5.0
+pyarrow==20.0.0
+scipy==1.16.3

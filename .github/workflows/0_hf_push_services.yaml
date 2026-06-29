@@ -7,7 +7,8 @@ on:
       - '.github/scripts/0_hf_push_services.yaml'
       - '.github/scripts/hf_create_spaces.py'
       - 'config.yaml'
-      - 'Services/**'      
+      - 'Services/**'   
+      - 'src/ml/config/**'
   workflow_dispatch:
 
 jobs:

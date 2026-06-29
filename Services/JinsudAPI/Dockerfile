@@ -3,6 +3,11 @@ FROM continuumio/miniconda3
 RUN apt-get update -y 
 RUN apt-get install nano unzip curl -y
 
+# Create conda environment with Python 3.11 to match model training environment
+RUN conda create -n jinsudapi python=3.11 -y
+RUN echo "conda activate jinsudapi" >> ~/.bashrc
+ENV PATH /opt/conda/envs/jinsudapi/bin:$PATH
+
 ENV MLFLOW_TRACKING_URI=https://jinsudai-mlflow.hf.space/
 ENV ENVIRONMENT=test
 
