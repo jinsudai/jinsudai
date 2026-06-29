@@ -80,12 +80,13 @@ logging:
 # Configuration Evidently AI
 evidently:
   enabled: true  # Activer/désactiver Evidently
-  workspace_path: "s3://evidently-reports/workspace"  # Chemin du workspace Evidently (S3 pour UI déployée)
+  ui_url: "https://jetestai-evidentlyui.hf.space"  # URL du service Evidently UI (RemoteWorkspace)
+  workspace_path: "s3://evidently-reports/workspace"  # Chemin du workspace (utilisé par le serveur UI pour le stockage S3)
   report_path: "./evidently_reports"  # Chemin pour sauvegarder les rapports
   use_native_reports: true  # Utiliser les rapports natifs Evidently (recommandé)
   save_to_mlflow: true  # Sauvegarder les rapports dans MLflow
   mlflow_artifact_path: "evidently_reports"  # Chemin des artefacts dans MLflow
-  save_to_workspace: true  # Sauvegarder dans le workspace Evidently UI (S3)
-  save_to_s3: true  # Sauvegarder les rapports sur S3
-  s3_bucket: "evidently-reports"  # Bucket S3 pour les rapports
-  s3_prefix: "evidently_reports"  # Préfixe S3 pour les rapports
+  save_to_workspace: true  # Sauvegarder dans le workspace Evidently UI via RemoteWorkspace
+  save_to_s3: false  # Le serveur UI gère le stockage S3
+  s3_bucket: "evidently-reports"  # Bucket S3 pour les rapports (utilisé par le serveur UI)
+  s3_prefix: "evidently_reports"  # Préfixe S3 pour les rapports (utilisé par le serveur UI)

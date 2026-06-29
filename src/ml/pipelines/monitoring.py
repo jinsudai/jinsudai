@@ -372,7 +372,8 @@ class MonitoringPipeline:
                 success = save_evidently_report_to_workspace(
                     report=report,
                     project_name="energy_consumption",
-                    workspace_path=self.evidently_config.get('workspace_path', './evidently_workspace'),
+                    ui_url=self.evidently_config.get('ui_url'),
+                    workspace_path=self.evidently_config.get('workspace_path'),
                     metadata=metadata,
                     tags=tags
                 )

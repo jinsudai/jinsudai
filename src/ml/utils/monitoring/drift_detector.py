@@ -728,18 +728,20 @@ def save_evidently_report_to_workspace(
     report: Report,
     project_name: str = "energy_consumption",
     report_name: Optional[str] = None,
-    workspace_path: str = "/app/workspace",
+    workspace_path: Optional[str] = None,
+    ui_url: Optional[str] = None,
     metadata: Optional[Dict[str, Any]] = None,
     tags: Optional[list] = None
 ) -> bool:
     """
-    Sauvegarde le rapport Evidently dans un workspace Evidently UI.
+    Sauvegarde le rapport Evidently dans un workspace Evidently UI (local ou distant).
 
     Args:
         report: Rapport Evidently
         project_name: Nom du projet dans le workspace
         report_name: Nom du rapport (optionnel, généré automatiquement si None)
-        workspace_path: Chemin du workspace Evidently
+        workspace_path: Chemin du workspace local (optionnel, ignoré si ui_url fourni)
+        ui_url: URL du service Evidently UI distant (optionnel)
         metadata: Métadonnées à attacher au rapport
         tags: Tags à attacher au rapport
 
@@ -747,14 +749,20 @@ def save_evidently_report_to_workspace(
         bool: True si succès, False sinon
     """
     try:
-        from evidently.ui.workspace import Workspace
+        from evidently.ui.workspace import Workspace, RemoteWorkspace
         from pathlib import Path
 
-        # Créer ou charger le workspace
-        workspace_path_obj = Path(workspace_path)
-        workspace_path_obj.mkdir(parents=True, exist_ok=True)
-
-        workspace = Workspace.create(workspace_path_obj)
+        # Utiliser RemoteWorkspace si une URL est fournie
+        if ui_url:
+            logger.info(f"Connexion au service Evidently UI distant: {ui_url}")
+            workspace = RemoteWorkspace(base_url=ui_url)
+        else:
+            # Workspace local
+            if workspace_path is None:
+                workspace_path = "/app/workspace"
+            workspace_path_obj = Path(workspace_path)
+            workspace_path_obj.mkdir(parents=True, exist_ok=True)
+            workspace = Workspace.create(workspace_path_obj)
 
         # Créer ou charger le projet
         try:
@@ -779,7 +787,7 @@ def save_evidently_report_to_workspace(
         )
 
         project.save()
-        logger.info(f"Rapport Evidently sauvegardé dans le workspace: {workspace_path}/{project_name}/{report_name}")
+        logger.info(f"Rapport Evidently sauvegardé dans le workspace: {project_name}/{report_name}")
         return True
 
     except ImportError:
