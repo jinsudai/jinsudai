@@ -68,15 +68,15 @@ class TrainingPipeline:
 
         logger.info(f"Pipeline MLOps initialisé avec model_name={self.model_name}")
 
-    def _download_train_from_s3(self, local_path: str) -> bool:
+    def _download_train_from_s3(self, local_path: str) -> tuple:
         """
         Télécharge le dernier fichier train concaténé depuis S3.
 
         Args:
-            local_path: Chemin local de destination
+            local_path: Chemin local de destination (répertoire ou fichier)
 
         Returns:
-            True si succès, False sinon
+            tuple: (success: bool, downloaded_path: str ou None)
         """
         try:
             from ml.config import load_config
@@ -92,15 +92,16 @@ class TrainingPipeline:
             )
 
             if result["status"] == "success":
-                logger.info(f"Fichier téléchargé depuis S3: {local_path}")
-                return True
+                downloaded_path = result.get("local_path")
+                logger.info(f"Fichier téléchargé depuis S3: {downloaded_path}")
+                return True, downloaded_path
             else:
                 logger.error(f"Erreur lors du téléchargement: {result.get('reason')}")
-                return False
+                return False, None
 
         except Exception as e:
             logger.error(f"Erreur lors du téléchargement depuis S3: {e}")
-            return False
+            return False, None
 
     def step_1_load_data(self, data_path=None, download_from_s3_if_missing=True):
         """Étape 1: Chargement des données"""
@@ -115,10 +116,14 @@ class TrainingPipeline:
             logger.warning(f"Fichier de données non trouvé: {data_path}")
             if download_from_s3_if_missing:
                 logger.info("Tentative de téléchargement depuis S3...")
-                success = self._download_train_from_s3(data_path)
+                # Télécharger avec le nom original depuis S3 (utiliser le répertoire parent)
+                download_dir = str(Path(data_path).parent)
+                success, downloaded_path = self._download_train_from_s3(download_dir)
                 if not success:
                     logger.error("Impossible de télécharger le fichier depuis S3")
                     return False
+                # Mettre à jour data_path avec le fichier téléchargé (nom original conservé)
+                data_path = downloaded_path
             else:
                 logger.error("Fichier de données non trouvé et téléchargement S3 désactivé")
                 return False
