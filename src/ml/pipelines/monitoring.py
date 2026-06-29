@@ -434,7 +434,9 @@ class MonitoringPipeline:
             success = save_evidently_report_to_mlflow(
                 report=self.evidently_report,
                 report_dict=self.drift_results,
-                run_id=run_id
+                run_id=run_id,
+                reference_data=self.reference_data,
+                current_data=self.current_data
             )
             if success:
                 logger.info("Métriques stockées dans MLflow")

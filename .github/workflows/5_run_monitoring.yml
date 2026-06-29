@@ -89,11 +89,3 @@ jobs:
           name: drift-report
           path: drift_report_*.html
           retention-days: 30
-      
-      - name: Upload drift metrics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: drift-metrics
-          path: drift_metrics_*.json
-          retention-days: 30

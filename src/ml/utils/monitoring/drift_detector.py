@@ -402,6 +402,123 @@ def run_drift_detection(
         }
 
 
+def _generate_custom_drift_report_html(
+    reference_data: pd.DataFrame,
+    current_data: pd.DataFrame,
+    report_name: str
+) -> str:
+    """
+    Génère un rapport HTML personnalisé pour le drift detection.
+    
+    Args:
+        reference_data: DataFrame de référence
+        current_data: DataFrame courant
+        report_name: Nom du rapport
+        
+    Returns:
+        HTML content
+    """
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    # Calculer des statistiques basiques
+    ref_rows = len(reference_data)
+    curr_rows = len(current_data)
+    common_cols = list(set(reference_data.columns) & set(current_data.columns))
+    
+    # Générer le HTML
+    html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Drift Detection Report - {report_name}</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 20px; }}
+        .header {{ background: #f0f0f0; padding: 20px; border-radius: 5px; }}
+        .section {{ margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }}
+        .stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }}
+        .stat-box {{ background: #e9f7ef; padding: 10px; border-radius: 5px; }}
+        table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
+        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+        th {{ background: #f2f2f2; }}
+        .warning {{ color: #856404; background: #fff3cd; padding: 10px; border-radius: 5px; }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Drift Detection Report</h1>
+        <p><strong>Report Name:</strong> {report_name}</p>
+        <p><strong>Generated:</strong> {timestamp}</p>
+    </div>
+    
+    <div class="section">
+        <h2>Data Overview</h2>
+        <div class="stats">
+            <div class="stat-box">
+                <strong>Reference Rows:</strong> {ref_rows}
+            </div>
+            <div class="stat-box">
+                <strong>Current Rows:</strong> {curr_rows}
+            </div>
+            <div class="stat-box">
+                <strong>Common Columns:</strong> {len(common_cols)}
+            </div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>Column Statistics</h2>
+        <table>
+            <tr>
+                <th>Column</th>
+                <th>Type</th>
+                <th>Ref Mean</th>
+                <th>Ref Std</th>
+                <th>Curr Mean</th>
+                <th>Curr Std</th>
+                <th>Ref NaN %</th>
+                <th>Curr NaN %</th>
+            </tr>
+"""
+    
+    for col in common_cols:
+        col_type = str(reference_data[col].dtype)
+        ref_mean = reference_data[col].mean() if pd.api.types.is_numeric_dtype(reference_data[col]) else "N/A"
+        ref_std = reference_data[col].std() if pd.api.types.is_numeric_dtype(reference_data[col]) else "N/A"
+        curr_mean = current_data[col].mean() if pd.api.types.is_numeric_dtype(current_data[col]) else "N/A"
+        curr_std = current_data[col].std() if pd.api.types.is_numeric_dtype(current_data[col]) else "N/A"
+        ref_nan_pct = (reference_data[col].isna().sum() / len(reference_data)) * 100
+        curr_nan_pct = (current_data[col].isna().sum() / len(current_data)) * 100
+        
+        html += f"""
+            <tr>
+                <td>{col}</td>
+                <td>{col_type}</td>
+                <td>{ref_mean:.2f if isinstance(ref_mean, (int, float)) else ref_mean}</td>
+                <td>{ref_std:.2f if isinstance(ref_std, (int, float)) else ref_std}</td>
+                <td>{curr_mean:.2f if isinstance(curr_mean, (int, float)) else curr_mean}</td>
+                <td>{curr_std:.2f if isinstance(curr_std, (int, float)) else curr_std}</td>
+                <td>{ref_nan_pct:.1f}%</td>
+                <td>{curr_nan_pct:.1f}%</td>
+            </tr>
+"""
+    
+    html += """
+        </table>
+    </div>
+    
+    <div class="section warning">
+        <h2>Important Note</h2>
+        <p>This is a simplified HTML report. For advanced drift visualization, use EvidentlyUI.</p>
+        <p>The full Evidently report is saved in the S3 workspace and can be viewed via EvidentlyUI.</p>
+    </div>
+    
+</body>
+</html>
+"""
+    
+    return html
+
+
 def generate_evidently_report(
     reference_data: pd.DataFrame,
     current_data: pd.DataFrame,
@@ -477,24 +594,22 @@ def generate_evidently_report(
         # Exécuter le rapport
         report.run(reference_data=reference_data_aligned, current_data=current_data_aligned)
 
-        # Sauvegarder le rapport HTML si un chemin est fourni
+        # Note: Dans Evidently 0.7.21, la sauvegarde HTML locale n'est pas disponible
+        # On génère un rapport HTML personnalisé basé sur les résultats
         if output_path:
             output_file = Path(output_path) / f"{report_name}.html"
-            # Utiliser l'API d'Evidently pour sauvegarder en HTML
             try:
-                # Essayer la méthode show_in_notebook pour obtenir le HTML
-                html_content = report.show_in_notebook(mode="auto")
-                if html_content and hasattr(html_content, 'data'):
-                    # Si c'est un IPython display object
-                    with open(output_file, 'w', encoding='utf-8') as f:
-                        f.write(html_content.data)
-                    logger.info(f"Rapport Evidently sauvegardé: {output_file}")
-                else:
-                    # Fallback: essayer save_html
-                    report.save_html(str(output_file))
-                    logger.info(f"Rapport Evidently sauvegardé: {output_file}")
-            except (AttributeError, TypeError) as e:
-                logger.warning(f"Impossible de sauvegarder le rapport en HTML: {e}")
+                # Générer un rapport HTML personnalisé
+                html_content = _generate_custom_drift_report_html(
+                    reference_data=reference_data_aligned,
+                    current_data=current_data_aligned,
+                    report_name=report_name
+                )
+                with open(output_file, 'w', encoding='utf-8') as f:
+                    f.write(html_content)
+                logger.info(f"Rapport HTML personnalisé sauvegardé: {output_file}")
+            except Exception as e:
+                logger.warning(f"Impossible de sauvegarder le rapport HTML personnalisé: {e}")
 
         # Retourner le rapport et un dictionnaire vide (l'API d'Evidently a changé)
         return report, {}
@@ -508,7 +623,9 @@ def save_evidently_report_to_mlflow(
     report: Report,
     report_dict: Dict[str, Any],
     run_id: Optional[str] = None,
-    artifact_path: str = "evidently_reports"
+    artifact_path: str = "evidently_reports",
+    reference_data: Optional[pd.DataFrame] = None,
+    current_data: Optional[pd.DataFrame] = None
 ) -> bool:
     """
     Sauvegarde le rapport Evidently et ses métriques dans MLflow.
@@ -518,6 +635,8 @@ def save_evidently_report_to_mlflow(
         report_dict: Résultats du rapport sous forme de dict
         run_id: ID de la run MLflow (optionnel, utilise la run active si None)
         artifact_path: Chemin pour les artefacts dans MLflow
+        reference_data: DataFrame de référence (pour générer HTML personnalisé)
+        current_data: DataFrame courant (pour générer HTML personnalisé)
 
     Returns:
         bool: True si succès, False sinon
@@ -529,19 +648,22 @@ def save_evidently_report_to_mlflow(
         with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as f:
             temp_path = f.name
 
-        # Sauvegarder le rapport HTML
-        try:
-            # Essayer la méthode show_in_notebook pour obtenir le HTML
-            html_content = report.show_in_notebook(mode="auto")
-            if html_content and hasattr(html_content, 'data'):
-                # Si c'est un IPython display object
+        # Générer un rapport HTML personnalisé
+        if reference_data is not None and current_data is not None:
+            try:
+                html_content = _generate_custom_drift_report_html(
+                    reference_data=reference_data,
+                    current_data=current_data,
+                    report_name=f"mlflow_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                )
                 with open(temp_path, 'w', encoding='utf-8') as f:
-                    f.write(html_content.data)
-            else:
-                # Fallback: essayer save_html
-                report.save_html(temp_path)
-        except (AttributeError, TypeError) as e:
-            logger.warning(f"Impossible de sauvegarder le rapport en HTML: {e}")
+                    f.write(html_content)
+            except Exception as e:
+                logger.warning(f"Impossible de générer le rapport HTML personnalisé: {e}")
+                Path(temp_path).unlink()
+                return False
+        else:
+            logger.warning("Données manquantes pour générer le rapport HTML")
             Path(temp_path).unlink()
             return False
 
