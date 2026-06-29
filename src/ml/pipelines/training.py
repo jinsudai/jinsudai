@@ -119,11 +119,12 @@ class TrainingPipeline:
                 # Télécharger avec le nom original depuis S3 (utiliser le répertoire parent)
                 download_dir = str(Path(data_path).parent)
                 success, downloaded_path = self._download_train_from_s3(download_dir)
-                if not success:
+                if not success or not downloaded_path:
                     logger.error("Impossible de télécharger le fichier depuis S3")
                     return False
                 # Mettre à jour data_path avec le fichier téléchargé (nom original conservé)
                 data_path = downloaded_path
+                logger.info(f"Chemin du fichier téléchargé: {data_path}")
             else:
                 logger.error("Fichier de données non trouvé et téléchargement S3 désactivé")
                 return False

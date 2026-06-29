@@ -368,11 +368,16 @@ class S3Handler:
                 # Utiliser le nom original dans le répertoire courant
                 filename = Path(latest_file).name
                 local_path = str(Path.cwd() / filename)
-            elif Path(local_path).is_dir() or local_path.endswith('/') or local_path.endswith('\\'):
-                # Si c'est un répertoire, utiliser le nom original dans ce répertoire
-                filename = Path(latest_file).name
-                local_path = str(Path(local_path) / filename)
-            # Sinon, utiliser le chemin complet tel quel
+            else:
+                local_path_obj = Path(local_path)
+                # Créer le répertoire parent s'il n'existe pas
+                local_path_obj.mkdir(parents=True, exist_ok=True)
+                # Vérifier si c'est un répertoire (existant ou terminé par / ou \)
+                if local_path_obj.is_dir() or local_path.endswith('/') or local_path.endswith('\\'):
+                    # Si c'est un répertoire, utiliser le nom original dans ce répertoire
+                    filename = Path(latest_file).name
+                    local_path = str(local_path_obj / filename)
+                # Sinon, utiliser le chemin complet tel quel
 
             # Télécharger le fichier
             result = self.download_file(
