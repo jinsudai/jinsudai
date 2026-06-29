@@ -68,6 +68,7 @@ Eviter les sauts de ligne inutiles
 -- Identifier que c'est le premier training
 
 # Plus tard
+- fichier de config différent pour les services. (evite de le trigger)
 - email notifier
 - config.yaml pour les différents environnements
 - Réparer base de donnée neon airflai (via un import de celle de jinsudai? Essayer plutot airflow db reset --yes)
