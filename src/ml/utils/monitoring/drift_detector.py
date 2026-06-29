@@ -489,14 +489,20 @@ def _generate_custom_drift_report_html(
         ref_nan_pct = (reference_data[col].isna().sum() / len(reference_data)) * 100
         curr_nan_pct = (current_data[col].isna().sum() / len(current_data)) * 100
         
+        # Formater les valeurs numériques
+        ref_mean_str = f"{ref_mean:.2f}" if isinstance(ref_mean, (int, float)) else str(ref_mean)
+        ref_std_str = f"{ref_std:.2f}" if isinstance(ref_std, (int, float)) else str(ref_std)
+        curr_mean_str = f"{curr_mean:.2f}" if isinstance(curr_mean, (int, float)) else str(curr_mean)
+        curr_std_str = f"{curr_std:.2f}" if isinstance(curr_std, (int, float)) else str(curr_std)
+        
         html += f"""
             <tr>
                 <td>{col}</td>
                 <td>{col_type}</td>
-                <td>{ref_mean:.2f if isinstance(ref_mean, (int, float)) else ref_mean}</td>
-                <td>{ref_std:.2f if isinstance(ref_std, (int, float)) else ref_std}</td>
-                <td>{curr_mean:.2f if isinstance(curr_mean, (int, float)) else curr_mean}</td>
-                <td>{curr_std:.2f if isinstance(curr_std, (int, float)) else curr_std}</td>
+                <td>{ref_mean_str}</td>
+                <td>{ref_std_str}</td>
+                <td>{curr_mean_str}</td>
+                <td>{curr_std_str}</td>
                 <td>{ref_nan_pct:.1f}%</td>
                 <td>{curr_nan_pct:.1f}%</td>
             </tr>
@@ -930,16 +936,19 @@ def run_evidently_drift_detection(
 
         # Sauvegarder dans MLflow si demandé
         if save_to_mlflow and report is not None:
+            logger.info(f"Sauvegarde du rapport dans MLflow (run_id: {mlflow_run_id or 'active'})")
             save_evidently_report_to_mlflow(
                 report=report,
                 report_dict=report_dict,
                 run_id=mlflow_run_id
             )
+            logger.info("Rapport sauvegardé dans MLflow")
 
         # Sauvegarder dans le workspace Evidently si demandé
         if save_to_workspace and report is not None:
             ws_path = workspace_path or config.get("evidently_workspace_path", "/app/workspace")
             proj_name = config.get("evidently_project_name", project_name)
+            logger.info(f"Sauvegarde du rapport dans le workspace Evidently: {ws_path}, projet: {proj_name}")
 
             # Préparer les métadonnées
             metadata = {
@@ -960,11 +969,13 @@ def run_evidently_drift_detection(
                 metadata=metadata,
                 tags=tags
             )
+            logger.info("Rapport sauvegardé dans le workspace Evidently")
 
         # Sauvegarder sur S3 si demandé
         if save_to_s3 and report is not None:
             bucket = s3_bucket or config.get("s3_bucket", "data-store")
             prefix = s3_prefix or config.get("s3_prefix", "evidently_reports")
+            logger.info(f"Sauvegarde du rapport sur S3: bucket={bucket}, prefix={prefix}")
 
             # Préparer les métadonnées
             metadata = {
@@ -979,6 +990,7 @@ def run_evidently_drift_detection(
                 s3_prefix=prefix,
                 metadata=metadata
             )
+            logger.info("Rapport sauvegardé sur S3")
 
         return results
 

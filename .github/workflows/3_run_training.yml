@@ -12,7 +12,6 @@ on:
       - 'src/ml/config/**'
       - 'src/ml/utils/models/**'
       - 'src/ml/utils/data/**'
-      - 'src/ml/utils/monitoring/**'
       - 'src/ml/utils/s3_handler.py'
       - 'data/templates/**'
 
