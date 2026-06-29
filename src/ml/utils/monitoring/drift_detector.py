@@ -778,11 +778,26 @@ def save_evidently_report_to_workspace(
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             report_name = f"drift_report_{timestamp}"
 
-        # Ajouter le rapport au projet via le workspace (API: add_run)
-        workspace.add_run(
-            project.id,
-            report
-        )
+        # Exécuter le rapport pour créer un "run" (API: add_run nécessite un run object)
+        # Le rapport a déjà été exécuté dans generate_evidently_report, mais on doit le ré-exécuter
+        # ou utiliser l'objet correct selon l'API
+        try:
+            # Essayer d'abord avec l'objet report directement
+            workspace.add_run(
+                project.id,
+                report
+            )
+        except AttributeError:
+            # Si ça échoue, essayer avec l'ancienne méthode (snapshot)
+            logger.warning("add_run échoué, tentative avec snapshot")
+            try:
+                from evidently.core.report import Snapshot
+                # Créer un snapshot depuis le rapport
+                snapshot = Snapshot.from_report(report)
+                workspace.add_snapshot(project.id, snapshot)
+            except Exception as e2:
+                logger.error(f"Échec avec snapshot: {e2}")
+                raise
 
         logger.info(f"Rapport Evidently sauvegardé dans le workspace: {project_name}/{report_name}")
         return True
