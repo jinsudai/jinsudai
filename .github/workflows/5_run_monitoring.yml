@@ -77,7 +77,10 @@ jobs:
             --current_data_limit "${{ github.event.inputs.current_data_limit || '1000' }}" \
             ${{ github.event.inputs.generate_report == 'false' && '--no-generate_report' || '--generate_report' }} \
             ${{ github.event.inputs.store_metrics == 'false' && '--no-store_metrics' || '--store_metrics' }} \
-            ${{ github.event.inputs.send_notifications == 'false' && '--no-send_notifications' || '--send_notifications' }}
+            ${{ github.event.inputs.send_notifications == 'false' && '--no-send_notifications' || '--send_notifications' }} \
+            --save_to_workspace \
+            --save_to_s3 \
+            --report_output_path "."
       
       - name: Upload drift report
         if: always()
