@@ -449,6 +449,124 @@ class S3Handler:
                 logger.warning(f"Impossible d'extraire la date de fin du fichier: {filename}")
                 return None
 
+    def archive_files(self, source_prefix: str, archive_prefix: str) -> Dict[str, Any]:
+        """
+        Archive tous les fichiers d'un préfixe S3 vers un autre préfixe.
+
+        Args:
+            source_prefix: Préfixe source (ex: "consumption/prepared")
+            archive_prefix: Préfixe destination (ex: "consumption/archived/prepared")
+
+        Returns:
+            dict: Résultat de l'opération (status, archived_files, failed_files)
+        """
+        if not self.s3_enabled:
+            return {
+                "status": "skipped",
+                "reason": "S3 credentials not available"
+            }
+
+        try:
+            logger.info(f"Archivage S3: {source_prefix} -> {archive_prefix}")
+
+            # Lister tous les fichiers dans le préfixe source
+            files = self.list_files(prefix=source_prefix)
+            if not files:
+                logger.info(f"Aucun fichier à archiver dans {source_prefix}")
+                return {
+                    "status": "success",
+                    "archived_files": [],
+                    "failed_files": []
+                }
+
+            logger.info(f"Fichiers à archiver: {len(files)}")
+
+            # Archiver chaque fichier
+            archived_files = []
+            failed_files = []
+            for file_key in files:
+                filename = Path(file_key).name
+                archive_key = f"{archive_prefix}/{filename}"
+
+                logger.info(f"Archivage: {file_key} -> {archive_key}")
+                copy_result = self.copy_file(file_key, archive_key)
+
+                if copy_result["status"] == "success":
+                    logger.info(f"Fichier archivé: {archive_key}")
+                    archived_files.append(file_key)
+                else:
+                    logger.warning(f"Échec de l'archivage: {copy_result.get('reason')}")
+                    failed_files.append(file_key)
+
+            logger.info(f"Archivage terminé: {len(archived_files)}/{len(files)} fichiers")
+            return {
+                "status": "success",
+                "archived_files": archived_files,
+                "failed_files": failed_files
+            }
+
         except Exception as e:
-            logger.error(f"Erreur lors de la récupération de la date de fin: {e}")
-            return None
+            logger.error(f"Erreur lors de l'archivage S3: {e}")
+            return {
+                "status": "error",
+                "reason": str(e),
+                "archived_files": [],
+                "failed_files": []
+            }
+
+    def delete_files(self, files_list: List[str]) -> Dict[str, Any]:
+        """
+        Supprime une liste de fichiers S3.
+
+        Args:
+            files_list: Liste des clés S3 à supprimer
+
+        Returns:
+            dict: Résultat de l'opération (status, deleted_files, failed_files)
+        """
+        if not self.s3_enabled:
+            return {
+                "status": "skipped",
+                "reason": "S3 credentials not available"
+            }
+
+        try:
+            if not files_list:
+                logger.info("Aucun fichier à supprimer")
+                return {
+                    "status": "success",
+                    "deleted_files": [],
+                    "failed_files": []
+                }
+
+            logger.info(f"Fichiers à supprimer: {len(files_list)}")
+
+            # Supprimer chaque fichier
+            deleted_files = []
+            failed_files = []
+            for file_key in files_list:
+                logger.info(f"Suppression: {file_key}")
+                delete_result = self.delete_file(file_key)
+
+                if delete_result["status"] == "success":
+                    logger.info(f"Fichier supprimé: {file_key}")
+                    deleted_files.append(file_key)
+                else:
+                    logger.warning(f"Échec de la suppression: {delete_result.get('reason')}")
+                    failed_files.append(file_key)
+
+            logger.info(f"Suppression terminée: {len(deleted_files)}/{len(files_list)} fichiers")
+            return {
+                "status": "success",
+                "deleted_files": deleted_files,
+                "failed_files": failed_files
+            }
+
+        except Exception as e:
+            logger.error(f"Erreur lors de la suppression S3: {e}")
+            return {
+                "status": "error",
+                "reason": str(e),
+                "deleted_files": [],
+                "failed_files": []
+            }

@@ -389,6 +389,19 @@ class TrainingPipeline:
                 logger.warning("S3 non disponible (credentials manquants)")
                 return False
 
+            # ÉTAPE 8.1: Archiver les anciens fichiers
+            logger.info("=== ÉTAPE 8.1: ARCHIVAGE DES ANCIENS FICHIERS ===")
+            archive_result = s3_handler.archive_files(
+                source_prefix="consumption/trained",
+                archive_prefix="consumption/archived/trained"
+            )
+            if archive_result["status"] == "success":
+                archived_files = archive_result.get("archived_files", [])
+                logger.info(f"Fichiers archivés: {len(archived_files)}")
+            else:
+                logger.warning(f"Échec de l'archivage: {archive_result.get('reason')}")
+                archived_files = []
+
             # Récupérer le chemin du fichier train utilisé (actual path, not config path)
             train_path = self.actual_data_path or self.config.get('data', {}).get('train_path')
 
@@ -416,6 +429,16 @@ class TrainingPipeline:
 
             if result["status"] == "success":
                 logger.info(f"✅ Fichier uploadé avec succès: {result['s3_uri']}")
+
+                # ÉTAPE 8.2: Supprimer les anciens fichiers après upload réussi
+                if archived_files:
+                    logger.info("=== ÉTAPE 8.2: SUPPRESSION DES ANCIENS FICHIERS ===")
+                    delete_result = s3_handler.delete_files(archived_files)
+                    if delete_result["status"] == "success":
+                        logger.info(f"Fichiers supprimés: {len(delete_result.get('deleted_files', []))}")
+                    else:
+                        logger.warning(f"Échec de la suppression: {delete_result.get('reason')}")
+
                 return True
             elif result["status"] == "skipped":
                 logger.info(f"ℹ️ Upload ignoré: {result['reason']}")

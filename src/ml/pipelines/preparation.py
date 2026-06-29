@@ -59,6 +59,7 @@ class PreparationPipeline:
         self.start_date = None
         self.end_date = None
         self.old_s3_key = None
+        self.archived_files = []
 
         logger.info("Pipeline de préparation initialisé")
 
@@ -312,68 +313,6 @@ class PreparationPipeline:
             logger.error(f"Erreur récupération données réelles: {e}")
             return False
 
-    def archive_old_s3_file(self, old_s3_key: str) -> bool:
-        """
-        Archive l'ancien fichier S3 vers consumption/archived/prepared (copie uniquement).
-
-        Args:
-            old_s3_key: Clé S3 de l'ancien fichier à archiver
-
-        Returns:
-            True si succès, False sinon
-        """
-        if not self.s3_handler.s3_enabled:
-            logger.info("S3 non disponible, pas d'archivage")
-            return False
-
-        try:
-            # Construire le chemin d'archive
-            filename = Path(old_s3_key).name
-            archive_key = f"consumption/archived/prepared/{filename}"
-
-            logger.info(f"Archivage S3: {old_s3_key} -> {archive_key}")
-
-            # Copier vers l'archive
-            copy_result = self.s3_handler.copy_file(old_s3_key, archive_key)
-
-            if copy_result["status"] == "success":
-                logger.info(f"Fichier archivé avec succès: {archive_key}")
-                return True
-            else:
-                logger.warning(f"Échec de l'archivage: {copy_result.get('reason')}")
-                return False
-        except Exception as e:
-            logger.error(f"Erreur lors de l'archivage S3: {e}")
-            return False
-
-    def delete_old_s3_file(self, old_s3_key: str) -> bool:
-        """
-        Supprime l'ancien fichier S3 de l'origine.
-
-        Args:
-            old_s3_key: Clé S3 de l'ancien fichier à supprimer
-
-        Returns:
-            True si succès, False sinon
-        """
-        if not self.s3_handler.s3_enabled:
-            logger.info("S3 non disponible, pas de suppression")
-            return False
-
-        try:
-            logger.info(f"Suppression du fichier original: {old_s3_key}")
-            delete_result = self.s3_handler.delete_file(old_s3_key)
-
-            if delete_result["status"] == "success":
-                logger.info(f"Fichier original supprimé avec succès")
-                return True
-            else:
-                logger.warning(f"Échec de la suppression du fichier original: {delete_result.get('reason')}")
-                return False
-        except Exception as e:
-            logger.error(f"Erreur lors de la suppression S3: {e}")
-            return False
-
     def concatenate_with_trained_data(self, new_features_df: pd.DataFrame) -> pd.DataFrame:
         """
         Concatène les nouvelles features avec les données trained existantes.
@@ -519,15 +458,28 @@ class PreparationPipeline:
         # ÉTAPE 5.6: Archiver l'ancien fichier S3
         if self.old_s3_key:
             logger.info("=== ÉTAPE 5.6: ARCHIVAGE DE L'ANCIEN FICHIER S3 ===")
-            self.archive_old_s3_file(self.old_s3_key)
+            archive_result = self.s3_handler.archive_files(
+                source_prefix="consumption/prepared",
+                archive_prefix="consumption/archived/prepared"
+            )
+            if archive_result["status"] == "success":
+                self.archived_files = archive_result.get("archived_files", [])
+                logger.info(f"Fichiers archivés: {len(self.archived_files)}")
+            else:
+                logger.warning(f"Échec de l'archivage: {archive_result.get('reason')}")
+                self.archived_files = []
 
         # ÉTAPE 6: Upload sur S3
         s3_result = self.upload_to_s3(train_path, weather_path)
 
         # ÉTAPE 6.5: Supprimer l'ancien fichier S3 après upload réussi
-        if self.old_s3_key and s3_result.get("status") == "success":
-            logger.info("=== ÉTAPE 6.5: SUPPRESSION DE L'ANCIEN FICHIER S3 ===")
-            self.delete_old_s3_file(self.old_s3_key)
+        if self.archived_files and s3_result.get("status") == "success":
+            logger.info("=== ÉTAPE 6.5: SUPPRESSION DES ANCIENS FICHIERS S3 ===")
+            delete_result = self.s3_handler.delete_files(self.archived_files)
+            if delete_result["status"] == "success":
+                logger.info(f"Fichiers supprimés: {len(delete_result.get('deleted_files', []))}")
+            else:
+                logger.warning(f"Échec de la suppression: {delete_result.get('reason')}")
 
         logger.info("\n####################################################")
         logger.info("### PIPELINE TERMINÉ AVEC SUCCÈS ###")
