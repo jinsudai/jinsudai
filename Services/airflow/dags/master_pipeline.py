@@ -16,13 +16,26 @@ from airflow.operators.python import PythonOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.operators.python import BranchPythonOperator
-from airflow.sensors.datetime import DateTimeSensor
+from airflow.sensors.python import PythonSensor
 import sys
 import os
 
 # Ajouter le dossier utils au path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'utils'))
 from github_action_helper import should_trigger_training
+
+def wait_until_3am_function(**context):
+    """Vérifie si l'heure actuelle est >= 3h du matin"""
+    now = datetime.now()
+    target_hour = 3
+    
+    # Si l'heure actuelle est >= 3h, on continue
+    if now.hour >= target_hour:
+        print(f"✅ Il est {now.hour}h, on continue (>= {target_hour}h)")
+        return True
+    else:
+        print(f"⏳ Il est {now.hour}h, on attend jusqu'à {target_hour}h")
+        return False
 
 default_args = {
     'owner': 'airflow',
@@ -77,9 +90,11 @@ with DAG(
     )
     
     # 4. Attendre jusqu'à 3h du matin pour l'inférence
-    wait_until_3h = DateTimeSensor(
+    wait_until_3h = PythonSensor(
         task_id='wait_until_3h',
-        target_time=lambda dt: dt.replace(hour=3, minute=0, second=0, microsecond=0) + (timedelta(days=1) if dt.hour >= 3 else timedelta(0)),
+        python_callable=wait_until_3am_function,
+        poke_interval=60,  # Vérifier toutes les minutes
+        timeout=3600*24,  # Timeout après 24h
         mode='reschedule',  # Libère le worker pendant l'attente
     )
     
