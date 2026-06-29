@@ -203,7 +203,7 @@ class PreparationPipeline:
         output_dir: Path,
         raw_path: Optional[str] = None,
         db_limit: Optional[int] = None
-    ) -> Path:
+    ) -> pd.DataFrame:
         """
         Prépare les features consommation.
 
@@ -215,13 +215,9 @@ class PreparationPipeline:
             db_limit: Nombre maximum d'enregistrements à récupérer depuis la base
 
         Returns:
-            Path: Chemin vers le fichier train
+            pd.DataFrame: DataFrame des features préparées
         """
         logger.info("=== ÉTAPE 4: PRÉPARATION DES FEATURES ===")
-
-        start_date_str = self.start_date.strftime('%Y-%m-%d')
-        end_date_str = self.end_date.strftime('%Y-%m-%d')
-        train_path = output_dir / f"{start_date_str}_to_{end_date_str}_train.parquet"
 
         try:
             preparer = ConsumptionDataPreparer()
@@ -229,14 +225,14 @@ class PreparationPipeline:
                 raw_path=raw_path,
                 weather_path=str(weather_path),
                 holidays_path=str(holidays_path) if holidays_path else None,
-                output_path=str(train_path),
+                output_path=None,  # Pas de sauvegarde à ce stade
                 db_uri=self.db_uri,
                 db_limit=db_limit,
                 use_database=self.db_uri is not None
             )
-            logger.info(f"Features préparées: {train_path}")
+            logger.info(f"Features préparées: {self.features_df.shape[0]} enregistrements")
             logger.info(f"Shape: {self.features_df.shape}")
-            return train_path
+            return self.features_df
         except Exception as e:
             logger.error(f"Erreur préparation features: {e}")
             raise
@@ -318,7 +314,7 @@ class PreparationPipeline:
 
     def archive_old_s3_file(self, old_s3_key: str) -> bool:
         """
-        Archive l'ancien fichier S3 vers consumption/archived/prepared.
+        Archive l'ancien fichier S3 vers consumption/archived/prepared (copie uniquement).
 
         Args:
             old_s3_key: Clé S3 de l'ancien fichier à archiver
@@ -348,6 +344,34 @@ class PreparationPipeline:
                 return False
         except Exception as e:
             logger.error(f"Erreur lors de l'archivage S3: {e}")
+            return False
+
+    def delete_old_s3_file(self, old_s3_key: str) -> bool:
+        """
+        Supprime l'ancien fichier S3 de l'origine.
+
+        Args:
+            old_s3_key: Clé S3 de l'ancien fichier à supprimer
+
+        Returns:
+            True si succès, False sinon
+        """
+        if not self.s3_handler.s3_enabled:
+            logger.info("S3 non disponible, pas de suppression")
+            return False
+
+        try:
+            logger.info(f"Suppression du fichier original: {old_s3_key}")
+            delete_result = self.s3_handler.delete_file(old_s3_key)
+
+            if delete_result["status"] == "success":
+                logger.info(f"Fichier original supprimé avec succès")
+                return True
+            else:
+                logger.warning(f"Échec de la suppression du fichier original: {delete_result.get('reason')}")
+                return False
+        except Exception as e:
+            logger.error(f"Erreur lors de la suppression S3: {e}")
             return False
 
     def concatenate_with_trained_data(self, new_features_df: pd.DataFrame) -> pd.DataFrame:
@@ -465,7 +489,7 @@ class PreparationPipeline:
 
         # ÉTAPE 4: Préparer les features
         try:
-            train_path = self.prepare_features(weather_path, holidays_path, output_dir, raw_path, db_limit)
+            self.prepare_features(weather_path, holidays_path, output_dir, raw_path, db_limit)
         except Exception as e:
             return {"status": "error", "step": "features", "error": str(e)}
 
@@ -476,6 +500,17 @@ class PreparationPipeline:
         # ÉTAPE 5.5: Concaténer avec les données trained existantes
         logger.info("=== ÉTAPE 5.5: CONCATénATION DES DONNÉES ===")
         self.features_df = self.concatenate_with_trained_data(self.features_df)
+
+        # Calculer le nom du fichier avec les dates complètes après concaténation
+        if 'Horodate' in self.features_df.columns:
+            if not pd.api.types.is_datetime64_any_dtype(self.features_df['Horodate']):
+                self.features_df['Horodate'] = pd.to_datetime(self.features_df['Horodate'])
+            min_date = self.features_df['Horodate'].min().strftime('%Y-%m-%d')
+            max_date = self.features_df['Horodate'].max().strftime('%Y-%m-%d')
+            train_path = output_dir / f"{min_date}_to_{max_date}_train.parquet"
+            logger.info(f"Nom du fichier avec plage complète: {train_path.name}")
+        else:
+            train_path = output_dir / "train.parquet"
 
         # Sauvegarder le fichier concaténé localement
         self.features_df.to_parquet(train_path)
@@ -488,6 +523,11 @@ class PreparationPipeline:
 
         # ÉTAPE 6: Upload sur S3
         s3_result = self.upload_to_s3(train_path, weather_path)
+
+        # ÉTAPE 6.5: Supprimer l'ancien fichier S3 après upload réussi
+        if self.old_s3_key and s3_result.get("status") == "success":
+            logger.info("=== ÉTAPE 6.5: SUPPRESSION DE L'ANCIEN FICHIER S3 ===")
+            self.delete_old_s3_file(self.old_s3_key)
 
         logger.info("\n####################################################")
         logger.info("### PIPELINE TERMINÉ AVEC SUCCÈS ###")
