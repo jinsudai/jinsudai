@@ -147,8 +147,8 @@ class MonitoringPipeline:
 
             bucket = s3_config.get('bucket', 'data-store')
 
-            # Chercher dans le préfixe consumption/trained pour les fichiers train
-            prefix = "consumption/trained"
+            # Chercher dans le préfixe consumption/reference pour les fichiers de référence
+            prefix = "consumption/reference"
 
             # Initialiser le handler S3
             s3_handler = S3Handler(bucket=bucket)
