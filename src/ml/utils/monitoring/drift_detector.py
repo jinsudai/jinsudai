@@ -778,11 +778,10 @@ def save_evidently_report_to_workspace(
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             report_name = f"drift_report_{timestamp}"
 
-        # Ajouter le rapport au projet via le workspace (API changée)
-        workspace.add_report(
+        # Ajouter le rapport au projet via le workspace (API: add_run)
+        workspace.add_run(
             project.id,
-            report,
-            include_data=False
+            report
         )
 
         logger.info(f"Rapport Evidently sauvegardé dans le workspace: {project_name}/{report_name}")
