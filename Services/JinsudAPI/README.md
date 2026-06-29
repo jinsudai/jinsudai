@@ -83,9 +83,9 @@ Health check endpoint for monitoring.
 
 ## Environment Variables
 
-- `ENV`: Environment (dev, test, prod) - default: `dev`
+- `ENV`: Environment (dev, test, prod) - default: `test`
 - `MLFLOW_TRACKING_URI`: MLflow tracking URI - default: `https://jinsudai-mlflow.hf.space/`
-- `MODEL_NAME`: MLflow model name - default: `consumption_model`
+- `MODEL_NAME`: MLflow model name - default: `consumption_model_test`
 - `MODEL_STAGE`: MLflow model stage - default: `prod`
 
 ## Running Locally

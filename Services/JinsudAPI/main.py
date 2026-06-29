@@ -44,13 +44,13 @@ _inference_model = None
 class PredictionRequest(BaseModel):
     """Request model for prediction endpoint."""
     
-    Horodate: str = Field(..., description="Timestamp in ISO format (e.g., '2024-01-01T00:00:00')")
-    temperature_2m_mean: float = Field(..., description="Mean temperature in Celsius")
-    relative_humidity_mean: float = Field(..., description="Mean relative humidity percentage")
-    precipitation_sum: float = Field(default=0.0, description="Total precipitation in mm")
-    is_vacances: int = Field(default=0, description="1 if vacation period, 0 otherwise")
-    jour_de_la_semaine: str = Field(default="", description="Day of the week in French")
-    jour_ferie: int = Field(default=0, description="1 if public holiday, 0 otherwise")
+    Horodate: str = Field(..., description="Timestamp in ISO format (e.g., '2024-01-01T00:00:00')", example="2024-01-15T14:30:00")
+    temperature_2m_mean: float = Field(..., description="Mean temperature in Celsius", example=12.5)
+    relative_humidity_mean: float = Field(..., description="Mean relative humidity percentage", example=65.0)
+    precipitation_sum: float = Field(default=0.0, description="Total precipitation in mm", example=0.0)
+    is_vacances: int = Field(default=0, description="1 if vacation period, 0 otherwise", example=0)
+    jour_de_la_semaine: str = Field(..., description="Day of the week in French", example="Lundi")
+    jour_ferie: int = Field(default=0, description="1 if public holiday, 0 otherwise", example=0)
 
 
 class PredictionResponse(BaseModel):
@@ -190,6 +190,11 @@ async def predict(request: PredictionRequest):
         }
         df = pd.DataFrame(data)
         
+        # Feature engineering: extract Heure and Jour from Horodate
+        df['Horodate'] = pd.to_datetime(df['Horodate'])
+        df['Heure'] = df['Horodate'].dt.hour
+        df['Jour'] = df['Horodate'].dt.day
+        
         # Make prediction using InferenceModel
         predictions = inference_model.predict(df)
         
@@ -239,6 +244,11 @@ async def predict_batch(requests: List[PredictionRequest]):
                 "jour férié": req.jour_ferie
             })
         df = pd.DataFrame(data)
+        
+        # Feature engineering: extract Heure and Jour from Horodate
+        df['Horodate'] = pd.to_datetime(df['Horodate'])
+        df['Heure'] = df['Horodate'].dt.hour
+        df['Jour'] = df['Horodate'].dt.day
         
         # Make predictions using InferenceModel
         predictions = inference_model.predict(df)

@@ -1,4 +1,4 @@
-## 2. VacancesAPI (TODO)
+## 2. VacancesAPI
 
 Classe pour récupérer les dates de vacances scolaires.
 

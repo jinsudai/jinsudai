@@ -1,19 +1,4 @@
-# Module API - Gestion des données externes
-
-Module pour accès centralisé aux APIs externes (météo, vacances, jours fériés) et génération de fichiers parquet réutilisables.
-
-## Architecture
-
-```
-src/ml/utils/api/
-├── weather_api.py          # ✓ Classe WeatherAPI (implémentée)
-├── vacances_api.py         # TODO: Classe VacancesAPI
-├── jours_feries_api.py     # TODO: Classe JoursFeriesAPI
-├── example_weather_api.py  # Exemple d'utilisation
-└── __init__.py
-```
-
-## 1. WeatherAPI ✓ (Implémentée)
+## 1. WeatherAPI
 
 Classe pour récupérer et gérer les données météo via [Open-Meteo](https://open-meteo.com/).
 

@@ -230,28 +230,6 @@ python src/ml/utils/api/integration_example.py
 # Résultat : Fichiers parquet générés
 ```
 
----
-
-## 📋 Prochaines étapes (TODO)
-
-### Phase 2 : APIs complémentaires
-- [ ] `VacancesAPI` - Dates vacances scolaires
-- [ ] `JoursFeriesAPI` - Jours fériés nationaux
-- [ ] Scripts intégration pour 3 fichiers
-
-### Phase 3 : Pipeline complet
-- [ ] Fusion données (météo + vacances + jours fériés)
-- [ ] Intégration dans data_transformer.py
-- [ ] Feature engineering calendar
-- [ ] Tests d'intégration E2E
-
-### Phase 4 : Optimisation
-- [ ] Caching requêtes API
-- [ ] Parallélisation multi-localisations
-- [ ] Configuration fichier config.yaml
-- [ ] Monitoring data drift
-
----
 
 ## ✅ Validation finale
 

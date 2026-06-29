@@ -15,7 +15,7 @@ Service Evidently UI natif pour visualiser les rapports de monitoring ML génér
 
 ## 🎯 Objectif
 
-Ce service fournit l'interface utilisateur native d'EvidentlyAI pour visualiser et explorer les rapports de drift detection. Il offre une expérience plus riche et performante que le dashboard Streamlit.
+Ce service fournit l'interface utilisateur native d'EvidentlyAI pour visualiser et explorer les rapports de drift detection.
 
 ## ✨ Fonctionnalités
 
@@ -136,17 +136,6 @@ drift_detection:
 - pandas >= 2.0.0
 - numpy >= 1.24.0
 
-## 🔍 Comparaison avec le service EvidentlyAI (Streamlit)
-
-| Fonctionnalité | EvidentlyAI (Streamlit) | EvidentlyUI (Natif) |
-|----------------|------------------------|---------------------|
-| Interface | Streamlit générique | UI native optimisée |
-| Performance | Modérée | Élevée |
-| Comparaison rapports | Limitée | Avancée |
-| Workspaces | Non | Oui |
-| Dashboards | Basiques | Riches et configurables |
-| API REST | Non | Oui |
-| Maintenance | Personnalisée | Officielle Evidently |
 
 ## 📚 Documentation additionnelle
 
@@ -183,7 +172,3 @@ curl http://localhost:8000
 # Vérifier les logs
 docker logs evidently-ui
 ```
-
-## 🤝 Contribution
-
-Ce service est maintenu parallèlement au service EvidentlyAI (Streamlit). Les deux peuvent coexister pour différents cas d'usage.

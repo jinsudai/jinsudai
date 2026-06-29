@@ -4,6 +4,7 @@
 Eviter les sauts de ligne inutiles
 
 # A faire
+exemple -> integration tests?
 
 ## question
 
@@ -16,6 +17,11 @@ Eviter les sauts de ligne inutiles
 
 
 # Nice to have
+
+## Documentation
+- simplification doc EvidentlyUI / Guide d'utilisation détaillé fait doublon?
+- Readme MLflow / AirFlow
+- ReadMe src perfectible
 
 ## Monitoring
 - datadrift récupérer le fichier depuis S3 dans prepared (et non le reference))
@@ -46,6 +52,7 @@ Eviter les sauts de ligne inutiles
 - Loki pour collecter les logs ?
 - Fast API qui contient tout le ML pour une orchestration peu gourmande avec l'orchestrateur qui appelle les endpoints
 - Optimisation du dockerfile JinsudAPI
+- Revoir holidays_api
 
 
 
@@ -68,3 +75,22 @@ Adapter l'infrastructure de données de l'organisation à travers la constructio
 Concevoir des pipelines d'intégration et déploiement continu pour automatiser le processus de déploiement d'une solution d'IA.
 Développer des scripts de réentrainement des modèles pour automatiser le processus de Machine Learning.
 Piloter la performance de la solution d'IA dans l'infrastructure à travers la mise en place d'outils de monitoring (comme Aporia ou Evidently) pour s'assurer qu'elle respecte les spécifications du cahier des charges dans un environnement de production.
+
+2. Infrastructure API
+- Documentation utilisateur de l'API
+
+3. Pipelines CI/CD
+- Tests d'intégration automatisés -> test d'intégration en testant les pipelines individuellement (GitHub Actions)
+- Déploiement production non configuré (placeholder dans cd.yml) -> Deployement HuggingFace possibilité de lancer les script Hugging Face depuis le GitHub Action CD
+
+4. Scripts de réentrainement ⚠️ PARTIELLEMENT PRÉSENT
+- Pas de trigger automatique reliant détection de drift → retraining → promotion -> Voir si on peut le faire avec Airflow
+- Le monitoring détecte le drift mais ne lance pas automatiquement le retraining -> Idem
+
+5. Monitoring ⚠️ PARTIELLEMENT PRÉSENT
+Pas de dashboards Grafana configurés -> Cloud -> Documenter en donnant le lien https://jenedai.grafana.net/public-dashboards/c609cf4eab1a495883ce1c5bc25b51f1?from=now-7d&to=now&timezone=browser
+Pas de monitoring du système de monitoring lui-même -> via airflow on peut voir si il y a des erreurs -> Possibilité d'ajouter l'envois d'un email
+
+6. Accessibilité ❌ MANQUANT
+Pas d'UI accessible (Streamlit mentionnée mais non implémentée) -> Ne pas le mentioné 
+Pas de documentation sur l'accessibilité / Pas de tests d'accessibilité -> Pas d'UI, juste Dashboard Grafana et API
