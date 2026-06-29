@@ -433,11 +433,18 @@ class TrainingPipeline:
                 # ÉTAPE 8.2: Supprimer les anciens fichiers après upload réussi
                 if archived_files:
                     logger.info("=== ÉTAPE 8.2: SUPPRESSION DES ANCIENS FICHIERS ===")
-                    delete_result = s3_handler.delete_files(archived_files)
-                    if delete_result["status"] == "success":
-                        logger.info(f"Fichiers supprimés: {len(delete_result.get('deleted_files', []))}")
+
+                    # Filtrer les fichiers à supprimer (exclure le nouveau fichier)
+                    files_to_delete = [f for f in archived_files if f != s3_key]
+
+                    if files_to_delete:
+                        delete_result = s3_handler.delete_files(files_to_delete)
+                        if delete_result["status"] == "success":
+                            logger.info(f"Fichiers supprimés: {len(delete_result.get('deleted_files', []))}")
+                        else:
+                            logger.warning(f"Échec de la suppression: {delete_result.get('reason')}")
                     else:
-                        logger.warning(f"Échec de la suppression: {delete_result.get('reason')}")
+                        logger.info("Aucun fichier à supprimer (le nouveau fichier est le seul)")
 
                 return True
             elif result["status"] == "skipped":

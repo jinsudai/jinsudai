@@ -475,11 +475,22 @@ class PreparationPipeline:
         # ÉTAPE 6.5: Supprimer l'ancien fichier S3 après upload réussi
         if self.archived_files and s3_result.get("status") == "success":
             logger.info("=== ÉTAPE 6.5: SUPPRESSION DES ANCIENS FICHIERS S3 ===")
-            delete_result = self.s3_handler.delete_files(self.archived_files)
-            if delete_result["status"] == "success":
-                logger.info(f"Fichiers supprimés: {len(delete_result.get('deleted_files', []))}")
+
+            # Récupérer le nom du fichier uploadé
+            train_filename = Path(train_path).name
+            new_s3_key = f"consumption/prepared/{train_filename}"
+
+            # Filtrer les fichiers à supprimer (exclure le nouveau fichier)
+            files_to_delete = [f for f in self.archived_files if f != new_s3_key]
+
+            if files_to_delete:
+                delete_result = self.s3_handler.delete_files(files_to_delete)
+                if delete_result["status"] == "success":
+                    logger.info(f"Fichiers supprimés: {len(delete_result.get('deleted_files', []))}")
+                else:
+                    logger.warning(f"Échec de la suppression: {delete_result.get('reason')}")
             else:
-                logger.warning(f"Échec de la suppression: {delete_result.get('reason')}")
+                logger.info("Aucun fichier à supprimer (le nouveau fichier est le seul)")
 
         logger.info("\n####################################################")
         logger.info("### PIPELINE TERMINÉ AVEC SUCCÈS ###")
