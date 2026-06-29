@@ -10,7 +10,7 @@ Fonctionnalités:
 import os
 import boto3
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import logging
 import re
 from datetime import datetime
