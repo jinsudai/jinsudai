@@ -787,10 +787,25 @@ def save_evidently_report_to_workspace(
 
         # Ajouter le rapport au projet via le workspace (API: add_run)
         # Le rapport doit déjà avoir été exécuté avec report.run()
-        workspace.add_run(
-            project.id,
-            report
-        )
+        # Essayer avec le rapport directement
+        try:
+            workspace.add_run(
+                project.id,
+                report
+            )
+        except Exception as e:
+            # Si ça échoue, essayer de ré-exécuter le rapport
+            logger.warning(f"add_run échoué avec le rapport existant: {e}, tentative de ré-exécution")
+            try:
+                # Ré-exécuter le rapport pour créer un nouvel objet
+                run_result = report.run()
+                workspace.add_run(
+                    project.id,
+                    run_result
+                )
+            except Exception as e2:
+                logger.error(f"Échec avec ré-exécution: {e2}")
+                raise
 
         logger.info(f"Rapport Evidently sauvegardé dans le workspace: {project_name}/{report_name}")
         return True

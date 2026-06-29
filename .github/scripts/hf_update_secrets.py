@@ -33,6 +33,11 @@ def get_satellites():
 
 def get_hf_token_for_service(service_name):
     """Get HF_TOKEN for a specific service or satellite"""
+    # Extract just the service name (without username prefix if present)
+    # e.g., "jetestai/airflow" -> "airflow"
+    if "/" in service_name:
+        service_name = service_name.split("/")[-1]
+    
     # Try satellite-specific token first (e.g., AIRFLOW_HF_TOKEN)
     satellite_token = os.getenv(f"{service_name.upper()}_HF_TOKEN")
     if satellite_token:
@@ -73,6 +78,11 @@ def get_shared_secrets():
 
 def get_service_secrets(service):
     """Get service-specific secrets from environment (e.g., AIRFLOW_PASSWORD)"""
+    # Extract just the service name (without username prefix if present)
+    # e.g., "jetestai/airflow" -> "airflow"
+    if "/" in service:
+        service = service.split("/")[-1]
+    
     # Mapping of service -> environment variables
     service_secrets_map = {
         "airflow": ["AIRFLOW_ADMIN_USER", "AIRFLOW_ADMIN_PASSWORD", "AIRFLOW__DATABASE__SQL_ALCHEMY_CONN", "AIRFLOW__WEBSERVER__SECRET_KEY", "GH_TOKEN", "GH_REPO", "GH_BRANCH"],
@@ -123,9 +133,6 @@ def main():
         print("[ERR] HF_TOKEN environment variable not set")
         sys.exit(1)
 
-    api = HfApi(token=token)
-    username = api.whoami()["name"]
-
     services = get_services()
     satellites = get_satellites()
     all_spaces = services + satellites
@@ -147,13 +154,8 @@ def main():
             continue
 
         space_api = HfApi(token=space_token)
-        try:
-            space_username = space_api.whoami()["name"]
-        except Exception as e:
-            print(f"[ERR] Failed to authenticate with HuggingFace for '{space}': {str(e)}")
-            continue
 
-        space_id = f"{space_username}/{space}"
+        space_id = space  # Space name already includes username from config
         print(f"\n[*] Processing space: {space_id}")
 
         # Add shared AWS secrets

@@ -63,14 +63,14 @@ environment: "dev"  # Options: "dev", "test", "prod"
 services:
   # Liste des services internes (HuggingFace Spaces)
   names:
-    - "MLflow"
-    - "docsify"
-    - "EvidentlyUI"
-    - "slidev"
+    - "jinsudai/MLflow"
+    - "jinsudai/docsify"
+    - "jinsudai/EvidentlyUI"
+    - "jinsudai/slidev"
 
   satellites:
-    - "airflow"
-    - "JinsudAPI"
+    - "jetestai/airflow"
+    - "jetestai/JinsudAPI"
     
 # Logging
 logging:
