@@ -83,8 +83,8 @@ def push_service_to_hf(api, service, space_id):
         return False
 
     try:
-        # Copier src uniquement pour FastApi
-        if service_name == "FastApi":
+        # Copier src pour FastApi et JinsudAPI
+        if service_name in ["JinsudAPI"]:
             src_dir = repo_root / "src"
             service_src_path = service_path / "src"
             if src_dir.exists():
@@ -104,7 +104,7 @@ def push_service_to_hf(api, service, space_id):
         )
 
         # Nettoyer: supprimer src copié localement (ne pas les commiter)
-        if service_name == "FastApi":
+        if service_name in ["JinsudAPI"]:
             service_src_path = service_path / "src"
             if service_src_path.exists():
                 shutil.rmtree(service_src_path)
