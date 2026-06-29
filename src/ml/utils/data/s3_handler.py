@@ -449,6 +449,10 @@ class S3Handler:
                 logger.warning(f"Impossible d'extraire la date de fin du fichier: {filename}")
                 return None
 
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération de la date de fin: {e}")
+            return None
+
     def archive_files(self, source_prefix: str, archive_prefix: str) -> Dict[str, Any]:
         """
         Archive tous les fichiers d'un préfixe S3 vers un autre préfixe.
