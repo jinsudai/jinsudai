@@ -373,6 +373,8 @@ class MonitoringPipeline:
 
                 success = save_evidently_report_to_workspace(
                     report=report,
+                    reference_data=self.reference_data,
+                    current_data=self.current_data,
                     project_name="energy_consumption",
                     ui_url=self.evidently_config.get('ui_url'),
                     project_id=self.evidently_config.get('project_id'),

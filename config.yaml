@@ -69,7 +69,7 @@ services:
     - "jinsudai/slidev"
 
   satellites:
-    - "jetestai/airflow"
+    - "airflai/airflow"
     - "jetestai/JinsudAPI"
     
 # Logging

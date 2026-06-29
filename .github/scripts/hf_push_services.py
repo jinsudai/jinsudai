@@ -30,6 +30,11 @@ def get_satellites():
 
 def get_hf_token_for_service(service_name):
     """Get HF_TOKEN for a specific service or satellite"""
+    # Extract just the service name (without username prefix if present)
+    # e.g., "jetestai/airflow" -> "airflow"
+    if "/" in service_name:
+        service_name = service_name.split("/")[-1]
+    
     # Try satellite-specific token first (e.g., AIRFLOW_HF_TOKEN)
     satellite_token = os.getenv(f"{service_name.upper()}_HF_TOKEN")
     if satellite_token:
@@ -65,9 +70,12 @@ def check_critical_files_changed():
     
     return False
 
-def push_service_to_hf(api, service, username):
+def push_service_to_hf(api, service, space_id):
     """Push service directory to HuggingFace Space"""
-    service_path = Path(__file__).parent.parent.parent / "Services" / service
+    # Extract just the service name (without username prefix) for local directory
+    # e.g., "jinsudai/MLflow" -> "MLflow"
+    service_name = service.split("/")[-1] if "/" in service else service
+    service_path = Path(__file__).parent.parent.parent / "Services" / service_name
     repo_root = Path(__file__).parent.parent.parent
 
     if not service_path.exists():
@@ -76,16 +84,16 @@ def push_service_to_hf(api, service, username):
 
     try:
         # Copier src uniquement pour FastApi
-        if service == "FastApi":
+        if service_name == "FastApi":
             src_dir = repo_root / "src"
             service_src_path = service_path / "src"
             if src_dir.exists():
                 if service_src_path.exists():
                     shutil.rmtree(service_src_path)
                 shutil.copytree(src_dir, service_src_path)
-                print(f"[*] Copied src to {service}")
+                print(f"[*] Copied src to {service_name}")
 
-        space_id = f"{username}/{service}"
+        # space_id is already the full name from config (e.g., "jinsudai/MLflow")
 
         # Upload the entire service directory to the space
         api.upload_folder(
@@ -96,7 +104,7 @@ def push_service_to_hf(api, service, username):
         )
 
         # Nettoyer: supprimer src copié localement (ne pas les commiter)
-        if service == "FastApi":
+        if service_name == "FastApi":
             service_src_path = service_path / "src"
             if service_src_path.exists():
                 shutil.rmtree(service_src_path)
@@ -119,11 +127,7 @@ def main():
     
     api = HfApi(token=token)
     
-    try:
-        username = api.whoami()["name"]
-    except Exception as e:
-        print(f"[ERR] Failed to authenticate with HuggingFace: {str(e)}")
-        sys.exit(1)
+    # No need to call whoami() since space names now include username from config
     
     services = get_services()
     satellites = get_satellites()
@@ -153,7 +157,10 @@ def main():
     else:
         # Vérifier chaque service et satellite pour des changements
         for space in all_spaces:
-            space_path = services_dir / space
+            # Extract just the service name (without username prefix) for local directory
+            # e.g., "jinsudai/MLflow" -> "MLflow"
+            service_name = space.split("/")[-1] if "/" in space else space
+            space_path = services_dir / service_name
             if space_path.exists() and has_changes(str(space_path)):
                 print(f"[*] Changes detected in '{space}'")
                 spaces_to_push.append(space)
@@ -175,13 +182,8 @@ def main():
             continue
         
         space_api = HfApi(token=space_token)
-        try:
-            space_username = space_api.whoami()["name"]
-        except Exception as e:
-            print(f"[ERR] Failed to authenticate with HuggingFace for '{space}': {str(e)}")
-            continue
         
-        if push_service_to_hf(space_api, space, space_username):
+        if push_service_to_hf(space_api, space, space):
             success_count += 1
     
     print("=" * 60)

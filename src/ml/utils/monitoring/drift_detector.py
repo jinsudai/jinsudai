@@ -726,6 +726,8 @@ def _log_metrics_and_artifacts(
 
 def save_evidently_report_to_workspace(
     report: Report,
+    reference_data: Optional[pd.DataFrame] = None,
+    current_data: Optional[pd.DataFrame] = None,
     project_name: str = "energy_consumption",
     report_name: Optional[str] = None,
     workspace_path: Optional[str] = None,
@@ -739,6 +741,8 @@ def save_evidently_report_to_workspace(
 
     Args:
         report: Rapport Evidently
+        reference_data: DataFrame de référence (optionnel, requis pour RemoteWorkspace)
+        current_data: DataFrame courant (optionnel, requis pour RemoteWorkspace)
         project_name: Nom du projet dans le workspace
         report_name: Nom du rapport (optionnel, généré automatiquement si None)
         workspace_path: Chemin du workspace local (optionnel, ignoré si ui_url fourni)
@@ -785,27 +789,32 @@ def save_evidently_report_to_workspace(
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             report_name = f"drift_report_{timestamp}"
 
-        # Ajouter le rapport au projet via le workspace (API: add_run)
-        # Le rapport doit déjà avoir été exécuté avec report.run()
-        # Essayer avec le rapport directement
-        try:
+        # Pour RemoteWorkspace, créer un nouveau rapport et l'exécuter avec les données
+        if ui_url and reference_data is not None and current_data is not None:
+            logger.info("Création d'un nouveau rapport pour RemoteWorkspace")
+            from evidently.presets import DataDriftPreset
+            from evidently.metrics import DriftedColumnsCount
+
+            # Créer un nouveau rapport avec les mêmes metrics
+            new_report = Report(metrics=[
+                DataDriftPreset(),
+                DriftedColumnsCount()
+            ])
+
+            # Exécuter le rapport avec les données
+            run_result = new_report.run(reference_data=reference_data, current_data=current_data)
+
+            # Envoyer au workspace
+            workspace.add_run(
+                project.id,
+                run_result
+            )
+        else:
+            # Pour workspace local ou si données non disponibles
             workspace.add_run(
                 project.id,
                 report
             )
-        except Exception as e:
-            # Si ça échoue, essayer de ré-exécuter le rapport
-            logger.warning(f"add_run échoué avec le rapport existant: {e}, tentative de ré-exécution")
-            try:
-                # Ré-exécuter le rapport pour créer un nouvel objet
-                run_result = report.run()
-                workspace.add_run(
-                    project.id,
-                    run_result
-                )
-            except Exception as e2:
-                logger.error(f"Échec avec ré-exécution: {e2}")
-                raise
 
         logger.info(f"Rapport Evidently sauvegardé dans le workspace: {project_name}/{report_name}")
         return True
