@@ -8,47 +8,17 @@ Eviter les sauts de ligne inutiles
 ## question
 
 ## documentation
-- actualiser la documentation
+- slidev -> utiliser EvidentlAI
+- actualiser la documentation en verifiant ce qui est pertinent à documenter
+-- Orchestration airflow qui déclenche GitHub Actions
+-- Prediction (inférence) inclue dans le pipeline pour être executé une seule fois dans un environnement temporaire
+-- Db?
 
 ## Monitoring
-- datadrift récupérer le fichier depuis S3 dans trained -> A tester
-- generation du rapport... -> failed demander GitHub Copilot -> Later
+- datadrift récupérer le fichier depuis S3 dans prepared (et non le reference))
+- autre drifts?
+- email notification
 
-## Verifier
-- visualisation dans Evidently AI
-- grafana avec donnée actuelles
-
-# cleaning
-**Ajouter** un `__init__.py` dans chaque répertoire pour des imports propres
-
-
-# A tester
-
-## Evidently
-- J'ai un server EvidentlyAi deployé je pense qu'il faut juste uploader les rapports dans le bucket s3 evidently-reports
-- Faire marcher la detection de drift avec S3
-- Est-ce que l'on compare bien les bons datasets?
-- Data Drift (Drift Detection Action) -> Tester la documentation
-
-## Data 
-- Verifier les fichiers sources
-- Vérifier les fichier généré dans S3
-- Vérifier la creation des parquet dans S3
-
-## slidev
-- Verifier la Documentation pour bloc 4
-
-## Db
-- Quels informations sont stockée en base de données? Quels pipelines utilise la base de données predictions?
-- Il y a t'il un documentation pour documenter les interraction avec la table prediction?  
-
-
-# A faire
-- deployement (ou streamlit) fait via le lancement des pipeline Retraining et Prediction provoqué par les Workflows? -> A faire
-
-# Documenter
-- Orchestration airflow qui déclenche GitHub Actions
-- Prediction (inférence) inclue dans le pipeline pour être executé une seule fois dans un environnement temporaire
 
 # Nice to have
 
@@ -57,9 +27,7 @@ Eviter les sauts de ligne inutiles
 - Enlever les exemples donnés pour les connecteurs si non pertinent -> les mettre dans Script?
 - Simplifier l'ingestion: get_predictions_by_date(start_date, end_date) non necessaire
 
-
 # A Nettoyer
-
 - Faire marcher les scripts restants
 - get_production_data_for_retraining peut être renommé en get_production_data
 - Clean vacances etc...
@@ -77,6 +45,7 @@ Eviter les sauts de ligne inutiles
 - Faire en sorte que chaque pipeline soit un service ?
 - Loki pour collecter les logs ?
 - Fast API qui contient tout le ML pour une orchestration peu gourmande avec l'orchestrateur qui appelle les endpoints
+- Optimisation du dockerfile JinsudAPI
 
 
 

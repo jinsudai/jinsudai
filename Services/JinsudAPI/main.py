@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
 from ml.utils.models.models_inference import InferenceModel
 from ml.config import get_mlflow_config
+from ml.config.global_config import load_config_with_environment
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -75,8 +76,9 @@ def get_inference_model():
     global _inference_model
     if _inference_model is None:
         try:
-            # Get MLflow config from the project config
-            mlflow_config = get_mlflow_config()
+            # Load full config with environment to get model_name
+            config = load_config_with_environment("consumption")
+            mlflow_config = config.get("mlflow", {})
             
             # Initialize InferenceModel with project config
             _inference_model = InferenceModel(
@@ -87,6 +89,9 @@ def get_inference_model():
             # Load production model
             model_name = mlflow_config.get("model_name")
             alias_prod = mlflow_config.get("prod_alias", "prod")
+            
+            if not model_name:
+                raise RuntimeError("model_name not found in configuration")
             
             success = _inference_model.load_production_model(
                 model_name=model_name,
