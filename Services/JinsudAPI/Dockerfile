@@ -3,6 +3,8 @@ FROM continuumio/miniconda3
 RUN apt-get update -y 
 RUN apt-get install nano unzip curl -y
 
+ENV MLFLOW_TRACKING_URI=https://jinsudai-mlflow.hf.space/
+
 # THIS IS SPECIFIC TO HUGGINFACE
 # We create a new user named "user" with ID of 1000
 RUN useradd -m -u 1000 user
@@ -23,20 +25,11 @@ WORKDIR $HOME/app
 COPY requirements.txt /dependencies/requirements.txt
 RUN pip install -r /dependencies/requirements.txt
 
-# Copy only necessary ml module files for inference (copied by hf_push_services.py)
-COPY --chown=user src/ml/__init__.py /home/user/src/ml/
-COPY --chown=user src/ml/config/__init__.py /home/user/src/ml/config/
-COPY --chown=user src/ml/config/config_loader.py /home/user/src/ml/config/
-COPY --chown=user src/ml/config/global_config.py /home/user/src/ml/config/
-COPY --chown=user src/ml/utils/__init__.py /home/user/src/ml/utils/
-COPY --chown=user src/ml/utils/models/__init__.py /home/user/src/ml/utils/models/
-COPY --chown=user src/ml/utils/models/models_inference.py /home/user/src/ml/utils/models/
-
-# Copy config files (copied by hf_push_services.py)
-COPY --chown=user src/configs/ /home/user/src/configs/
+# Copy src directory (copied by hf_push_services.py)
+COPY --chown=user src/ /home/user/src/
 
 # Copy FastAPI service files
-WORKDIR $HOME/app
-COPY --chown=user . $HOME/app
+WORKDIR $HOME/src
+COPY --chown=user . $HOME/src
 
 CMD uvicorn main:app --host 0.0.0.0 --port 7860 

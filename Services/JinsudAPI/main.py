@@ -175,7 +175,7 @@ async def predict(request: PredictionRequest):
         df = pd.DataFrame(data)
         
         # Make prediction using InferenceModel
-        predictions, _ = inference_model.predict(df)
+        predictions = inference_model.predict(df)
         
         if predictions is None:
             raise RuntimeError("Prediction returned None")
@@ -225,7 +225,7 @@ async def predict_batch(requests: List[PredictionRequest]):
         df = pd.DataFrame(data)
         
         # Make predictions using InferenceModel
-        predictions, _ = inference_model.predict(df)
+        predictions = inference_model.predict(df)
         
         if predictions is None:
             raise RuntimeError("Batch prediction returned None")

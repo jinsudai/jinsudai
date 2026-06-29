@@ -13,6 +13,8 @@ Eviter les sauts de ligne inutiles
 ## Monitoring
 - datadrift récupérer le fichier depuis S3 dans trained -> A tester
 - generation du rapport... -> failed demander GitHub Copilot -> Later
+
+## Verifier
 - visualisation dans Evidently AI
 - grafana avec donnée actuelles
 
