@@ -439,6 +439,27 @@ def generate_evidently_report(
 
         logger.info(f"Colonnes utilisées pour le rapport Evidently: {len(common_columns)} colonnes communes")
 
+        # Filtrer les colonnes constantes (variance nulle) pour éviter les warnings numpy
+        columns_to_keep = []
+        for col in common_columns:
+            # Vérifier si la colonne est numérique
+            if pd.api.types.is_numeric_dtype(reference_data_aligned[col]):
+                # Vérifier la variance
+                ref_std = reference_data_aligned[col].std()
+                curr_std = current_data_aligned[col].std()
+                if ref_std > 0 or curr_std > 0:
+                    columns_to_keep.append(col)
+                else:
+                    logger.info(f"Colonne {col} exclue (variance nulle)")
+            else:
+                columns_to_keep.append(col)
+
+        # Garder uniquement les colonnes non constantes
+        reference_data_aligned = reference_data_aligned[columns_to_keep]
+        current_data_aligned = current_data_aligned[columns_to_keep]
+
+        logger.info(f"Colonnes après filtrage variance nulle: {len(columns_to_keep)}")
+
         # Créer le rapport avec les presets Evidently
         report = Report(metrics=[
             DataDriftPreset(),
