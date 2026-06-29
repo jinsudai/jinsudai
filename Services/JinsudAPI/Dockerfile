@@ -4,6 +4,7 @@ RUN apt-get update -y
 RUN apt-get install nano unzip curl -y
 
 ENV MLFLOW_TRACKING_URI=https://jinsudai-mlflow.hf.space/
+ENV ENVIRONMENT=test
 
 # THIS IS SPECIFIC TO HUGGINFACE
 # We create a new user named "user" with ID of 1000

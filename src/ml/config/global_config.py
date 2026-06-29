@@ -219,31 +219,13 @@ def load_config_with_environment(config_name: str) -> Dict[str, Any]:
     """
     from .config_loader import load_config as _load_config
 
-    # Charger la config de base
-    base_config = _load_config(config_name=config_name)
-
-    # Charger la config spécifique à l'environnement si elle existe
-    # Priorité: variable d'environnement ENVIRONMENT (majuscules) > Environment (premier caractère majuscule)
-    environment = os.getenv('ENVIRONMENT')
-    if environment is None:
-        raise ValueError("La variable d'environnement ENVIRONMENT n'est pas définie")
-    environment = environment.lower()
-    env_config_name = f"{config_name}.{environment}"
-
-    try:
-        env_config = _load_config(config_name=env_config_name)
-        # Deep merge for nested dictionaries (especially mlflow section)
-        config = {**base_config}
-        for key, value in env_config.items():
-            if key in config and isinstance(config[key], dict) and isinstance(value, dict):
-                config[key] = {**config[key], **value}
-            else:
-                config[key] = value
-        logger.info(f"Config chargée: {config_name} + {env_config_name}")
-        return config
-    except Exception:
-        logger.info(f"Config chargée: {config_name} (pas de config spécifique pour {environment})")
-        return base_config
+    # load_config fait déjà la fusion automatique avec l'environnement
+    config = _load_config(config_name=config_name)
+    
+    environment = os.getenv('ENVIRONMENT', 'dev')
+    logger.info(f"Config chargée: {config_name} (environnement: {environment})")
+    
+    return config
 
 
 def get_services_names() -> list:
