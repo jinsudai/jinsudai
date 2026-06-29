@@ -375,6 +375,7 @@ class MonitoringPipeline:
                     report=report,
                     project_name="energy_consumption",
                     ui_url=self.evidently_config.get('ui_url'),
+                    project_id=self.evidently_config.get('project_id'),
                     workspace_path=self.evidently_config.get('workspace_path'),
                     metadata=metadata,
                     tags=tags

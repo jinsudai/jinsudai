@@ -80,7 +80,8 @@ logging:
 # Configuration Evidently AI
 evidently:
   enabled: true  # Activer/désactiver Evidently
-  ui_url: "https://jinsudai-evidentlyui.hf.space/"  # URL du service Evidently UI (RemoteWorkspace)
+  ui_url: "https://jinsudai-evidentlyui.hf.space"  # URL du service Evidently UI (RemoteWorkspace)
+  project_id: "019f13a4-e704-74be-a358-f53577d6bd2f"  # ID du projet existant sur Evidently UI
   workspace_path: "s3://evidently-reports/workspace"  # Chemin du workspace (utilisé par le serveur UI pour le stockage S3)
   report_path: "./evidently_reports"  # Chemin pour sauvegarder les rapports
   use_native_reports: true  # Utiliser les rapports natifs Evidently (recommandé)
