@@ -77,7 +77,7 @@ class TestMonitoringPipeline(unittest.TestCase):
         self.assertFalse(result)
 
     @patch('ml.pipelines.monitoring.load_reference_data')
-    def test_step_1_load_reference_data_success(self, mock_load):
+    def test_step_2_load_reference_data_success(self, mock_load):
         """Test le chargement des données de référence avec succès."""
         mock_load.return_value = pd.DataFrame({
             'feature1': [1, 2, 3],
@@ -86,7 +86,7 @@ class TestMonitoringPipeline(unittest.TestCase):
         })
 
         with patch('pathlib.Path.exists', return_value=True):
-            result = self.pipeline.step_1_load_reference_data(
+            result = self.pipeline.step_2_load_reference_data(
                 reference_path='data/test.parquet',
                 download_from_s3_if_missing=False
             )
@@ -96,12 +96,12 @@ class TestMonitoringPipeline(unittest.TestCase):
         self.assertEqual(len(self.pipeline.reference_data), 3)
 
     @patch('ml.pipelines.monitoring.load_reference_data')
-    def test_step_1_load_reference_data_failure(self, mock_load):
+    def test_step_2_load_reference_data_failure(self, mock_load):
         """Test le chargement des données de référence en échec."""
         mock_load.return_value = None
 
         with patch('pathlib.Path.exists', return_value=True):
-            result = self.pipeline.step_1_load_reference_data(
+            result = self.pipeline.step_2_load_reference_data(
                 reference_path='data/test.parquet',
                 download_from_s3_if_missing=False
             )
@@ -109,9 +109,9 @@ class TestMonitoringPipeline(unittest.TestCase):
         self.assertFalse(result)
 
     @patch('ml.pipelines.monitoring.load_reference_data')
-    def test_step_1_load_reference_data_no_path(self, mock_load):
+    def test_step_2_load_reference_data_no_path(self, mock_load):
         """Test le chargement sans chemin fourni."""
-        result = self.pipeline.step_1_load_reference_data(
+        result = self.pipeline.step_2_load_reference_data(
             reference_path=None,
             download_from_s3_if_missing=False
         )
@@ -119,7 +119,7 @@ class TestMonitoringPipeline(unittest.TestCase):
         self.assertFalse(result)
 
     @patch('pandas.read_parquet')
-    def test_step_2_load_current_data_success(self, mock_read):
+    def test_step_3_load_current_data_success(self, mock_read):
         """Test le chargement des données courantes avec succès."""
         mock_read.return_value = pd.DataFrame({
             'feature1': [1, 2],
@@ -127,7 +127,7 @@ class TestMonitoringPipeline(unittest.TestCase):
             'Valeur': [10, 20]
         })
 
-        result = self.pipeline.step_2_load_current_data(
+        result = self.pipeline.step_3_load_current_data(
             current_data_path='data/current.parquet',
             limit=1000
         )
@@ -136,11 +136,11 @@ class TestMonitoringPipeline(unittest.TestCase):
         self.assertIsNotNone(self.pipeline.current_data)
 
     @patch('pandas.read_parquet')
-    def test_step_2_load_current_data_failure(self, mock_read):
+    def test_step_3_load_current_data_failure(self, mock_read):
         """Test le chargement des données courantes en échec."""
         mock_read.side_effect = Exception("File not found")
 
-        result = self.pipeline.step_2_load_current_data(
+        result = self.pipeline.step_3_load_current_data(
             current_data_path='data/current.parquet',
             limit=1000
         )
@@ -149,7 +149,7 @@ class TestMonitoringPipeline(unittest.TestCase):
 
     @patch('ml.pipelines.monitoring.run_drift_detection')
     @patch('ml.pipelines.monitoring.MonitoringPipeline._generate_reference_predictions')
-    def test_step_3_detect_drift_success(self, mock_gen_pred, mock_detect):
+    def test_step_4_detect_drift_success(self, mock_gen_pred, mock_detect):
         """Test la détection de drift avec succès."""
         # Préparer les données avec assez d'échantillons (>= 96)
         self.pipeline.reference_data = pd.DataFrame({
@@ -170,24 +170,24 @@ class TestMonitoringPipeline(unittest.TestCase):
             'concept_drift': {'drift_detected': False}
         }
 
-        result = self.pipeline.step_3_detect_drift()
+        result = self.pipeline.step_4_detect_drift()
 
         self.assertTrue(result)
         self.assertIsNotNone(self.pipeline.drift_results)
         self.assertFalse(self.pipeline.drift_results['overall_drift_detected'])
 
     @patch('ml.pipelines.monitoring.run_drift_detection')
-    def test_step_3_detect_drift_failure(self, mock_detect):
+    def test_step_4_detect_drift_failure(self, mock_detect):
         """Test la détection de drift en échec."""
         self.pipeline.reference_data = None
         self.pipeline.current_data = None
 
-        result = self.pipeline.step_3_detect_drift()
+        result = self.pipeline.step_4_detect_drift()
 
         self.assertFalse(result)
 
     @patch('ml.pipelines.monitoring.generate_evidently_report')
-    def test_step_4_generate_report_success(self, mock_generate):
+    def test_step_5_generate_report_success(self, mock_generate):
         """Test la génération du rapport avec succès."""
         self.pipeline.reference_data = pd.DataFrame({'feature1': [1, 2]})
         self.pipeline.current_data = pd.DataFrame({'feature1': [1, 2]})
@@ -195,7 +195,7 @@ class TestMonitoringPipeline(unittest.TestCase):
 
         mock_generate.return_value = (MagicMock(), {'test': 'data'})
 
-        result = self.pipeline.step_4_generate_evidently_report(
+        result = self.pipeline.step_5_generate_evidently_report(
             output_path='test_report.html',
             save_to_workspace=False,
             save_to_s3=False
@@ -203,39 +203,41 @@ class TestMonitoringPipeline(unittest.TestCase):
 
         self.assertTrue(result)
 
-    def test_step_5_store_metrics_no_results(self):
+    def test_step_6_store_metrics_no_results(self):
         """Test le stockage des métriques sans résultats."""
         self.pipeline.drift_results = None
         self.pipeline.evidently_report = None
 
-        result = self.pipeline.step_5_store_metrics()
+        result = self.pipeline.step_6_store_metrics()
 
         self.assertFalse(result)
 
-    def test_step_6_send_notifications_no_drift(self):
+    def test_step_7_send_notifications_no_drift(self):
         """Test les notifications sans drift détecté."""
         self.pipeline.drift_results = {'overall_drift_detected': False}
 
-        result = self.pipeline.step_6_send_notifications()
+        result = self.pipeline.step_7_send_notifications()
 
         self.assertTrue(result)
 
-    def test_step_6_send_notifications_no_results(self):
+    def test_step_7_send_notifications_no_results(self):
         """Test les notifications sans résultats."""
         self.pipeline.drift_results = None
 
-        result = self.pipeline.step_6_send_notifications()
+        result = self.pipeline.step_7_send_notifications()
 
         self.assertFalse(result)
 
-    @patch('ml.pipelines.monitoring.MonitoringPipeline.step_1_load_reference_data')
-    @patch('ml.pipelines.monitoring.MonitoringPipeline.step_2_load_current_data')
-    @patch('ml.pipelines.monitoring.MonitoringPipeline.step_3_detect_drift')
-    def test_run_full_pipeline_success(self, mock_step3, mock_step2, mock_step1):
+    @patch('ml.pipelines.monitoring.MonitoringPipeline.step_2_load_reference_data')
+    @patch('ml.pipelines.monitoring.MonitoringPipeline.step_3_load_current_data')
+    @patch('ml.pipelines.monitoring.MonitoringPipeline.step_4_detect_drift')
+    @patch('ml.pipelines.monitoring.MonitoringPipeline.step_1_health_check_api')
+    def test_run_full_pipeline_success(self, mock_health_check, mock_step4, mock_step3, mock_step2):
         """Test l'exécution complète du pipeline avec succès."""
-        mock_step1.return_value = True
+        mock_health_check.return_value = True
         mock_step2.return_value = True
         mock_step3.return_value = True
+        mock_step4.return_value = True
 
         self.pipeline.drift_results = {'overall_drift_detected': False}
 
@@ -247,14 +249,17 @@ class TestMonitoringPipeline(unittest.TestCase):
         )
 
         self.assertTrue(results['success'])
+        self.assertIn('health_check_api', results['steps_completed'])
         self.assertIn('load_reference_data', results['steps_completed'])
         self.assertIn('load_current_data', results['steps_completed'])
         self.assertIn('detect_drift', results['steps_completed'])
 
-    @patch('ml.pipelines.monitoring.MonitoringPipeline.step_1_load_reference_data')
-    def test_run_full_pipeline_step1_failure(self, mock_step1):
-        """Test le pipeline avec échec à l'étape 1."""
-        mock_step1.return_value = False
+    @patch('ml.pipelines.monitoring.MonitoringPipeline.step_2_load_reference_data')
+    @patch('ml.pipelines.monitoring.MonitoringPipeline.step_1_health_check_api')
+    def test_run_full_pipeline_step2_failure(self, mock_health_check, mock_step2):
+        """Test le pipeline avec échec à l'étape 2 (chargement référence)."""
+        mock_health_check.return_value = True
+        mock_step2.return_value = False
 
         results = self.pipeline.run_full_pipeline(
             generate_report=False,
