@@ -4,12 +4,14 @@
 Eviter les sauts de ligne inutiles
 
 # A faire
-exemple -> integration tests?
+Ordonnées les Workflow GitHubActions?
+Générer les test Unitaires
+Générer des test d'intégration
 
 ## question
+Compare Prediction vs Reelle?
 
 ## documentation
-- slidev -> utiliser EvidentlAI
 - actualiser la documentation en verifiant ce qui est pertinent à documenter
 -- Orchestration airflow qui déclenche GitHub Actions
 -- Prediction (inférence) inclue dans le pipeline pour être executé une seule fois dans un environnement temporaire
@@ -46,6 +48,7 @@ Ordonencement GitHubAction
 -- Identifier que c'est le premier training
 
 # Plus tard
+- Email sender dans une variable d'environnent
 - fichier de config différent pour les services. (evite de le trigger)
 - email notifier
 - config.yaml pour les différents environnements

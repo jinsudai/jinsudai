@@ -15,7 +15,7 @@ email:
   # Configuration Resend (utilisé si provider = "resend")
   resend:
     api_key: null  # Clé API Resend (à définir via variable d'environnement RESEND_API_KEY)
-    from_email: "jinsudai@free.fr"  # Email expéditeur par défaut
+    from_email: "jinsudai@sustcoop.fr"  # Email expéditeur par défaut
   
   # Configuration commune
   sender_email: "jinsudai@free.fr"  # Email expéditeur (pour SMTP)
