@@ -597,7 +597,7 @@ def generate_evidently_report(
                 # Filtrer aussi si trop de NaN (>50%)
                 ref_nan_ratio = reference_data_aligned[col].isna().mean()
                 curr_nan_ratio = current_data_aligned[col].isna().mean()
-                
+
                 if (ref_std > 1e-6 or curr_std > 1e-6) and ref_nan_ratio < 0.5 and curr_nan_ratio < 0.5:
                     columns_to_keep.append(col)
                 else:
@@ -637,9 +637,9 @@ def generate_evidently_report(
                 )
                 with open(output_file, 'w', encoding='utf-8') as f:
                     f.write(html_content)
-                logger.info(f"Rapport HTML personnalisé sauvegardé: {output_file}")
+                logger.info(f"  → Rapport HTML local sauvegardé: {output_file}")
             except Exception as e:
-                logger.warning(f"Impossible de sauvegarder le rapport HTML personnalisé: {e}")
+                logger.warning(f"  ✗ Impossible de sauvegarder le rapport HTML local: {e}")
 
         # Retourner le rapport et un dictionnaire vide (l'API d'Evidently a changé)
         return report, {}
@@ -764,14 +764,14 @@ def save_evidently_report_to_workspace(
                 report
             )
 
-        logger.info(f"Rapport Evidently sauvegardé dans le workspace: {project_name}/{report_name}")
-        
+        logger.info(f"  → Rapport EvidentlyUI sauvegardé dans le workspace: {project_name}/{report_name}")
+
         # Construire l'URL ou le chemin du rapport
         if ui_url:
             report_url = f"{ui_url}/projects/{project.id}/reports"
         else:
             report_url = f"{workspace_path}/projects/{project.id}"
-        
+
         return True, report_url
 
     except ImportError:

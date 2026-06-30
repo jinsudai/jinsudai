@@ -78,6 +78,7 @@ class MonitoringPipeline:
         Returns:
             True si succès, False sinon
         """
+        logger.info("")
         logger.info("=== ÉTAPE 1: HEALTH CHECK API ===")
         logger.info("Vérification de la disponibilité de l'API JinsudAPI...")
 
@@ -118,6 +119,7 @@ class MonitoringPipeline:
         Returns:
             True si succès, False sinon
         """
+        logger.info("")
         logger.info("=== ÉTAPE 2: CHARGEMENT DES DONNÉES DE RÉFÉRENCE ===")
 
         # Utiliser le chemin depuis la config si non fourni
@@ -394,6 +396,7 @@ class MonitoringPipeline:
         Returns:
             True si succès, False sinon
         """
+        logger.info("")
         logger.info("=== ÉTAPE 3: CHARGEMENT DES DONNÉES COURANTES ===")
 
         # Priorité: fichier fourni -> S3
@@ -429,6 +432,7 @@ class MonitoringPipeline:
         Returns:
             True si succès, False sinon
         """
+        logger.info("")
         logger.info("=== ÉTAPE 4: DÉTECTION DE DRIFT ===")
 
         if self.reference_data is None or self.current_data is None:
@@ -523,6 +527,7 @@ class MonitoringPipeline:
         Returns:
             Tuple[bool, Optional[str]]: (succès, URL du rapport EvidentlyUI ou chemin local)
         """
+        logger.info("")
         logger.info("=== ÉTAPE 5: GÉNÉRATION DU RAPPORT EVIDENTLY ===")
 
         if self.reference_data is None or self.current_data is None:
@@ -629,6 +634,7 @@ class MonitoringPipeline:
         Returns:
             True si succès, False sinon
         """
+        logger.info("")
         logger.info("=== ÉTAPE 6: STOCKAGE DES MÉTRIQUES ===")
 
         if self.drift_results is None:
@@ -645,7 +651,7 @@ class MonitoringPipeline:
             # Récupérer le run_id de la version en production via MLflow alias
             if not run_id:
                 model_name = self.config.get('mlflow', {}).get('model_name')
-                
+
                 if model_name:
                     # Récupérer la version en production via l'alias "prod"
                     prod_model_version = get_model_version_by_alias(model_name, "prod")
@@ -696,16 +702,16 @@ class MonitoringPipeline:
                         report_filename = f"drift_report_{timestamp}.html"
                         with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as f:
                             temp_path = f.name
-                        
+
                         # Sauvegarder le rapport HTML
                         self.evidently_report.save_html(temp_path)
-                        
+
                         # Logger comme artefact MLflow
                         mlflow.log_artifact(temp_path, artifact_path="evidently_reports")
-                        
+
                         # Nettoyer le fichier temporaire
                         Path(temp_path).unlink()
-                        
+
                         # Logger l'URL de l'artefact MLflow avec le nom du fichier
                         mlflow_tracking_uri = mlflow.get_tracking_uri()
                         active_run_id = mlflow.active_run().info.run_id
@@ -734,6 +740,7 @@ class MonitoringPipeline:
         Returns:
             True si succès, False sinon
         """
+        logger.info("")
         logger.info("=== ÉTAPE 7: ENVOI DES NOTIFICATIONS ===")
 
         if self.drift_results is None:
