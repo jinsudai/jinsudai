@@ -4,12 +4,12 @@
 Eviter les sauts de ligne inutiles
 
 # A faire
-Ordonnées les Workflow GitHubActions?
-Générer les test Unitaires
-Générer des test d'intégration
+Améliorer les Logs du Monitoring Pipeline -> A tester
+Ordonnées les Workflow GitHubActions? -> CD à tester
+Générer les test Unitaires -> A la toute fin -> consomme des tokens
+Générer des test d'intégration -> A la toute fin -> consomme des tokens
 
 ## question
-Compare Prediction vs Reelle?
 
 ## documentation
 - actualiser la documentation en verifiant ce qui est pertinent à documenter
@@ -27,20 +27,13 @@ Ordonencement GitHubAction
 - Readme MLflow / AirFlow
 - ReadMe src perfectible
 
-## Monitoring
-- datadrift récupérer le fichier depuis S3 dans prepared (et non le reference))
-- autre drifts?
-- email notification
-
 ## prepare Consumption prepare -> En cours
 - vérifier si pas code en double pour récupéré les  valeurs réelle depuis la base de donnée -> Doublon consumption_preparer.py et preparation.py? get_predictions...
-- Enlever les exemples donnés pour les connecteurs si non pertinent -> les mettre dans Script?
 - Simplifier l'ingestion: get_predictions_by_date(start_date, end_date) non necessaire
 
 # A Nettoyer
 - Faire marcher les scripts restants
-- get_production_data_for_retraining peut être renommé en get_production_data
-- Clean vacances etc...
+- Clean vacances etc... Revoir holidays_api
 - Renommer les fichiers initiaux pour suivre le format date_xxx.parquet
 
 # A faire
@@ -51,14 +44,13 @@ Ordonencement GitHubAction
 - Reusable workflow pour la CI/CD des services et plus tard pour chaque entité
 - Email sender dans une variable d'environnent
 - fichier de config différent pour les services. (evite de le trigger)
-- email notifier
 - config.yaml pour les différents environnements
 - Réparer base de donnée neon airflai (via un import de celle de jinsudai? Essayer plutot airflow db reset --yes)
 - Faire en sorte que chaque pipeline soit un service ?
 - Loki pour collecter les logs ?
 - Fast API qui contient tout le ML pour une orchestration peu gourmande avec l'orchestrateur qui appelle les endpoints
 - Optimisation du dockerfile JinsudAPI
-- Revoir holidays_api
+
 
 
 

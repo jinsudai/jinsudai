@@ -529,7 +529,7 @@ class MonitoringPipeline:
             logger.error("  ✗ Données de référence ou courantes manquantes")
             return False, None
 
-        logger.info(f"Génération du rapport Evidently...")
+        logger.info("Génération du rapport Evidently...")
         logger.info(f"  - Sauvegarde locale: {output_path if output_path else 'Non'}")
         logger.info(f"  - Sauvegarde workspace: {save_to_workspace}")
         logger.info(f"  - Sauvegarde S3: {save_to_s3}")
@@ -580,7 +580,7 @@ class MonitoringPipeline:
                 )
 
                 if success:
-                    logger.info(f"  ✓ Rapport sauvegardé dans le workspace Evidently UI")
+                    logger.info("  ✓ Rapport sauvegardé dans le workspace Evidently UI")
                     if evidently_report_url:
                         logger.info(f"  → URL du rapport: {evidently_report_url}")
                 else:
@@ -642,18 +642,32 @@ class MonitoringPipeline:
             from pathlib import Path
             import tempfile
 
+            # Logger l'URI du serveur MLflow pour le débogage
+            mlflow_tracking_uri = mlflow.get_tracking_uri()
+            logger.info(f"  → Serveur MLflow: {mlflow_tracking_uri}")
+
             # Récupérer le run_id de la version en production via MLflow alias
             if not run_id:
                 model_name = self.config.get('mlflow', {}).get('model_name')
 
                 if model_name:
+                    logger.info(f"  → Modèle recherché: {model_name}")
                     # Récupérer la version en production via l'alias "prod"
                     prod_model_version = get_model_version_by_alias(model_name, "prod")
                     if prod_model_version:
                         run_id = prod_model_version.run_id
                         logger.info(f"  → Utilisation du run_id de la version en production: {run_id}")
                     else:
-                        logger.error("  ✗ Aucune version en production trouvée via alias 'prod'")
+                        logger.error(f"  ✗ Aucune version en production trouvée via alias 'prod' pour '{model_name}'")
+                        logger.error("  → Vérifiez que le modèle existe dans MLflow et qu'il a un alias 'prod'")
+                        # Logger les modèles disponibles pour aider au débogage
+                        try:
+                            client = mlflow.tracking.MlflowClient()
+                            models = client.search_registered_models()
+                            model_names = [m.name for m in models]
+                            logger.info(f"  → Modèles disponibles dans MLflow: {model_names}")
+                        except Exception as e:
+                            logger.warning(f"  → Impossible de récupérer la liste des modèles: {e}")
                         logger.error("  ✗ Impossible de stocker les métriques sans run_id")
                         return False
                 else:
@@ -712,7 +726,7 @@ class MonitoringPipeline:
                         artifact_uri = f"{mlflow_tracking_uri}/artifacts/evidently_reports/{report_filename}"
                         mlflow.log_param("mlflow_artifact_url", artifact_uri)
                         mlflow.log_param("mlflow_artifact_filename", report_filename)
-                        logger.info(f"  ✓ Rapport HTML sauvegardé dans MLflow artefacts")
+                        logger.info("  ✓ Rapport HTML sauvegardé dans MLflow artefacts")
                         logger.info(f"  → Nom du fichier: {report_filename}")
                         logger.info(f"  → URL de l'artefact: {artifact_uri}")
                         logger.info(f"  → Run ID: {active_run_id}")

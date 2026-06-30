@@ -173,7 +173,7 @@ Ajoute la colonne `actual_value` si elle n'existe pas déjà.
 
 ---
 
-#### `get_production_data_for_retraining(limit=None)`
+#### `get_production_data(limit=None)`
 Récupère les données de production avec valeurs réelles pour le retraining.
 
 **Paramètres :**
@@ -259,7 +259,7 @@ db_handler.update_actual_values(prediction_ids, actual_values)
 
 ```python
 # Récupérer les 1000 derniers enregistrements avec valeurs réelles
-training_data = db_handler.get_production_data_for_retraining(limit=1000)
+training_data = db_handler.get_production_data(limit=1000)
 ```
 
 ---

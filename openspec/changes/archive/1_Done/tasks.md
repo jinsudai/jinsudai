@@ -1,9 +1,11 @@
+# A Nettoyer
+- Enlever les exemples donnés pour les connecteurs si non pertinent -> les mettre dans Script
+- get_production_data_for_retraining peut être renommé en get_production_data
+
 ## Monitoring
 - datadrift récupérer le fichier depuis S3 dans prepared (et non le reference)) -> Fait
 - autre drifts -> Fait
 - email notification -> Fait
-
-
 
 ## Pipelines
 # 1_actuals_ingestion_pipeline (Daily)

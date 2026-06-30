@@ -695,7 +695,7 @@ La classe `DatabaseHandler` (`src/ml/pipelines/database_handler.py`) fournit les
 - `get_recent_predictions()` : Récupération des prédictions récentes
 - `get_predictions_by_date()` : Récupération par plage de dates
 - `update_actual_values()` : Mise à jour des valeurs réelles
-- `get_production_data_for_retraining()` : Récupération pour retraining
+- `get_production_data()` : Récupération pour retraining
 
 Voir [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) pour la documentation complète avec exemples d'utilisation.
 
