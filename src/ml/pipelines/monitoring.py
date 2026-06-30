@@ -206,8 +206,17 @@ class MonitoringPipeline:
 
             for idx, row in self.reference_data.iterrows():
                 # Mapping des colonnes vers le format attendu par l'API
+                # Convertir les Timestamps en chaînes ISO
+                horodate_value = row.get('Horodate', row.get('horodate', row.get('timestamp', datetime.now())))
+                if hasattr(horodate_value, 'isoformat'):
+                    horodate_value = horodate_value.isoformat()
+                elif isinstance(horodate_value, str):
+                    pass  # Déjà une chaîne
+                else:
+                    horodate_value = str(horodate_value)
+
                 request_data = {
-                    "Horodate": row.get('Horodate', row.get('horodate', row.get('timestamp', datetime.now().isoformat()))),
+                    "Horodate": horodate_value,
                     "temperature_2m_mean": row.get('temperature_2m_mean', 0.0),
                     "relative_humidity_mean": row.get('relative_humidity_mean', 0.0),
                     "precipitation_sum": row.get('precipitation_sum', 0.0),
