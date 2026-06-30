@@ -21,7 +21,7 @@ Classe principale :
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 import requests
 
 import numpy as np
