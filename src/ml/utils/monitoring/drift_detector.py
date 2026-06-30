@@ -419,22 +419,22 @@ def _generate_custom_drift_report_html(
 ) -> str:
     """
     Génère un rapport HTML personnalisé pour le drift detection.
-    
+
     Args:
         reference_data: DataFrame de référence
         current_data: DataFrame courant
         report_name: Nom du rapport
-        
+
     Returns:
         HTML content
     """
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    
+
     # Calculer des statistiques basiques
     ref_rows = len(reference_data)
     curr_rows = len(current_data)
     common_cols = list(set(reference_data.columns) & set(current_data.columns))
-    
+
     # Générer le HTML
     html = f"""
 <!DOCTYPE html>
@@ -459,7 +459,7 @@ def _generate_custom_drift_report_html(
         <p><strong>Report Name:</strong> {report_name}</p>
         <p><strong>Generated:</strong> {timestamp}</p>
     </div>
-    
+
     <div class="section">
         <h2>Data Overview</h2>
         <div class="stats">
@@ -474,7 +474,7 @@ def _generate_custom_drift_report_html(
             </div>
         </div>
     </div>
-    
+
     <div class="section">
         <h2>Column Statistics</h2>
         <table>
@@ -498,13 +498,13 @@ def _generate_custom_drift_report_html(
         curr_std = current_data[col].std() if pd.api.types.is_numeric_dtype(current_data[col]) else "N/A"
         ref_nan_pct = (reference_data[col].isna().sum() / len(reference_data)) * 100
         curr_nan_pct = (current_data[col].isna().sum() / len(current_data)) * 100
-        
+
         # Formater les valeurs numériques
         ref_mean_str = f"{ref_mean:.2f}" if isinstance(ref_mean, (int, float)) else str(ref_mean)
         ref_std_str = f"{ref_std:.2f}" if isinstance(ref_std, (int, float)) else str(ref_std)
         curr_mean_str = f"{curr_mean:.2f}" if isinstance(curr_mean, (int, float)) else str(curr_mean)
         curr_std_str = f"{curr_std:.2f}" if isinstance(curr_std, (int, float)) else str(curr_std)
-        
+
         html += f"""
             <tr>
                 <td>{col}</td>
@@ -517,17 +517,17 @@ def _generate_custom_drift_report_html(
                 <td>{curr_nan_pct:.1f}%</td>
             </tr>
 """
-    
+
     html += """
         </table>
     </div>
-    
+
     <div class="section warning">
         <h2>Important Note</h2>
         <p>This is a simplified HTML report. For advanced drift visualization, use EvidentlyUI.</p>
         <p>The full Evidently report is saved in the S3 workspace and can be viewed via EvidentlyUI.</p>
     </div>
-    
+
 </body>
 </html>
 """

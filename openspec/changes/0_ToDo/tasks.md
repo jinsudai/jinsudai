@@ -48,6 +48,7 @@ Ordonencement GitHubAction
 -- Identifier que c'est le premier training
 
 # Plus tard
+- Reusable workflow pour la CI/CD des services et plus tard pour chaque entité
 - Email sender dans une variable d'environnent
 - fichier de config différent pour les services. (evite de le trigger)
 - email notifier

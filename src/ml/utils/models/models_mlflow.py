@@ -1114,4 +1114,3 @@ def delete_model_alias(model_name, alias):
         logger.warning(f"Impossible de supprimer l'alias '{alias}': {e}")
 
         return False
-

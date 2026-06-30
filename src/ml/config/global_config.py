@@ -221,10 +221,10 @@ def load_config_with_environment(config_name: str) -> Dict[str, Any]:
 
     # load_config fait déjà la fusion automatique avec l'environnement
     config = _load_config(config_name=config_name)
-    
+
     environment = os.getenv('ENVIRONMENT', 'dev')
     logger.info(f"Config chargée: {config_name} (environnement: {environment})")
-    
+
     return config
 
 
@@ -274,5 +274,3 @@ def get_satellites_names() -> list:
     config = load_global_config()
     satellites = config.get('services', {}).get('satellites', [])
     return satellites
-
-

@@ -92,7 +92,7 @@ class PreparationPipeline:
                 prefix="consumption/reference",
                 prioritize_dated=True
             )
-            
+
             if result["status"] != "success":
                 logger.warning(f"Aucun fichier trained trouvé dans 'reference': {result.get('reason')}")
                 logger.info("Utilisation de la date actuelle comme point de départ")
@@ -144,7 +144,6 @@ class PreparationPipeline:
 
         logger.info(f"Plage de dates calculée: {self.start_date} à {self.end_date}")
         return True
-
 
     def generate_weather_data(self, output_dir: Path) -> Path:
         """

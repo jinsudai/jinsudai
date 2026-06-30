@@ -29,14 +29,12 @@ import pandas as pd
 
 from ml.utils.monitoring.drift_detector import (
     load_reference_data,
-    load_production_data,
     run_drift_detection,
     generate_evidently_report,
     save_evidently_report_to_mlflow
 )
 from ml.config import load_config
 from ml.config.global_config import get_database_uri
-from ..utils.data.database_handler import DatabaseHandler
 from ml.utils.data.s3_handler import S3Handler
 
 logging.basicConfig(level=logging.INFO)
@@ -153,7 +151,7 @@ class MonitoringPipeline:
             bucket = s3_config.get('bucket', 'data-store')
 
             # Chercher dans le préfixe consumption/reference pour les fichiers de référence
-            prefix = "consumption/preparation"
+            prefix = "consumption/prepared"
 
             # Initialiser le handler S3
             s3_handler = S3Handler(bucket=bucket)
