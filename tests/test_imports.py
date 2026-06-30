@@ -64,10 +64,9 @@ def test_imports():
         print("❌ Import test failed:")
         for error in errors:
             print(f"  - {error}")
-        sys.exit(1)
+        assert False, f"Import test failed: {errors}"
     else:
         print("✅ All imports successful")
-        sys.exit(0)
 
 
 if __name__ == "__main__":
