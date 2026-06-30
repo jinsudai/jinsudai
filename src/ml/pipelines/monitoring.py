@@ -33,9 +33,10 @@ from ml.utils.monitoring.drift_detector import (
     save_evidently_report_to_mlflow
 )
 from ml.config import load_config
-from ml.config.global_config import get_database_uri
+from ml.config.global_config import get_database_uri, get_mlflow_config
 from ..utils.data.database_handler import DatabaseHandler
 from ml.utils.data.s3_handler import S3Handler
+from ml.utils.models.models_inference import InferenceModel
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -173,6 +174,48 @@ class MonitoringPipeline:
             logger.error(f"Erreur lors du téléchargement depuis S3: {e}")
             return None
 
+    def _generate_reference_predictions(self) -> Optional[np.ndarray]:
+        """
+        Génère des prédictions sur reference_data avec le modèle actuel depuis MLflow.
+
+        Returns:
+            Prédictions de référence ou None en cas d'échec
+        """
+        try:
+            logger.info("Génération des prédictions de référence avec le modèle actuel")
+            mlflow_config = get_mlflow_config()
+            inference_model = InferenceModel(config=mlflow_config)
+
+            model_name = self.config.get('mlflow', {}).get('model_name', 'consumption_model')
+            if not inference_model.load_production_model(model_name):
+                logger.warning("Impossible de charger le modèle depuis MLflow")
+                return None
+
+            # Préparer les features pour la prédiction
+            target_column = self.config.get('data', {}).get('target_column', 'Valeur')
+            feature_columns = self.config.get('data', {}).get('feature_columns')
+
+            # Sélectionner les features pour la prédiction
+            if feature_columns:
+                ref_features = self.reference_data[[col for col in feature_columns if col in self.reference_data.columns]]
+            else:
+                # Utiliser toutes les colonnes numériques sauf la cible
+                ref_features = self.reference_data.select_dtypes(include=[np.number]).drop(columns=[target_column], errors='ignore')
+
+            # Générer les prédictions
+            reference_predictions = inference_model.predict(ref_features)
+
+            if reference_predictions is not None:
+                logger.info(f"{len(reference_predictions)} prédictions de référence générées")
+                return reference_predictions
+            else:
+                logger.warning("Échec de la génération des prédictions de référence")
+                return None
+
+        except Exception as e:
+            logger.warning(f"Impossible de générer les prédictions de référence: {e}")
+            return None
+
     def _download_latest_train_from_s3(self) -> bool:
         """
         Télécharge le dernier fichier train.parquet depuis S3 (préfixe consumption/).
@@ -296,23 +339,27 @@ class MonitoringPipeline:
         reference_predictions = None
         current_predictions = None
 
+        # Récupérer les prédictions courantes depuis la base
         if self.db_uri:
             try:
                 self.db_handler = DatabaseHandler(self.db_uri)
                 if self.db_handler.verify_connection():
-                    logger.info("Récupération des prédictions pour le concept drift")
+                    logger.info("Récupération des prédictions courantes pour le concept drift")
                     production_data = self.db_handler.get_production_data(
                         limit=1000,
                         include_prediction=True
                     )
                     if production_data is not None and len(production_data) > 0:
-                        # Utiliser les prédictions les plus récentes comme current_predictions
                         current_predictions = production_data['prediction'].values
                         logger.info(f"{len(current_predictions)} prédictions courantes récupérées")
                     else:
                         logger.warning("Aucune prédiction disponible dans la base de données")
             except Exception as e:
                 logger.warning(f"Impossible de récupérer les prédictions: {e}")
+
+        # Générer des prédictions sur reference_data avec le modèle actuel
+        if self.reference_data is not None and current_predictions is not None:
+            reference_predictions = self._generate_reference_predictions()
 
         # Exécuter la détection
         self.drift_results = run_drift_detection(
