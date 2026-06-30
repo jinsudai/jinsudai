@@ -30,12 +30,12 @@ import pandas as pd
 from ml.utils.monitoring.drift_detector import (
     load_reference_data,
     run_drift_detection,
-    generate_evidently_report,
-    save_evidently_report_to_mlflow
+    generate_evidently_report
 )
 from ml.config import load_config
 from ml.config.global_config import get_database_uri
 from ml.utils.data.s3_handler import S3Handler
+from ml.utils.models.models_mlflow import get_model_version_by_alias
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -511,7 +511,7 @@ class MonitoringPipeline:
 
         return True
 
-    def step_5_generate_evidently_report(self, output_path: Optional[str] = None, save_to_workspace: bool = False, save_to_s3: bool = False) -> bool:
+    def step_5_generate_evidently_report(self, output_path: Optional[str] = None, save_to_workspace: bool = False, save_to_s3: bool = False) -> Tuple[bool, Optional[str]]:
         """
         Étape 5: Génération du rapport Evidently.
 
@@ -521,13 +521,13 @@ class MonitoringPipeline:
             save_to_s3: Sauvegarder le rapport sur S3
 
         Returns:
-            True si succès, False sinon
+            Tuple[bool, Optional[str]]: (succès, URL du rapport EvidentlyUI ou chemin local)
         """
         logger.info("=== ÉTAPE 5: GÉNÉRATION DU RAPPORT EVIDENTLY ===")
 
         if self.reference_data is None or self.current_data is None:
             logger.error("  ✗ Données de référence ou courantes manquantes")
-            return False
+            return False, None
 
         logger.info(f"Génération du rapport Evidently...")
         logger.info(f"  - Sauvegarde locale: {output_path if output_path else 'Non'}")
@@ -544,12 +544,13 @@ class MonitoringPipeline:
 
         if report is None:
             logger.error("  ✗ Impossible de générer le rapport Evidently")
-            return False
+            return False, None
 
         self.evidently_report = report
         logger.info("  ✓ Rapport Evidently généré avec succès")
 
         # Sauvegarder dans le workspace Evidently UI local si demandé
+        evidently_report_url = None
         if save_to_workspace and self.evidently_config.get('save_to_workspace', False):
             logger.info("Sauvegarde dans le workspace Evidently UI...")
             try:
@@ -566,7 +567,7 @@ class MonitoringPipeline:
                 if self.drift_results and self.drift_results.get('overall_drift_detected', False):
                     tags.append("drift_detected")
 
-                success = save_evidently_report_to_workspace(
+                success, evidently_report_url = save_evidently_report_to_workspace(
                     report=report,
                     reference_data=self.reference_data,
                     current_data=self.current_data,
@@ -579,7 +580,9 @@ class MonitoringPipeline:
                 )
 
                 if success:
-                    logger.info("  ✓ Rapport sauvegardé dans le workspace Evidently UI")
+                    logger.info(f"  ✓ Rapport sauvegardé dans le workspace Evidently UI")
+                    if evidently_report_url:
+                        logger.info(f"  → URL du rapport: {evidently_report_url}")
                 else:
                     logger.warning("  ✗ Échec de la sauvegarde dans le workspace Evidently UI")
 
@@ -613,14 +616,15 @@ class MonitoringPipeline:
             except Exception as e:
                 logger.error(f"  ✗ Erreur lors de la sauvegarde sur S3: {e}")
 
-        return True
+        return True, evidently_report_url
 
-    def step_6_store_metrics(self, run_id: Optional[str] = None) -> bool:
+    def step_6_store_metrics(self, run_id: Optional[str] = None, evidently_report_url: Optional[str] = None) -> bool:
         """
         Étape 6: Stockage des métriques de drift.
 
         Args:
             run_id: ID de la run MLflow (optionnel)
+            evidently_report_url: URL du rapport EvidentlyUI (optionnel)
 
         Returns:
             True si succès, False sinon
@@ -631,25 +635,97 @@ class MonitoringPipeline:
             logger.warning("  ✗ Aucun résultat de drift à stocker")
             return False
 
-        logger.info("Stockage des métriques dans MLflow...")
+        logger.info("Stockage des métriques de drift dans MLflow...")
 
-        # Stocker dans MLflow
-        if self.evidently_report is not None:
-            success = save_evidently_report_to_mlflow(
-                report=self.evidently_report,
-                report_dict=self.drift_results,
-                run_id=run_id,
-                reference_data=self.reference_data,
-                current_data=self.current_data
-            )
-            if success:
-                logger.info("  ✓ Métriques stockées dans MLflow")
+        try:
+            import mlflow
+            from pathlib import Path
+            import tempfile
+
+            # Récupérer le run_id de la version en production via MLflow alias
+            if not run_id:
+                model_name = self.config.get('mlflow', {}).get('model_name')
+                
+                if model_name:
+                    # Récupérer la version en production via l'alias "prod"
+                    prod_model_version = get_model_version_by_alias(model_name, "prod")
+                    if prod_model_version:
+                        run_id = prod_model_version.run_id
+                        logger.info(f"  → Utilisation du run_id de la version en production: {run_id}")
+                    else:
+                        logger.error("  ✗ Aucune version en production trouvée via alias 'prod'")
+                        logger.error("  ✗ Impossible de stocker les métriques sans run_id")
+                        return False
+                else:
+                    logger.error("  ✗ model_name non configuré dans la config")
+                    logger.error("  ✗ Impossible de stocker les métriques sans run_id")
+                    return False
+
+            # Démarrer la run MLflow avec le run_id
+            mlflow.start_run(run_id=run_id)
+
+            # Logger les métriques de drift
+            data_drift = self.drift_results.get('data_drift', {})
+            concept_drift = self.drift_results.get('concept_drift', {})
+
+            if data_drift:
+                drift_detected = data_drift.get('drift_detected', False)
+                mlflow.log_metric("data_drift_detected", int(drift_detected))
+                logger.info(f"  ✓ Data drift: {drift_detected}")
+
+            if concept_drift:
+                drift_detected = concept_drift.get('drift_detected', False)
+                mlflow.log_metric("concept_drift_detected", int(drift_detected))
+                logger.info(f"  ✓ Concept drift: {drift_detected}")
+
+            overall_drift = self.drift_results.get('overall_drift_detected', False)
+            mlflow.log_metric("overall_drift_detected", int(overall_drift))
+            logger.info(f"  ✓ Drift global: {overall_drift}")
+
+            # Logger l'URL du rapport EvidentlyUI si disponible
+            if evidently_report_url:
+                mlflow.set_tag("evidently.drift_report_url", evidently_report_url)
+                logger.info(f"  ✓ URL du rapport EvidentlyUI: {evidently_report_url}")
             else:
-                logger.warning("  ✗ Impossible de stocker les métriques dans MLflow")
-        else:
-            logger.warning("  ✗ Rapport Evidently non disponible pour le stockage MLflow")
+                # Si pas d'URL EvidentlyUI, générer et sauvegarder le rapport HTML dans MLflow
+                logger.info("  → Pas d'URL EvidentlyUI, génération du rapport HTML pour MLflow...")
+                if self.evidently_report is not None:
+                    try:
+                        # Créer un fichier temporaire pour le rapport HTML avec date dans le nom
+                        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                        report_filename = f"drift_report_{timestamp}.html"
+                        with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as f:
+                            temp_path = f.name
+                        
+                        # Sauvegarder le rapport HTML
+                        self.evidently_report.save_html(temp_path)
+                        
+                        # Logger comme artefact MLflow
+                        mlflow.log_artifact(temp_path, artifact_path="evidently_reports")
+                        
+                        # Nettoyer le fichier temporaire
+                        Path(temp_path).unlink()
+                        
+                        # Logger l'URL de l'artefact MLflow avec le nom du fichier
+                        mlflow_tracking_uri = mlflow.get_tracking_uri()
+                        active_run_id = mlflow.active_run().info.run_id
+                        artifact_uri = f"{mlflow_tracking_uri}/artifacts/evidently_reports/{report_filename}"
+                        mlflow.log_param("mlflow_artifact_url", artifact_uri)
+                        mlflow.log_param("mlflow_artifact_filename", report_filename)
+                        logger.info(f"  ✓ Rapport HTML sauvegardé dans MLflow artefacts")
+                        logger.info(f"  → Nom du fichier: {report_filename}")
+                        logger.info(f"  → URL de l'artefact: {artifact_uri}")
+                        logger.info(f"  → Run ID: {active_run_id}")
+                    except Exception as e:
+                        logger.warning(f"  ✗ Impossible de sauvegarder le rapport HTML dans MLflow: {e}")
 
-        return True
+            mlflow.end_run()
+            logger.info("  ✓ Métriques stockées avec succès")
+            return True
+
+        except Exception as e:
+            logger.error(f"  ✗ Erreur lors du stockage des métriques: {e}")
+            return False
 
     def step_7_send_notifications(self) -> bool:
         """
@@ -785,15 +861,19 @@ class MonitoringPipeline:
             results["drift_results"] = self.drift_results
 
             # Étape 5: Génération rapport Evidently
+            evidently_report_url = None
             if generate_report:
-                if not self.step_5_generate_evidently_report(report_output_path, save_to_workspace, save_to_s3):
+                success, evidently_report_url = self.step_5_generate_evidently_report(report_output_path, save_to_workspace, save_to_s3)
+                if not success:
                     logger.warning("Échec de la génération du rapport Evidently")
                 else:
                     results["steps_completed"].append("generate_evidently_report")
+                    if evidently_report_url:
+                        results["evidently_report_url"] = evidently_report_url
 
             # Étape 6: Stockage des métriques
             if store_metrics:
-                if not self.step_6_store_metrics(mlflow_run_id):
+                if not self.step_6_store_metrics(mlflow_run_id, evidently_report_url):
                     logger.warning("Échec du stockage des métriques")
                 else:
                     results["steps_completed"].append("store_metrics")
