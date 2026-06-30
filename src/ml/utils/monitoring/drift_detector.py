@@ -332,7 +332,9 @@ def calculate_psi(expected: np.ndarray, actual: np.ndarray, bins: int = 10) -> f
 def run_drift_detection(
     reference_data: pd.DataFrame,
     current_data: pd.DataFrame,
-    config: Dict[str, Any]
+    config: Dict[str, Any],
+    reference_predictions: Optional[np.ndarray] = None,
+    current_predictions: Optional[np.ndarray] = None
 ) -> Dict[str, Any]:
     """
     Exécute la détection de drift complète (data drift + concept drift).
@@ -341,6 +343,8 @@ def run_drift_detection(
         reference_data: DataFrame de référence
         current_data: DataFrame courant
         config: Configuration avec les seuils
+        reference_predictions: Prédictions de référence (optionnel, pour concept drift réel)
+        current_predictions: Prédictions courantes (optionnel, pour concept drift réel)
 
     Returns:
         Dict avec tous les résultats de drift detection
@@ -368,18 +372,24 @@ def run_drift_detection(
             )
 
         # Concept drift (si on a les prédictions)
-        # Note: Pour l'instant, on utilise les valeurs cibles si disponibles
+        # Note: Utiliser les vraies prédictions si fournies, sinon simulation
         if target_column in reference_data.columns and target_column in current_data.columns:
             ref_targets = reference_data[target_column].values
             curr_targets = current_data[target_column].values
 
-            # Simuler des prédictions (en pratique, on utiliserait les vraies prédictions)
-            ref_predictions = ref_targets * 0.95  # Simulation
-            curr_predictions = curr_targets * 0.95  # Simulation
+            # Utiliser les vraies prédictions si disponibles, sinon simulation
+            if reference_predictions is not None and current_predictions is not None:
+                logger.info("Utilisation des vraies prédictions pour le concept drift")
+                ref_preds = reference_predictions
+                curr_preds = current_predictions
+            else:
+                logger.info("Simulation des prédictions pour le concept drift (fallback)")
+                ref_preds = ref_targets * 0.95  # Simulation
+                curr_preds = curr_targets * 0.95  # Simulation
 
             results["concept_drift"] = detect_concept_drift(
-                reference_predictions=ref_predictions,
-                current_predictions=curr_predictions,
+                reference_predictions=ref_preds,
+                current_predictions=curr_preds,
                 reference_targets=ref_targets,
                 current_targets=curr_targets,
                 threshold=concept_drift_threshold

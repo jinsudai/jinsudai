@@ -292,11 +292,35 @@ class MonitoringPipeline:
             "target_column": self.config.get('data', {}).get('target_column', 'Valeur')
         }
 
+        # Récupérer les prédictions réelles depuis la base de données pour le concept drift
+        reference_predictions = None
+        current_predictions = None
+
+        if self.db_uri:
+            try:
+                self.db_handler = DatabaseHandler(self.db_uri)
+                if self.db_handler.verify_connection():
+                    logger.info("Récupération des prédictions pour le concept drift")
+                    production_data = self.db_handler.get_production_data(
+                        limit=1000,
+                        include_prediction=True
+                    )
+                    if production_data is not None and len(production_data) > 0:
+                        # Utiliser les prédictions les plus récentes comme current_predictions
+                        current_predictions = production_data['prediction'].values
+                        logger.info(f"{len(current_predictions)} prédictions courantes récupérées")
+                    else:
+                        logger.warning("Aucune prédiction disponible dans la base de données")
+            except Exception as e:
+                logger.warning(f"Impossible de récupérer les prédictions: {e}")
+
         # Exécuter la détection
         self.drift_results = run_drift_detection(
             reference_data=self.reference_data,
             current_data=self.current_data,
-            config=detection_config
+            config=detection_config,
+            reference_predictions=reference_predictions,
+            current_predictions=current_predictions
         )
 
         if self.drift_results is None:

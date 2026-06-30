@@ -1,26 +1,17 @@
 ---
-marp: true
-theme: dark
-paginate: true
-backgroundColor: #0f172a
-color: #f1f5f9
-style: |
-  section {
-    font-family: 'Arial', sans-serif;
-  }
-  h1 {
-    color: #4a90d9;
-  }
-  h2 {
-    color: #8b9dc3;
-  }
-  code {
-    background-color: #1e3a5f;
-    color: #ffffff;
-  }
-  pre {
-    background-color: #1e3a5f;
-  }
+theme: default
+background: https://source.unsplash.com/collection/94734566/1920x1080
+class: text-center
+highlighter: shiki
+lineNumbers: false
+info: |
+  ## Architecture MLOps - Jinsudai
+  Présentation de l'architecture complète de prédiction énergétique
+drawings:
+  persist: false
+transition: slide-left
+title: Architecture MLOps
+mdc: true
 ---
 
 <!-- _class: lead -->
