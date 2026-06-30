@@ -197,7 +197,11 @@ class MonitoringPipeline:
                 logger.warning("URL de l'API FastAPI non configurée")
                 return None
 
-            full_url = f"{api_url}{predict_endpoint}"
+            # Nettoyer l'URL pour éviter les doubles slashes
+            api_url = api_url.rstrip('/')
+            predict_endpoint = predict_endpoint.lstrip('/')
+
+            full_url = f"{api_url}/{predict_endpoint}"
             logger.info(f"Appel de l'API: {full_url}")
 
             # Préparer les données pour l'API
