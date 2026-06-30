@@ -1,11 +1,6 @@
 name: 0 - Infra - Create HF Spaces
 
 on:
-  push:
-    paths:
-      - '.github/scripts/hf_create_spaces.py'
-      - '.github/workflows/0_hf_create_spaces.yaml'
-      - 'config.yaml'
   workflow_dispatch:
 
 jobs:

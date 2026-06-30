@@ -1,14 +1,6 @@
 name: 0 - Infra - Push Service Files to HF
 
 on:
-  push:
-    paths:
-      - '.github/scripts/hf_push_services.py'
-      - '.github/scripts/0_hf_push_services.yaml'
-      - '.github/scripts/hf_create_spaces.py'
-      - 'config.yaml'
-      - 'Services/**'   
-      - 'src/ml/config/**'
   workflow_dispatch:
 
 jobs:
