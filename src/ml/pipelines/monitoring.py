@@ -376,14 +376,18 @@ class MonitoringPipeline:
         current_predictions = None
 
         # Vérifier si les données courantes contiennent déjà des prédictions
-        if self.current_data is not None and 'prediction' in self.current_data.columns:
-            current_predictions = self.current_data['prediction'].values
-            logger.info(f"{len(current_predictions)} prédictions courantes trouvées dans current_data")
+        if self.current_data is not None:
+            logger.info(f"Colonnes dans current_data: {self.current_data.columns.tolist()}")
+            if 'prediction' in self.current_data.columns:
+                current_predictions = self.current_data['prediction'].values
+                logger.info(f"{len(current_predictions)} prédictions courantes trouvées dans current_data")
 
         # Vérifier si les données de référence contiennent déjà des prédictions
-        if self.reference_data is not None and 'prediction' in self.reference_data.columns:
-            reference_predictions = self.reference_data['prediction'].values
-            logger.info(f"{len(reference_predictions)} prédictions de référence trouvées dans reference_data")
+        if self.reference_data is not None:
+            logger.info(f"Colonnes dans reference_data: {self.reference_data.columns.tolist()}")
+            if 'prediction' in self.reference_data.columns:
+                reference_predictions = self.reference_data['prediction'].values
+                logger.info(f"{len(reference_predictions)} prédictions de référence trouvées dans reference_data")
 
         # Si pas de prédictions dans reference_data, essayer de les générer via API
         reference_data_for_drift = self.reference_data
