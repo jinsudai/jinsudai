@@ -23,6 +23,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional
 
+import numpy as np
 import pandas as pd
 
 from ml.utils.monitoring.drift_detector import (
