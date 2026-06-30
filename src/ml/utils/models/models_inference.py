@@ -52,6 +52,7 @@ class InferenceModel:
         self.default_model_name = mlflow_config.get("model_name")
         self.default_prod_alias = mlflow_config.get("prod_alias") or "prod"
         self.model = None
+        self.model_name = None
         self.model_version = None
         self.run_id = None
 
@@ -82,6 +83,9 @@ class InferenceModel:
         if not model_name:
             logger.error("Le nom du modèle MLflow n'est pas défini.")
             return False
+
+        # Stocker le nom du modèle
+        self.model_name = model_name
 
         try:
             # Récupérer la version avec l'alias prod

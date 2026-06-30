@@ -63,10 +63,11 @@ class PredictionResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     """Response model for health endpoint."""
-    
+
     status: str = Field(..., description="Service status")
     timestamp: str = Field(..., description="Current timestamp")
     model_loaded: bool = Field(..., description="Whether the model is loaded")
+    model_name: Optional[str] = Field(None, description="MLflow model name")
     model_version: Optional[str] = Field(None, description="MLflow model version")
     mlflow_tracking_uri: str = Field(..., description="MLflow tracking URI")
 
@@ -136,28 +137,32 @@ async def startup_event():
 async def health_check():
     """
     Health check endpoint for monitoring.
-    
+
     Returns the service status, model loading status, and MLflow configuration.
     """
     global _inference_model
-    
+
+    model_name = None
     model_version = None
     mlflow_tracking_uri = "unknown"
-    
+
     if _inference_model is not None:
+        model_name = _inference_model.model_name
         model_version = _inference_model.model_version
         mlflow_tracking_uri = _inference_model.mlflow_tracking_uri
     else:
         try:
             mlflow_config = get_mlflow_config()
             mlflow_tracking_uri = mlflow_config.get("tracking_uri", "unknown")
+            model_name = mlflow_config.get("model_name")
         except Exception:
             pass
-    
+
     return HealthResponse(
         status="healthy",
         timestamp=datetime.utcnow().isoformat(),
         model_loaded=_inference_model is not None,
+        model_name=model_name,
         model_version=model_version,
         mlflow_tracking_uri=mlflow_tracking_uri
     )

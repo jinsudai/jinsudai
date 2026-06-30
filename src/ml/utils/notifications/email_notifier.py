@@ -315,6 +315,7 @@ Ceci est un message automatique du système de traitement SFTP.
         drift_results: Dict[str, Any],
         model_name: str,
         run_id: str,
+        model_version: Optional[str] = None,
         timestamp: Optional[datetime] = None
     ) -> bool:
         """
@@ -324,6 +325,7 @@ Ceci est un message automatique du système de traitement SFTP.
             drift_results: Résultats de la détection de drift
             model_name: Nom du modèle
             run_id: ID de la run
+            model_version: Version du modèle (optionnel)
             timestamp: Timestamp de détection (défaut: maintenant)
 
         Returns:
@@ -332,7 +334,8 @@ Ceci est un message automatique du système de traitement SFTP.
         if timestamp is None:
             timestamp = datetime.now()
 
-        subject = f"[DRIFT ALERT] Drift détecté pour le modèle {model_name}"
+        version_suffix = f" (v{model_version})" if model_version else ""
+        subject = f"[DRIFT ALERT] Drift détecté pour le modèle {model_name}{version_suffix}"
 
         # Extraire les informations de drift
         data_drift = drift_results.get('data_drift', {})
@@ -344,6 +347,7 @@ Ceci est un message automatique du système de traitement SFTP.
 ALERTE DE DRIFT DÉTECTÉE
 
 Modèle: {model_name}
+Version: {model_version or 'inconnue'}
 Run ID: {run_id}
 Date de détection: {timestamp.strftime('%Y-%m-%d %H:%M:%S')}
 Drift global détecté: {overall_drift}
@@ -411,6 +415,10 @@ Ceci est un message automatique du système de monitoring de drift.
         <tr>
             <td><strong>Modèle</strong></td>
             <td>{model_name}</td>
+        </tr>
+        <tr>
+            <td><strong>Version</strong></td>
+            <td>{model_version or 'inconnue'}</td>
         </tr>
         <tr>
             <td><strong>Run ID</strong></td>

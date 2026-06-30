@@ -153,7 +153,7 @@ class MonitoringPipeline:
             bucket = s3_config.get('bucket', 'data-store')
 
             # Chercher dans le préfixe consumption/reference pour les fichiers de référence
-            prefix = "consumption/reference"
+            prefix = "consumption/preparation"
 
             # Initialiser le handler S3
             s3_handler = S3Handler(bucket=bucket)
@@ -175,6 +175,47 @@ class MonitoringPipeline:
         except Exception as e:
             logger.error(f"Erreur lors du téléchargement depuis S3: {e}")
             return None
+
+    def _get_model_info_from_api(self) -> Dict[str, Optional[str]]:
+        """
+        Récupère les informations du modèle depuis l'API via l'endpoint /health.
+
+        Returns:
+            Dict avec model_name et model_version, ou dict vide en cas d'échec
+        """
+        try:
+            # Récupérer l'URL de l'API depuis la config
+            project_root = Path(__file__).resolve().parents[3]
+            config_path = project_root / 'config.yaml'
+            global_config = load_config(config_path=str(config_path))
+
+            api_url = global_config.get('fastapi', {}).get('url')
+            if not api_url:
+                logger.warning("URL de l'API FastAPI non configurée")
+                return {}
+
+            # Nettoyer l'URL
+            api_url = api_url.rstrip('/')
+            health_url = f"{api_url}/health"
+
+            logger.info(f"Récupération des infos du modèle depuis l'API: {health_url}")
+            response = requests.get(health_url, timeout=10)
+
+            if response.status_code != 200:
+                logger.warning(f"Erreur API health: {response.status_code} - {response.text}")
+                return {}
+
+            health_data = response.json()
+            model_info = {
+                'model_name': health_data.get('model_name'),
+                'model_version': health_data.get('model_version')
+            }
+            logger.info(f"Infos du modèle récupérées: {model_info}")
+            return model_info
+
+        except Exception as e:
+            logger.warning(f"Impossible de récupérer les infos du modèle depuis l'API: {e}")
+            return {}
 
     def _generate_reference_predictions(self, reference_data: pd.DataFrame) -> Optional[np.ndarray]:
         """
@@ -578,10 +619,20 @@ class MonitoringPipeline:
         try:
             from ml.utils.notifications.email_notifier import EmailNotifier
 
+            # Récupérer les infos du modèle depuis l'API
+            model_info = self._get_model_info_from_api()
+            model_name = model_info.get('model_name')
+            model_version = model_info.get('model_version')
+
+            if not model_name:
+                # Fallback vers la config locale
+                model_name = self.config.get('mlflow', {}).get('model_name', 'unknown')
+
             notifier = EmailNotifier(config=self.email_config)
             success = notifier.notify_drift_detected(
                 drift_results=self.drift_results,
-                model_name=self.config.get('name', 'unknown'),
+                model_name=model_name,
+                model_version=model_version,
                 run_id="monitoring_pipeline"
             )
 
