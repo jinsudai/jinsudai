@@ -35,7 +35,7 @@ from ml.utils.monitoring.drift_detector import (
 from ml.config import load_config
 from ml.config.global_config import get_database_uri
 from ml.utils.data.s3_handler import S3Handler
-from ml.utils.models.models_mlflow import get_model_version_by_alias
+from ml.utils.models.models_mlflow import get_model_version_by_alias, setup_mlflow
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -55,13 +55,20 @@ class MonitoringPipeline:
         self.config = load_config(config_name=config_name)
         self.db_uri = db_uri or get_database_uri()
 
-        # Charger la configuration globale pour Evidently, S3 et Email
+        # Charger la configuration globale pour Evidently, S3, Email et MLflow
         project_root = Path(__file__).parent.parent.parent.parent
         global_config_path = project_root / 'config.yaml'
         global_config = load_config(config_path=str(global_config_path))
         self.evidently_config = global_config.get('evidently', {})
         self.s3_config = global_config.get('s3', {})
         self.email_config = global_config.get('email', {})
+        self.mlflow_config = global_config.get('mlflow', {})
+
+        # Configurer MLflow avec le tracking URI depuis la config
+        mlflow_tracking_uri = self.mlflow_config.get('tracking_uri')
+        if mlflow_tracking_uri:
+            setup_mlflow(tracking_uri=mlflow_tracking_uri)
+            logger.info(f"MLflow configuré avec tracking URI: {mlflow_tracking_uri}")
 
         self.reference_data = None
         self.current_data = None
