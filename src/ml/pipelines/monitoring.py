@@ -185,8 +185,11 @@ class MonitoringPipeline:
         try:
             logger.info("Génération des prédictions de référence via JinsudAPI")
 
-            # Récupérer l'URL de l'API depuis la config
-            global_config = load_config('config.yaml')
+            # Récupérer l'URL de l'API depuis la config (fichier à la racine du projet)
+            project_root = Path(__file__).resolve().parents[3]
+            config_path = project_root / 'config.yaml'
+            global_config = load_config(config_path=str(config_path))
+
             api_url = global_config.get('fastapi', {}).get('url')
             predict_endpoint = global_config.get('fastapi', {}).get('predict_endpoint', '/predict/batch')
 
