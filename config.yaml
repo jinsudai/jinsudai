@@ -65,12 +65,12 @@ services:
   names:
     - "jinsudai/MLflow"
     - "jinsudai/docsify"
-    - "jinsudai/EvidentlyUI"
     - "jinsudai/slidev"
 
   satellites:
     - "airflai/airflow"
     - "jetestai/JinsudAPI"
+    - "evidentlai/EvidentlyUI"
     
 # Logging
 logging:

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Documentation MLOps - Jinsudai</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="Documentation MLOps complète avec diagrammes Mermaid">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+  <style>
+    .mermaid {
+      width: 800px !important;
+      height: 600px !important;
+      max-width: 800px !important;
+      max-height: 600px !important;
+    }
+    .mermaid svg {
+      width: 800px !important;
+      height: 600px !important;
+      max-width: 800px !important;
+      max-height: 600px !important;
+    }
+    body {
+      background-color: #1a1a2e;
+      color: #eaeaea;
+    }
+    .sidebar {
+      background-color: #16213e;
+    }
+    .sidebar-nav > ul > li > a {
+      color: #eaeaea;
+    }
+    .mermaid .nodeLabel {
+      /* color: #879e8d !important; */
+      /* color: #00003E !important; */
+      color: #16213e!important;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.$docsify = {
+      name: 'Documentation MLOps',
+      repo: '',
+      loadSidebar: true,
+      subMaxLevel: 2,
+      plugins: [
+        function(hook, vm) {
+          hook.doneEach(function() {
+            if (window.mermaid) {
+              mermaid.initialize({ 
+                startOnLoad: true, 
+                theme: 'dark',
+                themeVariables: {
+                  primaryColor: '#1e3a5f',
+                  primaryTextColor: '#ffffff',
+                  primaryBorderColor: '#4a90d9',
+                  lineColor: '#8b9dc3',
+                  secondaryColor: '#2d4a6f',
+                  tertiaryColor: '#3d5a7f',
+                  background: '#0f172a',
+                  mainBkg: '#1e3a5f',
+                  nodeBorder: '#4a90d9',
+                  clusterBkg: '#1e293b',
+                  clusterBorder: '#334155',
+                  titleColor: '#f1f5f9',
+                  edgeLabelBackground: '#1e3a5f',
+                  actorBkg: '#1e3a5f',
+                  actorBorder: '#4a90d9',
+                  actorTextColor: '#ffffff',
+                  actorLineColor: '#8b9dc3',
+                  signalColor: '#8b9dc3',
+                  signalTextColor: '#f1f5f9',
+                  labelBoxBkgColor: '#1e293b',
+                  labelTextColor: '#f1f5f9',
+                  loopTextColor: '#f1f5f9',
+                  noteBorderColor: '#334155',
+                  noteBkgColor: '#1e293b',
+                  noteTextColor: '#f1f5f9',
+                  activationBorderColor: '#334155',
+                  activationBkgColor: '#1e293b',
+                  sequenceNumberColor: '#f1f5f9'
+                },
+                flowchart: {
+                  useMaxWidth: false,
+                  htmlLabels: true,
+                  curve: 'basis'
+                }
+              });
+              mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+            }
+          });
+        }
+      ]
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-mermaid@1.0.0/dist/docsify-mermaid.min.js"></script>
+</body>
+</html>
