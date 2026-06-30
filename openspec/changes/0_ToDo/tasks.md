@@ -18,6 +18,8 @@ exemple -> integration tests?
 
 # Nice to have
 
+Ordonencement GitHubAction
+
 ## Documentation
 - simplification doc EvidentlyUI / Guide d'utilisation détaillé fait doublon?
 - Readme MLflow / AirFlow

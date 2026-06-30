@@ -60,6 +60,7 @@ class PreparationPipeline:
         self.end_date = None
         self.old_s3_key = None
         self.archived_files = []
+        self.from_reference = False
 
         logger.info("Pipeline de préparation initialisé")
 
@@ -85,13 +86,24 @@ class PreparationPipeline:
         )
 
         if result["status"] != "success":
-            logger.warning(f"Aucun fichier trained trouvé: {result.get('reason')}")
-            logger.info("Utilisation de la date actuelle comme point de départ")
-            self.start_date = datetime.now()
-            today = datetime.now().date()
-            yesterday = today - timedelta(days=1)
-            self.end_date = datetime.combine(yesterday, datetime.max.time())
-            return True
+            logger.warning(f"Aucun fichier trained trouvé dans 'prepared': {result.get('reason')}")
+            logger.info("Tentative de fallback vers 'reference'...")
+            result = self.s3_handler.download_latest_train_file(
+                prefix="consumption/reference",
+                prioritize_dated=True
+            )
+            
+            if result["status"] != "success":
+                logger.warning(f"Aucun fichier trained trouvé dans 'reference': {result.get('reason')}")
+                logger.info("Utilisation de la date actuelle comme point de départ")
+                self.start_date = datetime.now()
+                today = datetime.now().date()
+                yesterday = today - timedelta(days=1)
+                self.end_date = datetime.combine(yesterday, datetime.max.time())
+                return True
+            else:
+                self.from_reference = True
+                logger.info("Fichier chargé depuis 'reference' - ne sera pas supprimé après upload")
 
         local_path = result["local_path"]
         self.old_s3_key = result.get("key")
@@ -456,7 +468,7 @@ class PreparationPipeline:
         logger.info(f"Fichier concaténé sauvegardé: {train_path}")
 
         # ÉTAPE 5.6: Archiver l'ancien fichier S3
-        if self.old_s3_key:
+        if self.old_s3_key and not self.from_reference:
             logger.info("=== ÉTAPE 5.6: ARCHIVAGE DE L'ANCIEN FICHIER S3 ===")
             archive_result = self.s3_handler.archive_files(
                 source_prefix="consumption/prepared",
@@ -468,12 +480,14 @@ class PreparationPipeline:
             else:
                 logger.warning(f"Échec de l'archivage: {archive_result.get('reason')}")
                 self.archived_files = []
+        elif self.from_reference:
+            logger.info("=== ÉTAPE 5.6: PAS D'ARCHIVAGE (FICHIER VENU DE REFERENCE) ===")
 
         # ÉTAPE 6: Upload sur S3
         s3_result = self.upload_to_s3(train_path, weather_path)
 
         # ÉTAPE 6.5: Supprimer l'ancien fichier S3 après upload réussi
-        if self.archived_files and s3_result.get("status") == "success":
+        if self.archived_files and s3_result.get("status") == "success" and not self.from_reference:
             logger.info("=== ÉTAPE 6.5: SUPPRESSION DES ANCIENS FICHIERS S3 ===")
 
             # Récupérer le nom du fichier uploadé
