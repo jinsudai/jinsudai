@@ -571,7 +571,7 @@ def generate_evidently_report(
         curr_only = set(current_data.columns) - set(common_columns)
 
         if ref_only or curr_only:
-            logger.info(f"Colonnes non conservées (schéma différent):")
+            logger.info("Colonnes non conservées (schéma différent):")
             if ref_only:
                 logger.info(f"  - Présentes uniquement dans référence: {ref_only}")
             if curr_only:
@@ -830,12 +830,12 @@ def save_evidently_report_to_workspace(
             curr_only = set(current_data.columns) - set(common_columns)
 
             if ref_only or curr_only:
-                logger.info(f"Colonnes non conservées (schéma différent):")
+                logger.info("Colonnes non conservées (schéma différent):")
                 if ref_only:
                     logger.info(f"  - Présentes uniquement dans référence: {ref_only}")
                 if curr_only:
                     logger.info(f"  - Présentes uniquement dans courant: {curr_only}")
-                    
+
             reference_data_aligned = reference_data[common_columns].copy()
             current_data_aligned = current_data[common_columns].copy()
             logger.info(f"Colonnes alignées pour RemoteWorkspace: {len(common_columns)} colonnes communes - {common_columns}")

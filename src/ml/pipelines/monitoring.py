@@ -79,15 +79,17 @@ class MonitoringPipeline:
             True si succès, False sinon
         """
         logger.info("=== ÉTAPE 1: HEALTH CHECK API ===")
+        logger.info("Vérification de la disponibilité de l'API JinsudAPI...")
 
-        logger.info("Health check de l'API JinsudAPI")
         model_info = self._get_model_info_from_api()
 
         if model_info:
-            logger.info(f"API JinsudAPI fonctionnelle - Modèle: {model_info.get('model_name')}, Version: {model_info.get('model_version')}")
+            model_name = model_info.get('model_name', 'unknown')
+            model_version = model_info.get('model_version', 'unknown')
+            logger.info(f"  ✓ API fonctionnelle - Modèle: {model_name}, Version: {model_version}")
             return True
         else:
-            logger.error("Health check de l'API JinsudAPI échoué ou impossible de récupérer les infos du modèle")
+            logger.error("  ✗ Health check échoué - Impossible de récupérer les infos du modèle")
 
             # Envoyer une alerte email si le health check échoue
             if self.email_config and self.email_config.get('enabled', False):
@@ -98,9 +100,9 @@ class MonitoringPipeline:
                         api_url=self.config.get('fastapi', {}).get('url', 'unknown'),
                         error="Impossible de récupérer les infos du modèle depuis l'API"
                     )
-                    logger.info("Alerte email envoyée pour health check échoué")
+                    logger.info("  ✓ Alerte email envoyée")
                 except Exception as e:
-                    logger.warning(f"Impossible d'envoyer l'alerte email: {e}")
+                    logger.warning(f"  ✗ Impossible d'envoyer l'alerte email: {e}")
 
             return False
 
@@ -124,8 +126,10 @@ class MonitoringPipeline:
             reference_path = drift_config.get('reference_data_path')
 
         if reference_path is None:
-            logger.error("Aucun chemin de données de référence fourni")
+            logger.error("  ✗ Chemin des données de référence non spécifié")
             return False
+
+        logger.info(f"Chemin des données de référence: {reference_path}")
 
         # Convertir en chemin absolu si relatif
         if not Path(reference_path).is_absolute():
@@ -134,20 +138,21 @@ class MonitoringPipeline:
 
         # Vérifier si le fichier existe, sinon essayer de le télécharger depuis S3
         if not Path(reference_path).exists():
-            logger.warning(f"Fichier de référence non trouvé: {reference_path}")
+            logger.warning(f"  ✗ Fichier de référence non trouvé: {reference_path}")
 
             if download_from_s3_if_missing:
-                logger.info("Tentative de téléchargement depuis S3...")
+                logger.info("  → Tentative de téléchargement depuis S3...")
                 # Utiliser le répertoire parent comme destination
                 local_dir = Path(reference_path).parent
                 downloaded_path = self._download_reference_from_s3(str(local_dir))
                 if downloaded_path is None:
-                    logger.error("Impossible de télécharger le fichier depuis S3")
+                    logger.error("  ✗ Impossible de télécharger le fichier depuis S3")
                     return False
                 # Mettre à jour reference_path avec le chemin réel du fichier téléchargé
                 reference_path = downloaded_path
+                logger.info(f"  ✓ Fichier téléchargé: {reference_path}")
             else:
-                logger.error("Fichier de référence non trouvé et téléchargement S3 désactivé")
+                logger.error("  ✗ Fichier de référence non trouvé et téléchargement S3 désactivé")
                 return False
 
         target_column = self.config.get('data', {}).get('target_column', 'Valeur')
@@ -160,10 +165,10 @@ class MonitoringPipeline:
         )
 
         if self.reference_data is None:
-            logger.error("Impossible de charger les données de référence")
+            logger.error("  ✗ Impossible de charger les données de référence")
             return False
 
-        logger.info(f"Données de référence chargées: {len(self.reference_data)} enregistrements")
+        logger.info(f"  ✓ Données de référence chargées: {len(self.reference_data)} enregistrements, {len(self.reference_data.columns)} colonnes")
         return True
 
     def _download_reference_from_s3(self, local_dir: str) -> Optional[str]:
@@ -393,6 +398,7 @@ class MonitoringPipeline:
 
         # Priorité: fichier fourni -> S3
         if current_data_path:
+            logger.info(f"Chargement depuis fichier: {current_data_path}")
             # Charger depuis un fichier
             if not Path(current_data_path).is_absolute():
                 project_root = Path(__file__).parent.parent.parent.parent
@@ -400,19 +406,20 @@ class MonitoringPipeline:
 
             try:
                 self.current_data = pd.read_parquet(current_data_path)
-                logger.info(f"Données courantes chargées depuis fichier: {len(self.current_data)} enregistrements")
+                logger.info(f"  ✓ Données courantes chargées: {len(self.current_data)} enregistrements, {len(self.current_data.columns)} colonnes")
                 return True
             except Exception as e:
-                logger.error(f"Impossible de charger les données courantes depuis fichier: {e}")
+                logger.error(f"  ✗ Impossible de charger les données courantes depuis fichier: {e}")
                 return False
 
         # Télécharger le dernier train.parquet depuis S3 (par défaut)
-        logger.info("Tentative de téléchargement du dernier train.parquet depuis S3...")
+        logger.info("Téléchargement du dernier train.parquet depuis S3...")
         success = self._download_latest_train_from_s3()
         if success:
+            logger.info(f"  ✓ Données courantes chargées: {len(self.current_data)} enregistrements, {len(self.current_data.columns)} colonnes")
             return True
         else:
-            logger.error("Impossible de télécharger depuis S3")
+            logger.error("  ✗ Impossible de télécharger depuis S3")
             return False
 
     def step_4_detect_drift(self) -> bool:
@@ -432,6 +439,8 @@ class MonitoringPipeline:
         drift_config = self.config.get('drift_detection', {})
         min_samples = drift_config.get('min_samples_for_detection', 96)
 
+        logger.info(f"Données disponibles - Référence: {len(self.reference_data)} échantillons, Courant: {len(self.current_data)} échantillons")
+
         if len(self.current_data) < min_samples:
             logger.warning(f"Pas assez d'échantillons pour détecter le drift ({len(self.current_data)} < {min_samples})")
             return False
@@ -445,21 +454,31 @@ class MonitoringPipeline:
             "target_column": self.config.get('data', {}).get('target_column', 'Valeur')
         }
 
+        logger.info(f"Seuils de détection - Data drift: {detection_config['data_drift_threshold']}, Concept drift: {detection_config['concept_drift_threshold']}")
+
         # Générer les prédictions via l'API pour le concept drift
         reference_predictions = None
         current_predictions = None
 
+        logger.info("Génération des prédictions via API pour concept drift...")
         # Générer les prédictions de référence via l'API
         if self.reference_data is not None:
-            logger.info("Génération des prédictions de référence via API")
             reference_predictions = self._generate_reference_predictions(self.reference_data)
+            if reference_predictions is not None:
+                logger.info(f"  ✓ Prédictions de référence générées: {len(reference_predictions)}")
+            else:
+                logger.warning("  ✗ Échec génération prédictions de référence")
 
         # Générer les prédictions courantes via l'API
         if self.current_data is not None:
-            logger.info("Génération des prédictions courantes via API")
             current_predictions = self._generate_reference_predictions(self.current_data)
+            if current_predictions is not None:
+                logger.info(f"  ✓ Prédictions courantes générées: {len(current_predictions)}")
+            else:
+                logger.warning("  ✗ Échec génération prédictions courantes")
 
         # Exécuter la détection
+        logger.info("Exécution de la détection de drift...")
         self.drift_results = run_drift_detection(
             reference_data=self.reference_data,
             current_data=self.current_data,
@@ -482,9 +501,10 @@ class MonitoringPipeline:
             target_column = self.config.get('data', {}).get('target_column', 'Valeur')
             logger.warning(f"Concept drift non détecté: colonne cible '{target_column}' non trouvée dans les données")
 
-        logger.info(f"Data drift détecté: {data_drift_detected}")
-        logger.info(f"Concept drift détecté: {concept_drift_detected}")
-        logger.info(f"Drift global détecté: {overall_drift_detected}")
+        logger.info("=== RÉSULTATS DE DÉTECTION DE DRIFT ===")
+        logger.info(f"  Data drift: {'DÉTECTÉ' if data_drift_detected else 'Non détecté'}")
+        logger.info(f"  Concept drift: {'DÉTECTÉ' if concept_drift_detected else 'Non détecté'}")
+        logger.info(f"  Drift global: {'DÉTECTÉ' if overall_drift_detected else 'Non détecté'}")
 
         if overall_drift_detected:
             logger.warning("⚠️ DRIFT DÉTECTÉ - Action requise")
@@ -506,8 +526,13 @@ class MonitoringPipeline:
         logger.info("=== ÉTAPE 5: GÉNÉRATION DU RAPPORT EVIDENTLY ===")
 
         if self.reference_data is None or self.current_data is None:
-            logger.error("Données de référence ou courantes manquantes")
+            logger.error("  ✗ Données de référence ou courantes manquantes")
             return False
+
+        logger.info(f"Génération du rapport Evidently...")
+        logger.info(f"  - Sauvegarde locale: {output_path if output_path else 'Non'}")
+        logger.info(f"  - Sauvegarde workspace: {save_to_workspace}")
+        logger.info(f"  - Sauvegarde S3: {save_to_s3}")
 
         # Générer le rapport
         report, report_dict = generate_evidently_report(
@@ -518,14 +543,15 @@ class MonitoringPipeline:
         )
 
         if report is None:
-            logger.error("Impossible de générer le rapport Evidently")
+            logger.error("  ✗ Impossible de générer le rapport Evidently")
             return False
 
         self.evidently_report = report
-        logger.info("Rapport Evidently généré avec succès")
+        logger.info("  ✓ Rapport Evidently généré avec succès")
 
         # Sauvegarder dans le workspace Evidently UI local si demandé
         if save_to_workspace and self.evidently_config.get('save_to_workspace', False):
+            logger.info("Sauvegarde dans le workspace Evidently UI...")
             try:
                 from ml.utils.monitoring.drift_detector import save_evidently_report_to_workspace
 
@@ -553,15 +579,16 @@ class MonitoringPipeline:
                 )
 
                 if success:
-                    logger.info("Rapport sauvegardé dans le workspace Evidently UI")
+                    logger.info("  ✓ Rapport sauvegardé dans le workspace Evidently UI")
                 else:
-                    logger.warning("Échec de la sauvegarde dans le workspace Evidently UI")
+                    logger.warning("  ✗ Échec de la sauvegarde dans le workspace Evidently UI")
 
             except Exception as e:
-                logger.error(f"Erreur lors de la sauvegarde dans le workspace Evidently UI: {e}")
+                logger.error(f"  ✗ Erreur lors de la sauvegarde dans le workspace Evidently UI: {e}")
 
         # Sauvegarder sur S3 si demandé
         if save_to_s3 and self.evidently_config.get('save_to_s3', False):
+            logger.info("Sauvegarde sur S3...")
             try:
                 from ml.utils.monitoring.drift_detector import save_evidently_report_to_s3
 
@@ -579,12 +606,12 @@ class MonitoringPipeline:
                 )
 
                 if success:
-                    logger.info("Rapport sauvegardé sur S3")
+                    logger.info("  ✓ Rapport sauvegardé sur S3")
                 else:
-                    logger.warning("Échec de la sauvegarde sur S3")
+                    logger.warning("  ✗ Échec de la sauvegarde sur S3")
 
             except Exception as e:
-                logger.error(f"Erreur lors de la sauvegarde sur S3: {e}")
+                logger.error(f"  ✗ Erreur lors de la sauvegarde sur S3: {e}")
 
         return True
 
@@ -601,8 +628,10 @@ class MonitoringPipeline:
         logger.info("=== ÉTAPE 6: STOCKAGE DES MÉTRIQUES ===")
 
         if self.drift_results is None:
-            logger.error("Aucun résultat de drift à stocker")
+            logger.warning("  ✗ Aucun résultat de drift à stocker")
             return False
+
+        logger.info("Stockage des métriques dans MLflow...")
 
         # Stocker dans MLflow
         if self.evidently_report is not None:
@@ -614,11 +643,11 @@ class MonitoringPipeline:
                 current_data=self.current_data
             )
             if success:
-                logger.info("Métriques stockées dans MLflow")
+                logger.info("  ✓ Métriques stockées dans MLflow")
             else:
-                logger.warning("Impossible de stocker les métriques dans MLflow")
+                logger.warning("  ✗ Impossible de stocker les métriques dans MLflow")
         else:
-            logger.warning("Rapport Evidently non disponible pour le stockage MLflow")
+            logger.warning("  ✗ Rapport Evidently non disponible pour le stockage MLflow")
 
         return True
 
@@ -632,20 +661,22 @@ class MonitoringPipeline:
         logger.info("=== ÉTAPE 7: ENVOI DES NOTIFICATIONS ===")
 
         if self.drift_results is None:
-            logger.error("Aucun résultat de drift disponible")
+            logger.warning("  ✗ Aucun résultat de drift disponible")
             return False
 
         # Vérifier si le drift est détecté
         overall_drift_detected = self.drift_results.get('overall_drift_detected', False)
 
         if not overall_drift_detected:
-            logger.info("Pas de drift détecté, pas de notification nécessaire")
+            logger.info("  ✓ Aucun drift détecté, pas de notification nécessaire")
             return True
+
+        logger.info("Drift détecté, envoi des notifications...")
 
         # Vérifier si les notifications sont activées
         email_config = self.config.get('email', {})
         if not email_config.get('enabled', False):
-            logger.info("Notifications email désactivées")
+            logger.warning("  ✗ Notifications email désactivées")
             return True
 
         # Importer et utiliser le notifier
@@ -661,6 +692,8 @@ class MonitoringPipeline:
                 # Fallback vers la config locale
                 model_name = self.config.get('mlflow', {}).get('model_name', 'unknown')
 
+            logger.info(f"Envoi notification email - Modèle: {model_name}, Version: {model_version}")
+
             notifier = EmailNotifier(config=self.email_config)
             success = notifier.notify_drift_detected(
                 drift_results=self.drift_results,
@@ -670,16 +703,16 @@ class MonitoringPipeline:
             )
 
             if success:
-                logger.info("Notification email envoyée avec succès")
+                logger.info("  ✓ Notification email envoyée avec succès")
             else:
-                logger.warning("Impossible d'envoyer la notification email")
+                logger.warning("  ✗ Impossible d'envoyer la notification email")
 
             return success
         except ImportError:
-            logger.warning("EmailNotifier non disponible")
+            logger.warning("  ✗ EmailNotifier non disponible")
             return True
         except Exception as e:
-            logger.error(f"Erreur lors de l'envoi de la notification: {e}")
+            logger.error(f"  ✗ Erreur lors de l'envoi de la notification: {e}")
             return False
 
     def run_full_pipeline(self,
