@@ -365,7 +365,7 @@ class ConsumptionDataPreparer:
         if output_path:
             output_path = Path(output_path)
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            features_df.to_parquet(output_path)
+            features_df.to_parquet(output_path, index=False)
             logger.info(f"✅ Features consommation sauvegardées: {output_path}")
 
         return features_df

@@ -175,7 +175,7 @@ class PreparationPipeline:
             # S'assurer que la colonne Horodate existe
             if 'Horodate' not in weather_df.columns:
                 weather_df['Horodate'] = pd.to_datetime(weather_df.index)
-            weather_df.to_parquet(weather_path)
+            weather_df.to_parquet(weather_path, index=False)
             logger.info(f"Météo générée: {weather_path}")
             return weather_path
         except Exception as e:
@@ -201,7 +201,7 @@ class PreparationPipeline:
         try:
             holidays_api = HolidaysCombinedAPI(zone="C")
             holidays_df = holidays_api.generate_holidays_dataframe(start_date_str, end_date_str)
-            holidays_df.to_parquet(holidays_path)
+            holidays_df.to_parquet(holidays_path, index=False)
             logger.info(f"Vacances générées: {holidays_path}")
             return holidays_path
         except Exception as e:
@@ -463,7 +463,7 @@ class PreparationPipeline:
             train_path = output_dir / "train.parquet"
 
         # Sauvegarder le fichier concaténé localement
-        self.features_df.to_parquet(train_path)
+        self.features_df.to_parquet(train_path, index=False)
         logger.info(f"Fichier concaténé sauvegardé: {train_path}")
 
         # ÉTAPE 5.6: Archiver l'ancien fichier S3

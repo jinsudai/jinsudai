@@ -499,6 +499,6 @@ class HolidaysCombinedAPI:
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        df.to_parquet(output_path)
+        df.to_parquet(output_path, index=False)
         logger.info(f"Fichier Parquet généré: {output_path}")
         return output_path
