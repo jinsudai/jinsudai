@@ -489,7 +489,7 @@ def _generate_custom_drift_report_html(
                 <th>Curr NaN %</th>
             </tr>
 """
-    
+
     for col in common_cols:
         col_type = str(reference_data[col].dtype)
         ref_mean = reference_data[col].mean() if pd.api.types.is_numeric_dtype(reference_data[col]) else "N/A"
@@ -531,7 +531,7 @@ def _generate_custom_drift_report_html(
 </body>
 </html>
 """
-    
+
     return html
 
 

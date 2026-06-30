@@ -30,7 +30,7 @@ class TestMonitoringPipeline(unittest.TestCase):
         # Mock la config pour éviter les dépendances externes
         with patch('ml.pipelines.monitoring.load_config') as mock_config, \
              patch('ml.pipelines.monitoring.get_database_uri') as mock_db_uri:
-            
+
             mock_config.return_value = {
                 'drift_detection': {
                     'reference_data_path': 'data/test_reference.parquet'
@@ -43,7 +43,7 @@ class TestMonitoringPipeline(unittest.TestCase):
                 'mlflow': {'model_name': 'test_model'}
             }
             mock_db_uri.return_value = 'postgresql://test'
-            
+
             self.pipeline = MonitoringPipeline(config_name="consumption")
 
     def test_initialization(self):

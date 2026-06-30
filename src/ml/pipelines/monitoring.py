@@ -71,10 +71,43 @@ class MonitoringPipeline:
 
         logger.info(f"Pipeline de détection de drift initialisé avec config={config_name}")
 
-    def step_1_load_reference_data(self, reference_path: Optional[str] = None,
+    def step_1_health_check_api(self) -> bool:
+        """
+        Étape 1: Health check de l'API JinsudAPI.
+
+        Returns:
+            True si succès, False sinon
+        """
+        logger.info("=== ÉTAPE 1: HEALTH CHECK API ===")
+
+        logger.info("Health check de l'API JinsudAPI")
+        model_info = self._get_model_info_from_api()
+
+        if model_info:
+            logger.info(f"API JinsudAPI fonctionnelle - Modèle: {model_info.get('model_name')}, Version: {model_info.get('model_version')}")
+            return True
+        else:
+            logger.error("Health check de l'API JinsudAPI échoué ou impossible de récupérer les infos du modèle")
+
+            # Envoyer une alerte email si le health check échoue
+            if self.email_config and self.email_config.get('enabled', False):
+                try:
+                    from ml.utils.notifications.email_notifier import EmailNotifier
+                    notifier = EmailNotifier(config=self.email_config)
+                    notifier.notify_api_health_check_failed(
+                        api_url=self.config.get('fastapi', {}).get('url', 'unknown'),
+                        error="Impossible de récupérer les infos du modèle depuis l'API"
+                    )
+                    logger.info("Alerte email envoyée pour health check échoué")
+                except Exception as e:
+                    logger.warning(f"Impossible d'envoyer l'alerte email: {e}")
+
+            return False
+
+    def step_2_load_reference_data(self, reference_path: Optional[str] = None,
                                    download_from_s3_if_missing: bool = True) -> bool:
         """
-        Étape 1: Chargement des données de référence.
+        Étape 2: Chargement des données de référence.
 
         Args:
             reference_path: Chemin vers le fichier de référence (optionnel)
@@ -83,7 +116,7 @@ class MonitoringPipeline:
         Returns:
             True si succès, False sinon
         """
-        logger.info("=== ÉTAPE 1: CHARGEMENT DES DONNÉES DE RÉFÉRENCE ===")
+        logger.info("=== ÉTAPE 2: CHARGEMENT DES DONNÉES DE RÉFÉRENCE ===")
 
         # Utiliser le chemin depuis la config si non fourni
         if reference_path is None:
@@ -204,11 +237,13 @@ class MonitoringPipeline:
                 return {}
 
             health_data = response.json()
+            model_name = health_data.get('model_name')
+            model_version = health_data.get('model_version')
             model_info = {
-                'model_name': health_data.get('model_name'),
-                'model_version': health_data.get('model_version')
+                'model_name': model_name,
+                'model_version': model_version
             }
-            logger.info(f"Infos du modèle récupérées: {model_info}")
+            logger.info(f"Infos du modèle récupérées depuis l'API - Nom: {model_name}, Version: {model_version}")
             return model_info
 
         except Exception as e:
@@ -338,12 +373,12 @@ class MonitoringPipeline:
             logger.error(f"Erreur lors du téléchargement depuis S3: {e}")
             return False
 
-    def step_2_load_current_data(self, current_data_path: Optional[str] = None,
+    def step_3_load_current_data(self, current_data_path: Optional[str] = None,
                                  limit: int = 1000,
                                  start_date: Optional[str] = None,
                                  end_date: Optional[str] = None) -> bool:
         """
-        Étape 2: Chargement des données courantes (production).
+        Étape 3: Chargement des données courantes (production).
 
         Args:
             current_data_path: Chemin vers le fichier de données courantes (optionnel)
@@ -354,7 +389,7 @@ class MonitoringPipeline:
         Returns:
             True si succès, False sinon
         """
-        logger.info("=== ÉTAPE 2: CHARGEMENT DES DONNÉES COURANTES ===")
+        logger.info("=== ÉTAPE 3: CHARGEMENT DES DONNÉES COURANTES ===")
 
         # Priorité: fichier fourni -> S3
         if current_data_path:
@@ -380,14 +415,14 @@ class MonitoringPipeline:
             logger.error("Impossible de télécharger depuis S3")
             return False
 
-    def step_3_detect_drift(self) -> bool:
+    def step_4_detect_drift(self) -> bool:
         """
-        Étape 3: Détection de drift (data drift + concept drift).
+        Étape 4: Détection de drift (data drift + concept drift).
 
         Returns:
             True si succès, False sinon
         """
-        logger.info("=== ÉTAPE 3: DÉTECTION DE DRIFT ===")
+        logger.info("=== ÉTAPE 4: DÉTECTION DE DRIFT ===")
 
         if self.reference_data is None or self.current_data is None:
             logger.error("Données de référence ou courantes manquantes")
@@ -456,9 +491,9 @@ class MonitoringPipeline:
 
         return True
 
-    def step_4_generate_evidently_report(self, output_path: Optional[str] = None, save_to_workspace: bool = False, save_to_s3: bool = False) -> bool:
+    def step_5_generate_evidently_report(self, output_path: Optional[str] = None, save_to_workspace: bool = False, save_to_s3: bool = False) -> bool:
         """
-        Étape 4: Génération du rapport Evidently.
+        Étape 5: Génération du rapport Evidently.
 
         Args:
             output_path: Chemin pour sauvegarder le rapport HTML (optionnel)
@@ -468,7 +503,7 @@ class MonitoringPipeline:
         Returns:
             True si succès, False sinon
         """
-        logger.info("=== ÉTAPE 4: GÉNÉRATION DU RAPPORT EVIDENTLY ===")
+        logger.info("=== ÉTAPE 5: GÉNÉRATION DU RAPPORT EVIDENTLY ===")
 
         if self.reference_data is None or self.current_data is None:
             logger.error("Données de référence ou courantes manquantes")
@@ -553,9 +588,9 @@ class MonitoringPipeline:
 
         return True
 
-    def step_5_store_metrics(self, run_id: Optional[str] = None) -> bool:
+    def step_6_store_metrics(self, run_id: Optional[str] = None) -> bool:
         """
-        Étape 5: Stockage des métriques de drift.
+        Étape 6: Stockage des métriques de drift.
 
         Args:
             run_id: ID de la run MLflow (optionnel)
@@ -563,7 +598,7 @@ class MonitoringPipeline:
         Returns:
             True si succès, False sinon
         """
-        logger.info("=== ÉTAPE 5: STOCKAGE DES MÉTRIQUES ===")
+        logger.info("=== ÉTAPE 6: STOCKAGE DES MÉTRIQUES ===")
 
         if self.drift_results is None:
             logger.error("Aucun résultat de drift à stocker")
@@ -587,14 +622,14 @@ class MonitoringPipeline:
 
         return True
 
-    def step_6_send_notifications(self) -> bool:
+    def step_7_send_notifications(self) -> bool:
         """
-        Étape 6: Envoi des notifications si drift détecté.
+        Étape 7: Envoi des notifications si drift détecté.
 
         Returns:
             True si succès, False sinon
         """
-        logger.info("=== ÉTAPE 6: ENVOI DES NOTIFICATIONS ===")
+        logger.info("=== ÉTAPE 7: ENVOI DES NOTIFICATIONS ===")
 
         if self.drift_results is None:
             logger.error("Aucun résultat de drift disponible")
@@ -692,42 +727,47 @@ class MonitoringPipeline:
         }
 
         try:
-            # Étape 1: Chargement données référence
-            if not self.step_1_load_reference_data(reference_path, download_from_s3):
+            # Étape 1: Health check API
+            if not self.step_1_health_check_api():
+                logger.warning("Health check API échoué, continuation du pipeline")
+            results["steps_completed"].append("health_check_api")
+
+            # Étape 2: Chargement données référence
+            if not self.step_2_load_reference_data(reference_path, download_from_s3):
                 results["error"] = "Échec du chargement des données de référence"
                 return results
             results["steps_completed"].append("load_reference_data")
 
-            # Étape 2: Chargement données courantes
-            if not self.step_2_load_current_data(current_data_path, current_data_limit, start_date, end_date):
+            # Étape 3: Chargement données courantes
+            if not self.step_3_load_current_data(current_data_path, current_data_limit, start_date, end_date):
                 results["error"] = "Échec du chargement des données courantes"
                 return results
             results["steps_completed"].append("load_current_data")
 
-            # Étape 3: Détection de drift
-            if not self.step_3_detect_drift():
+            # Étape 4: Détection de drift
+            if not self.step_4_detect_drift():
                 results["error"] = "Échec de la détection de drift"
                 return results
             results["steps_completed"].append("detect_drift")
             results["drift_results"] = self.drift_results
 
-            # Étape 4: Génération rapport Evidently
+            # Étape 5: Génération rapport Evidently
             if generate_report:
-                if not self.step_4_generate_evidently_report(report_output_path, save_to_workspace, save_to_s3):
+                if not self.step_5_generate_evidently_report(report_output_path, save_to_workspace, save_to_s3):
                     logger.warning("Échec de la génération du rapport Evidently")
                 else:
                     results["steps_completed"].append("generate_evidently_report")
 
-            # Étape 5: Stockage des métriques
+            # Étape 6: Stockage des métriques
             if store_metrics:
-                if not self.step_5_store_metrics(mlflow_run_id):
+                if not self.step_6_store_metrics(mlflow_run_id):
                     logger.warning("Échec du stockage des métriques")
                 else:
                     results["steps_completed"].append("store_metrics")
 
-            # Étape 6: Notifications
+            # Étape 7: Notifications
             if send_notifications:
-                if not self.step_6_send_notifications():
+                if not self.step_7_send_notifications():
                     logger.warning("Échec de l'envoi des notifications")
                 else:
                     results["steps_completed"].append("send_notifications")

@@ -598,6 +598,86 @@ Ceci est un message automatique du système de traitement SFTP.
 
         return self._send_email(subject, body, html_body)
 
+    def notify_api_health_check_failed(
+        self,
+        api_url: str,
+        error: str,
+        timestamp: Optional[datetime] = None
+    ) -> bool:
+        """
+        Notifie l'échec du health check de l'API.
+
+        Args:
+            api_url: URL de l'API
+            error: Message d'erreur
+            timestamp: Timestamp du health check (défaut: maintenant)
+
+        Returns:
+            True si succès, False sinon
+        """
+        if timestamp is None:
+            timestamp = datetime.now()
+
+        subject = f"[ALERT] Health Check API échoué - {api_url}"
+
+        # Corps texte
+        body = f"""
+ALERT: Health Check API échoué
+
+Détails:
+- URL de l'API: {api_url}
+- Erreur: {error}
+- Date: {timestamp.strftime('%Y-%m-%d %H:%M:%S')}
+
+Action requise:
+- Vérifier que l'API est accessible
+- Vérifier que le modèle est chargé
+- Consulter les logs de l'API pour plus de détails
+
+---
+Ceci est un message automatique du système de monitoring.
+"""
+
+        # Corps HTML
+        html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; }}
+        .alert {{ background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 5px; }}
+        .details {{ background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0; }}
+        .label {{ font-weight: bold; }}
+    </style>
+</head>
+<body>
+    <h2>⚠️ ALERT: Health Check API échoué</h2>
+
+    <div class="alert">
+        <strong>Action requise:</strong> L'API de prédiction n'est pas accessible ou le modèle n'est pas chargé.
+    </div>
+
+    <div class="details">
+        <p><span class="label">URL de l'API:</span> {api_url}</p>
+        <p><span class="label">Erreur:</span> {error}</p>
+        <p><span class="label">Date:</span> {timestamp.strftime('%Y-%m-%d %H:%M:%S')}</p>
+    </div>
+
+    <h3>Actions recommandées:</h3>
+    <ul>
+        <li>Vérifier que l'API est accessible</li>
+        <li>Vérifier que le modèle est chargé</li>
+        <li>Consulter les logs de l'API pour plus de détails</li>
+    </ul>
+
+    <hr>
+    <p><em>Ceci est un message automatique du système de monitoring.</em></p>
+</body>
+</html>
+"""
+
+        return self._send_email(subject, body, html_body)
+
     def notify_batch_completed(
         self,
         total_files: int,
