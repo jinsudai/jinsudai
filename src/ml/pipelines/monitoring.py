@@ -57,12 +57,13 @@ class MonitoringPipeline:
         self.config = load_config(config_name=config_name)
         self.db_uri = db_uri or get_database_uri()
 
-        # Charger la configuration globale pour Evidently et S3
+        # Charger la configuration globale pour Evidently, S3 et Email
         project_root = Path(__file__).parent.parent.parent.parent
         global_config_path = project_root / 'config.yaml'
         global_config = load_config(config_path=str(global_config_path))
         self.evidently_config = global_config.get('evidently', {})
         self.s3_config = global_config.get('s3', {})
+        self.email_config = global_config.get('email', {})
 
         self.reference_data = None
         self.current_data = None
@@ -175,9 +176,12 @@ class MonitoringPipeline:
             logger.error(f"Erreur lors du téléchargement depuis S3: {e}")
             return None
 
-    def _generate_reference_predictions(self) -> Optional[np.ndarray]:
+    def _generate_reference_predictions(self, reference_data: pd.DataFrame) -> Optional[np.ndarray]:
         """
         Génère des prédictions sur reference_data via JinsudAPI.
+
+        Args:
+            reference_data: DataFrame de référence pour générer les prédictions
 
         Returns:
             Prédictions de référence ou None en cas d'échec
@@ -208,7 +212,7 @@ class MonitoringPipeline:
             # L'API attend des champs spécifiques: Horodate, temperature_2m_mean, relative_humidity_mean, etc.
             requests_data = []
 
-            for idx, row in self.reference_data.iterrows():
+            for idx, row in reference_data.iterrows():
                 # Mapping des colonnes vers le format attendu par l'API
                 # Convertir les Timestamps en chaînes ISO
                 horodate_value = row.get('Horodate', row.get('horodate', row.get('timestamp', datetime.now())))
@@ -391,7 +395,17 @@ class MonitoringPipeline:
 
         # Générer des prédictions sur reference_data avec le modèle actuel
         if self.reference_data is not None and current_predictions is not None:
-            reference_predictions = self._generate_reference_predictions()
+            # Échantillonner reference_data pour avoir la même taille que current_predictions
+            n_samples = len(current_predictions)
+            if len(self.reference_data) > n_samples:
+                logger.info(f"Échantillonnage de reference_data: {len(self.reference_data)} -> {n_samples}")
+                reference_data_sample = self.reference_data.sample(n=n_samples, random_state=42)
+                self.reference_data_sample = reference_data_sample
+            else:
+                reference_data_sample = self.reference_data
+                self.reference_data_sample = reference_data_sample
+
+            reference_predictions = self._generate_reference_predictions(reference_data_sample)
 
         # Exécuter la détection
         self.drift_results = run_drift_detection(
@@ -586,8 +600,12 @@ class MonitoringPipeline:
         try:
             from ml.utils.notifications.email_notifier import EmailNotifier
 
-            notifier = EmailNotifier()
-            success = notifier.notify_drift_detected(self.drift_results)
+            notifier = EmailNotifier(config=self.email_config)
+            success = notifier.notify_drift_detected(
+                drift_results=self.drift_results,
+                model_name=self.config.get('name', 'unknown'),
+                run_id="monitoring_pipeline"
+            )
 
             if success:
                 logger.info("Notification email envoyée avec succès")
