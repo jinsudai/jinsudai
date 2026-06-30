@@ -1,3 +1,10 @@
+## Monitoring
+- datadrift récupérer le fichier depuis S3 dans prepared (et non le reference)) -> Fait
+- autre drifts -> Fait
+- email notification -> Fait
+
+
+
 ## Pipelines
 # 1_actuals_ingestion_pipeline (Daily)
 - Peux tu me confirmer que si le ftp n'est pas activé, les donnnées sont générée aléatoirement? -> A tester

@@ -78,8 +78,7 @@ class MonitoringPipeline:
         Returns:
             True si succès, False sinon
         """
-        logger.info("")
-        logger.info("=== ÉTAPE 1: HEALTH CHECK API ===")
+        logger.info("\n\n=== ÉTAPE 1: HEALTH CHECK API ===")
         logger.info("Vérification de la disponibilité de l'API JinsudAPI...")
 
         model_info = self._get_model_info_from_api()
@@ -119,8 +118,7 @@ class MonitoringPipeline:
         Returns:
             True si succès, False sinon
         """
-        logger.info("")
-        logger.info("=== ÉTAPE 2: CHARGEMENT DES DONNÉES DE RÉFÉRENCE ===")
+        logger.info("\n\n=== ÉTAPE 2: CHARGEMENT DES DONNÉES DE RÉFÉRENCE ===")
 
         # Utiliser le chemin depuis la config si non fourni
         if reference_path is None:
@@ -396,8 +394,7 @@ class MonitoringPipeline:
         Returns:
             True si succès, False sinon
         """
-        logger.info("")
-        logger.info("=== ÉTAPE 3: CHARGEMENT DES DONNÉES COURANTES ===")
+        logger.info("\n\n=== ÉTAPE 3: CHARGEMENT DES DONNÉES COURANTES ===")
 
         # Priorité: fichier fourni -> S3
         if current_data_path:
@@ -432,8 +429,7 @@ class MonitoringPipeline:
         Returns:
             True si succès, False sinon
         """
-        logger.info("")
-        logger.info("=== ÉTAPE 4: DÉTECTION DE DRIFT ===")
+        logger.info("\n\n=== ÉTAPE 4: DÉTECTION DE DRIFT ===")
 
         if self.reference_data is None or self.current_data is None:
             logger.error("Données de référence ou courantes manquantes")
@@ -527,8 +523,7 @@ class MonitoringPipeline:
         Returns:
             Tuple[bool, Optional[str]]: (succès, URL du rapport EvidentlyUI ou chemin local)
         """
-        logger.info("")
-        logger.info("=== ÉTAPE 5: GÉNÉRATION DU RAPPORT EVIDENTLY ===")
+        logger.info("\n\n=== ÉTAPE 5: GÉNÉRATION DU RAPPORT EVIDENTLY ===")
 
         if self.reference_data is None or self.current_data is None:
             logger.error("  ✗ Données de référence ou courantes manquantes")
@@ -634,8 +629,7 @@ class MonitoringPipeline:
         Returns:
             True si succès, False sinon
         """
-        logger.info("")
-        logger.info("=== ÉTAPE 6: STOCKAGE DES MÉTRIQUES ===")
+        logger.info("\n\n=== ÉTAPE 6: STOCKAGE DES MÉTRIQUES ===")
 
         if self.drift_results is None:
             logger.warning("  ✗ Aucun résultat de drift à stocker")
@@ -740,8 +734,7 @@ class MonitoringPipeline:
         Returns:
             True si succès, False sinon
         """
-        logger.info("")
-        logger.info("=== ÉTAPE 7: ENVOI DES NOTIFICATIONS ===")
+        logger.info("\n\n=== ÉTAPE 7: ENVOI DES NOTIFICATIONS ===")
 
         if self.drift_results is None:
             logger.warning("  ✗ Aucun résultat de drift disponible")
