@@ -371,45 +371,39 @@ class MonitoringPipeline:
             "target_column": self.config.get('data', {}).get('target_column', 'Valeur')
         }
 
-        # Récupérer les prédictions réelles depuis la base de données pour le concept drift
+        # Récupérer les prédictions réelles depuis les données pour le concept drift
         reference_predictions = None
         current_predictions = None
 
-        # Récupérer les prédictions courantes depuis la base
-        if self.db_uri:
-            try:
-                self.db_handler = DatabaseHandler(self.db_uri)
-                if self.db_handler.verify_connection():
-                    logger.info("Récupération des prédictions courantes pour le concept drift")
-                    production_data = self.db_handler.get_production_data(
-                        limit=1000,
-                        include_prediction=True
-                    )
-                    if production_data is not None and len(production_data) > 0:
-                        current_predictions = production_data['prediction'].values
-                        logger.info(f"{len(current_predictions)} prédictions courantes récupérées")
-                    else:
-                        logger.warning("Aucune prédiction disponible dans la base de données")
-            except Exception as e:
-                logger.warning(f"Impossible de récupérer les prédictions: {e}")
+        # Vérifier si les données courantes contiennent déjà des prédictions
+        if self.current_data is not None and 'prediction' in self.current_data.columns:
+            current_predictions = self.current_data['prediction'].values
+            logger.info(f"{len(current_predictions)} prédictions courantes trouvées dans current_data")
 
-        # Générer des prédictions sur reference_data avec le modèle actuel
-        if self.reference_data is not None and current_predictions is not None:
+        # Vérifier si les données de référence contiennent déjà des prédictions
+        if self.reference_data is not None and 'prediction' in self.reference_data.columns:
+            reference_predictions = self.reference_data['prediction'].values
+            logger.info(f"{len(reference_predictions)} prédictions de référence trouvées dans reference_data")
+
+        # Si pas de prédictions dans reference_data, essayer de les générer via API
+        reference_data_for_drift = self.reference_data
+        if reference_predictions is None and self.reference_data is not None and current_predictions is not None:
+            logger.info("Génération des prédictions de référence via API")
             # Échantillonner reference_data pour avoir la même taille que current_predictions
             n_samples = len(current_predictions)
             if len(self.reference_data) > n_samples:
                 logger.info(f"Échantillonnage de reference_data: {len(self.reference_data)} -> {n_samples}")
-                reference_data_sample = self.reference_data.sample(n=n_samples, random_state=42)
-                self.reference_data_sample = reference_data_sample
+                reference_data_for_drift = self.reference_data.sample(n=n_samples, random_state=42)
+                self.reference_data_sample = reference_data_for_drift
             else:
-                reference_data_sample = self.reference_data
-                self.reference_data_sample = reference_data_sample
+                reference_data_for_drift = self.reference_data
+                self.reference_data_sample = reference_data_for_drift
 
-            reference_predictions = self._generate_reference_predictions(reference_data_sample)
+            reference_predictions = self._generate_reference_predictions(reference_data_for_drift)
 
         # Exécuter la détection
         self.drift_results = run_drift_detection(
-            reference_data=self.reference_data,
+            reference_data=reference_data_for_drift,
             current_data=self.current_data,
             config=detection_config,
             reference_predictions=reference_predictions,
