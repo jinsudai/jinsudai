@@ -35,7 +35,7 @@ from ml.utils.monitoring.drift_detector import (
 from ml.config import load_config
 from ml.config.global_config import get_database_uri
 from ml.utils.data.s3_handler import S3Handler
-from ml.utils.models.models_mlflow import get_model_version_by_alias, setup_mlflow
+from ml.utils.models.models_mlflow import get_model_version_by_alias, set_mlflow_tracking
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -67,7 +67,7 @@ class MonitoringPipeline:
         # Configurer MLflow avec le tracking URI depuis la config
         mlflow_tracking_uri = self.mlflow_config.get('tracking_uri')
         if mlflow_tracking_uri:
-            setup_mlflow(tracking_uri=mlflow_tracking_uri)
+            set_mlflow_tracking(tracking_uri=mlflow_tracking_uri)
             logger.info(f"MLflow configuré avec tracking URI: {mlflow_tracking_uri}")
 
         self.reference_data = None
