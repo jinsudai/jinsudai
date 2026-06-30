@@ -76,6 +76,27 @@ class TestMonitoringPipeline(unittest.TestCase):
         result = self.pipeline.is_drift_detected()
         self.assertFalse(result)
 
+    @patch('ml.pipelines.monitoring.MonitoringPipeline._get_model_info_from_api')
+    def test_step_1_health_check_api_success(self, mock_get_info):
+        """Test le health check API avec succès."""
+        mock_get_info.return_value = {
+            'model_name': 'test_model',
+            'model_version': 'v1.0'
+        }
+
+        result = self.pipeline.step_1_health_check_api()
+
+        self.assertTrue(result)
+
+    @patch('ml.pipelines.monitoring.MonitoringPipeline._get_model_info_from_api')
+    def test_step_1_health_check_api_failure(self, mock_get_info):
+        """Test le health check API en échec."""
+        mock_get_info.return_value = None
+
+        result = self.pipeline.step_1_health_check_api()
+
+        self.assertFalse(result)
+
     @patch('ml.pipelines.monitoring.load_reference_data')
     def test_step_2_load_reference_data_success(self, mock_load):
         """Test le chargement des données de référence avec succès."""

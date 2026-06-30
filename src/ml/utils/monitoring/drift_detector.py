@@ -566,11 +566,24 @@ def generate_evidently_report(
             logger.error("Aucune colonne commune entre les DataFrames de référence et courant")
             return None, {"error": "no_common_columns"}
 
+        # Identifier les colonnes non conservées
+        ref_only = set(reference_data.columns) - set(common_columns)
+        curr_only = set(current_data.columns) - set(common_columns)
+
+        if ref_only or curr_only:
+            logger.info(f"Colonnes non conservées (schéma différent):")
+            if ref_only:
+                logger.info(f"  - Présentes uniquement dans référence: {ref_only}")
+            if curr_only:
+                logger.info(f"  - Présentes uniquement dans courant: {curr_only}")
+            if "nom_vacances" in ref_only or "nom_vacances" in curr_only:
+                logger.info("  Note: nom_vacances est redondant avec is_vacances et est supprimé dans consumption_preparer.py")
+
         # Garder uniquement les colonnes communes
         reference_data_aligned = reference_data[common_columns].copy()
         current_data_aligned = current_data[common_columns].copy()
 
-        logger.info(f"Colonnes utilisées pour le rapport Evidently: {len(common_columns)} colonnes communes")
+        logger.info(f"Colonnes utilisées pour le rapport Evidently: {len(common_columns)} colonnes communes - {common_columns}")
 
         # Filtrer les colonnes constantes (variance nulle) pour éviter les warnings numpy
         columns_to_keep = []
@@ -805,14 +818,36 @@ def save_evidently_report_to_workspace(
             from evidently.presets import DataDriftPreset
             from evidently.metrics import DriftedColumnsCount
 
+            # Aligner les colonnes entre les deux DataFrames pour éviter l'erreur "partially present"
+            common_columns = list(set(reference_data.columns) & set(current_data.columns))
+            if len(common_columns) == 0:
+                logger.error("Aucune colonne commune entre les DataFrames de référence et courant")
+                return False
+
+            # Identifier les colonnes non conservées
+            # Note: nom_vacances est redondant avec is_vacances et est supprimé dans consumption_preparer.py"
+            ref_only = set(reference_data.columns) - set(common_columns)
+            curr_only = set(current_data.columns) - set(common_columns)
+
+            if ref_only or curr_only:
+                logger.info(f"Colonnes non conservées (schéma différent):")
+                if ref_only:
+                    logger.info(f"  - Présentes uniquement dans référence: {ref_only}")
+                if curr_only:
+                    logger.info(f"  - Présentes uniquement dans courant: {curr_only}")
+                    
+            reference_data_aligned = reference_data[common_columns].copy()
+            current_data_aligned = current_data[common_columns].copy()
+            logger.info(f"Colonnes alignées pour RemoteWorkspace: {len(common_columns)} colonnes communes - {common_columns}")
+
             # Créer un nouveau rapport avec les mêmes metrics
             new_report = Report(metrics=[
                 DataDriftPreset(),
                 DriftedColumnsCount()
             ])
 
-            # Exécuter le rapport avec les données
-            run_result = new_report.run(reference_data=reference_data, current_data=current_data)
+            # Exécuter le rapport avec les données alignées
+            run_result = new_report.run(reference_data=reference_data_aligned, current_data=current_data_aligned)
 
             # Envoyer au workspace
             workspace.add_run(
