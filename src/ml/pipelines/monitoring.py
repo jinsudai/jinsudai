@@ -22,6 +22,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional
+import requests
 
 import numpy as np
 import pandas as pd
@@ -34,10 +35,9 @@ from ml.utils.monitoring.drift_detector import (
     save_evidently_report_to_mlflow
 )
 from ml.config import load_config
-from ml.config.global_config import get_database_uri, get_mlflow_config
+from ml.config.global_config import get_database_uri
 from ..utils.data.database_handler import DatabaseHandler
 from ml.utils.data.s3_handler import S3Handler
-from ml.utils.models.models_inference import InferenceModel
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -177,44 +177,59 @@ class MonitoringPipeline:
 
     def _generate_reference_predictions(self) -> Optional[np.ndarray]:
         """
-        Génère des prédictions sur reference_data avec le modèle actuel depuis MLflow.
+        Génère des prédictions sur reference_data via JinsudAPI.
 
         Returns:
             Prédictions de référence ou None en cas d'échec
         """
         try:
-            logger.info("Génération des prédictions de référence avec le modèle actuel")
-            mlflow_config = get_mlflow_config()
-            inference_model = InferenceModel(config=mlflow_config)
+            logger.info("Génération des prédictions de référence via JinsudAPI")
 
-            model_name = self.config.get('mlflow', {}).get('model_name', 'consumption_model')
-            if not inference_model.load_production_model(model_name):
-                logger.warning("Impossible de charger le modèle depuis MLflow")
+            # Récupérer l'URL de l'API depuis la config
+            global_config = load_config('config.yaml')
+            api_url = global_config.get('fastapi', {}).get('url')
+            predict_endpoint = global_config.get('fastapi', {}).get('predict_endpoint', '/predict/batch')
+
+            if not api_url:
+                logger.warning("URL de l'API FastAPI non configurée")
                 return None
 
-            # Préparer les features pour la prédiction
-            target_column = self.config.get('data', {}).get('target_column', 'Valeur')
-            feature_columns = self.config.get('data', {}).get('feature_columns')
+            full_url = f"{api_url}{predict_endpoint}"
+            logger.info(f"Appel de l'API: {full_url}")
 
-            # Sélectionner les features pour la prédiction
-            if feature_columns:
-                ref_features = self.reference_data[[col for col in feature_columns if col in self.reference_data.columns]]
-            else:
-                # Utiliser toutes les colonnes numériques sauf la cible
-                ref_features = self.reference_data.select_dtypes(include=[np.number]).drop(columns=[target_column], errors='ignore')
+            # Préparer les données pour l'API
+            # L'API attend des champs spécifiques: Horodate, temperature_2m_mean, relative_humidity_mean, etc.
+            requests_data = []
 
-            # Générer les prédictions
-            reference_predictions = inference_model.predict(ref_features)
+            for idx, row in self.reference_data.iterrows():
+                # Mapping des colonnes vers le format attendu par l'API
+                request_data = {
+                    "Horodate": row.get('Horodate', row.get('horodate', row.get('timestamp', datetime.now().isoformat()))),
+                    "temperature_2m_mean": row.get('temperature_2m_mean', 0.0),
+                    "relative_humidity_mean": row.get('relative_humidity_mean', 0.0),
+                    "precipitation_sum": row.get('precipitation_sum', 0.0),
+                    "is_vacances": row.get('is_vacances', row.get('is_vacation', 0)),
+                    "jour_de_la_semaine": row.get('jour de la semaine', row.get('jour_de_la_semaine', 'Lundi')),
+                    "jour_ferie": row.get('jour férié', row.get('jour_ferie', 0))
+                }
+                requests_data.append(request_data)
 
-            if reference_predictions is not None:
-                logger.info(f"{len(reference_predictions)} prédictions de référence générées")
-                return reference_predictions
-            else:
-                logger.warning("Échec de la génération des prédictions de référence")
+            # Appel de l'API
+            response = requests.post(full_url, json=requests_data, timeout=30)
+
+            if response.status_code != 200:
+                logger.warning(f"Erreur API: {response.status_code} - {response.text}")
                 return None
+
+            # Extraire les prédictions de la réponse
+            predictions_data = response.json()
+            reference_predictions = np.array([pred['prediction'] for pred in predictions_data])
+
+            logger.info(f"{len(reference_predictions)} prédictions de référence générées via API")
+            return reference_predictions
 
         except Exception as e:
-            logger.warning(f"Impossible de générer les prédictions de référence: {e}")
+            logger.warning(f"Impossible de générer les prédictions de référence via API: {e}")
             return None
 
     def _download_latest_train_from_s3(self) -> bool:
