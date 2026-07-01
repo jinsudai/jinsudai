@@ -163,7 +163,7 @@ def should_trigger_training(**context) -> str:
         context: Context Airflow avec accès aux XComs
     
     Returns:
-        'train' si le training doit être déclenché, 'skip' sinon
+        'trigger_training' si le training doit être déclenché, 'skip_training' sinon
     """
     # Récupérer le drift status depuis le monitoring (via XCom)
     task_instance = context['task_instance']
@@ -195,4 +195,4 @@ def should_trigger_training(**context) -> str:
     print(f"   - Training nécessaire: {training_needed}")
     print(f"   - Décision finale: {'TRAIN' if should_train else 'SKIP'}")
     
-    return 'train' if should_train else 'skip'
+    return 'trigger_training' if should_train else 'skip_training'

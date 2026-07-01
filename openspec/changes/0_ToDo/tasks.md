@@ -74,9 +74,6 @@ Concevoir des pipelines d'intégration et déploiement continu pour automatiser 
 Développer des scripts de réentrainement des modèles pour automatiser le processus de Machine Learning.
 Piloter la performance de la solution d'IA dans l'infrastructure à travers la mise en place d'outils de monitoring (comme Aporia ou Evidently) pour s'assurer qu'elle respecte les spécifications du cahier des charges dans un environnement de production.
 
-2. Infrastructure API
-- Documentation utilisateur de l'API
-
 3. Pipelines CI/CD
 - Tests d'intégration automatisés -> test d'intégration en testant les pipelines individuellement (GitHub Actions)
 - Déploiement production non configuré (placeholder dans cd.yml) -> Deployement HuggingFace possibilité de lancer les script Hugging Face depuis le GitHub Action CD

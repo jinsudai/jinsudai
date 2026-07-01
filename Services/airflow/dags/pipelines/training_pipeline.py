@@ -47,7 +47,7 @@ with DAG(
     
     # Tâche de training
     train_task = PythonOperator(
-        task_id='train',
+        task_id='trigger_training',
         python_callable=trigger_github_action,
         op_kwargs={'github_workflow': '3_run_training.yml'},
     )
@@ -63,7 +63,7 @@ with DAG(
     
     # Tâche de skip
     skip_training = EmptyOperator(
-        task_id='skip',
+        task_id='skip_training',
     )
     
     # Dépendances conditionnelles
