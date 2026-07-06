@@ -26,10 +26,10 @@ from github_action_helper import should_trigger_training
 
 def wait_until_3am_function(**context):
     """Vérifie si l'heure actuelle est >= 3h du matin, ou bypass si déclenchement manuel"""
-    # Vérifier si c'est un déclenchement manuel (pas de schedule)
+    # Vérifier si c'est un déclenchement manuel (run_id commence par "manual__")
     dag_run = context.get('dag_run')
-    if dag_run and dag_run.external_trigger:
-        print(f"✅ Déclenchement manuel détecté, on bypass l'attente de 3h")
+    if dag_run and dag_run.run_id and dag_run.run_id.startswith('manual__'):
+        print(f"✅ Déclenchement manuel détecté (run_id: {dag_run.run_id}), on bypass l'attente de 3h")
         return True
     
     now = datetime.now()
