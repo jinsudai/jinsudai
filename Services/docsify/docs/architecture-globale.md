@@ -21,7 +21,6 @@ graph LR
 
     subgraph "API & Inference"
         H[FastAPI<br/>REST API]
-        I[Streamlit<br/>UI Prédictions]
     end
 
     subgraph "Monitoring"
@@ -40,7 +39,6 @@ graph LR
     D --> F
     D --> G
     F --> H
-    F --> I
     H --> L
     D --> J
     J --> K
@@ -76,12 +74,6 @@ graph LR
             EV3[Reports HTML]
         end
         
-        subgraph "Grafana"
-            GR1[Grafana<br/>Port 3000]
-            GR2[Dashboards]
-            GR3[Datasources]
-        end
-        
         subgraph "Airflow"
             AF1[Airflow Webserver<br/>Port 8080]
             AF2[Airflow Scheduler]
@@ -95,36 +87,30 @@ graph LR
     AF1 --> FA1
     AF1 --> ML1
     AF1 --> EV1
-    EV1 --> GR1
     
     style ML1 fill:#ff6b6b
     style FA1 fill:#4ecdc4
     style EV1 fill:#45b7d1
-    style GR1 fill:#f39c12
     style AF1 fill:#9b59b6
 ```
 
-## Flux de données complet
+## Flux de données complet (A finaliser)
 
 ```mermaid
 sequenceDiagram
     participant Source as Sources Externes
-    participant Ingest as Ingestion Airflow
-    participant Process as Traitement
-    participant Train as Training
+    participant Ingest as Ingestion
+    participant Process as Preparation
     participant MLflow as MLflow
-    participant API as FastAPI
+    participant API as Inference
     participant DB as PostgreSQL
     participant Monitor as Evidently
+    participant Train as Training
     
     Source->>Ingest: Données brutes (CSV)
     Ingest->>Process: Validation & Nettoyage
     Process->>Process: Feature Engineering
-    Process->>Train: Données préparées
-    Train->>Train: Entraînement AutoGluon
-    Train->>MLflow: Log métriques & modèle
-    MLflow-->>Train: Model URI
-    Train->>MLflow: Promotion en production
+    Process->>Monitor: Données préparées
     
     Note over API,DB: Phase d'Inférence
     
@@ -139,104 +125,15 @@ sequenceDiagram
     Monitor->>Monitor: Comparaison référence
     Monitor->>Monitor: Détection drift
     Monitor-->>Train: Trigger retraining
+    Train->>Train: Entraînement AutoGluon
+    Train->>MLflow: Log métriques & modèle
+    MLflow-->>Train: Model URI
+    Train->>MLflow: Promotion en production
 ```
 
-## Structure du code
 
-```mermaid
-%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#e1f5ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#0ea5e9', 'lineColor': '#64748b', 'secondaryColor': '#fff4e1', 'tertiaryColor': '#fce4ec', 'background': '#1e293b', 'mainBkg': '#e1f5ff', 'nodeBorder': '#0ea5e9', 'clusterBkg': '#334155', 'clusterBorder': '#475569', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b'}}}%%
-graph LR
-    subgraph "src/"
-        subgraph "ml/"
-            M1[config.py<br/>Gestion config]
-            M2[consumption/<br/>Domaine consommation]
-            M3[solar_production/<br/>Domaine solaire]
-            M4[data/<br/>Loading, Validation]
-            M5[models/<br/>Training, Inference]
-            M6[monitoring/<br/>Drift Detection]
-            M7[pipelines/<br/>Orchestration]
-            M8[utils/<br/>Utilitaires]
-            M9[dags/<br/>DAGs Airflow]
-        end
-        
-        subgraph "connectors/"
-            C1[resend_client/<br/>Email]
-            C2[database/<br/>PostgreSQL]
-            C3[mlflow/<br/>Tracking]
-        end
-        
-        subgraph "configs/"
-            CFG1[consumption.dev.yaml]
-            CFG2[consumption.prod.yaml]
-            CFG3[consumption.test.yaml]
-        end
-    end
-    
-    subgraph "scripts/"
-        S1[deploy_prediction_flows.py]
-        S2[deploy_prediction_schedule.py]
-        S3[create_test_data.py]
-        S4[send_notification.py]
-    end
-    
-    subgraph "Services/"
-        SVC1[MLflow/]
-        SVC2[FastApi/]
-        SVC3[EvidentlyAI/]
-        SVC4[Grafana/]
-        SVC5[Airflow/]
-    end
-    
-    style M1 fill:#e1f5ff
-    style M9 fill:#fff4e1
-    style S1 fill:#e8f5e9
-    style SVC1 fill:#fce4ec
-```
 
-## Différenciation par configuration
-
-```mermaid
-graph LR
-    subgraph "Config Consommation"
-        C1[src/ml/consumption/<br/>configs/config.yaml]
-        C2[Problem: Regression]
-        C3[Features: Temp, Humidité, Précip]
-        C4[Métrique: R² >= 0.90]
-        C5[Alert: R² < 0.85]
-        C6[Experiment: energy_consumption]
-    end
-    
-    subgraph "Config Production Solaire"
-        S1[src/ml/solar_production/<br/>configs/config.yaml]
-        S2[Problem: Regression]
-        S3[Features: Temp, Humidité, Irradiance, Cloud]
-        S4[Métrique: R² >= 0.92]
-        S5[Alert: R² < 0.88]
-        S6[Experiment: solar_production]
-    end
-    
-    subgraph "Code Partagé"
-        SH1[src/ml/data/]
-        SH2[src/ml/models/]
-        SH3[src/ml/monitoring/]
-        SH4[src/ml/pipelines/]
-    end
-    
-    C1 --> SH1
-    S1 --> SH1
-    C1 --> SH2
-    S1 --> SH2
-    C1 --> SH3
-    S1 --> SH3
-    C1 --> SH4
-    S1 --> SH4
-    
-    style C1 fill:#e1f5ff
-    style S1 fill:#fff4e1
-    style SH1 fill:#e8f5e9
-```
-
-## Flux de données d'entraînement
+## Flux de données d'entraînement (à finaliser)
 
 ```mermaid
 graph LR
@@ -260,7 +157,7 @@ graph LR
     style I fill:#d1c4e9
 ```
 
-## Flux de données d'inférence
+## Flux de données d'inférence (à finaliser)
 
 ```mermaid
 graph LR
@@ -297,7 +194,7 @@ graph LR
 
     subgraph "Implémentation"
         I1[AutoGluon Training<br/>Multi-domaines]
-        I2[FastAPI REST API<br/>+ Streamlit UI]
+        I2[FastAPI REST API]
         I3[GitHub Actions<br/>+ Docker Compose]
         I4[Airflow DAGs<br/>+ Drift Detection]
         I5[Evidently AI<br/>+ Grafana Dashboards]
@@ -315,61 +212,3 @@ graph LR
     style O4 fill:#fce4ec
     style O5 fill:#d1c4e9
 ```
-
-### Spécifications techniques respectées
-
-| Spécification | Implémentation | Statut |
-|---------------|----------------|--------|
-| **Algorithmes IA** | AutoGluon (regression) pour consommation et production solaire | ✅ |
-| **Métriques** | R² >= 0.90 (consommation), R² >= 0.92 (solaire) | ✅ |
-| **Temps inférence** | < 100ms par requête (FastAPI) | ✅ |
-| **API Production** | FastAPI avec endpoints /predict et /predict/batch | ✅ |
-| **CI/CD** | GitHub Actions avec Docker + Hugging Face Spaces | ✅ |
-| **Réentraînement auto** | Airflow DAGs avec triggers drift + cycle hebdo | ✅ |
-| **Monitoring** | Evidently AI + Grafana dashboards | ✅ |
-| **Alertes** | Email via Resend + Slack webhooks | ✅ |
-| **Stockage modèles** | MLflow Model Registry avec promotion prod | ✅ |
-| **Données** | PostgreSQL pour prédictions, S3 pour artefacts | ✅ |
-
-## Résumé des Flows Principaux
-
-```mermaid
-mindmap
-  root((DAGs Airflow))
-    prediction
-      prediction_full_pipeline
-      prediction_inference_only_pipeline
-      prediction_batch_pipeline
-    training
-      consumption_flow
-      solar_production_flow
-    data_ingestion
-      weather_flow
-      holidays_flow
-      sftp_ingestion_flow
-    monitoring
-      actual_values_flow
-      drift_detection_flow
-```
-
-## Services déployés
-
-```mermaid
-mindmap
-  root((Services))
-    MLOps_Core
-      MLflow
-      Airflow
-    Inference
-      FastAPI
-      Streamlit
-    Monitoring
-      Evidently_AI
-      Grafana
-    Storage
-      PostgreSQL
-      S3
-    Notification
-      Resend_Email
-```
-

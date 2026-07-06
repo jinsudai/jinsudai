@@ -57,7 +57,7 @@ with DAG(
 ) as dag:
     
     # Point de départ
-    start = EmptyOperator(task_id='start')
+    start_at_2h30 = EmptyOperator(task_id='start_at_2h30')
     
     # 1. Déclencher l'ingestion
     trigger_ingestion = TriggerDagRunOperator(
@@ -131,7 +131,7 @@ with DAG(
     end = EmptyOperator(task_id='end')
     
     # Dépendances
-    start >> trigger_ingestion
+    start_at_2h30 >> trigger_ingestion
     trigger_ingestion >> trigger_preparation
     trigger_preparation >> trigger_monitoring
     
@@ -144,7 +144,7 @@ with DAG(
     # Fin du pipeline training
     [trigger_training, skip_training] >> end
     
-    # Inférence en parallèle: start → wait until 3h → inference → end
-    start >> wait_until_3h
+    # Inférence en parallèle: start_at_2h30 → wait until 3h → inference → end
+    start_at_2h30 >> wait_until_3h
     wait_until_3h >> trigger_inference
     trigger_inference >> end

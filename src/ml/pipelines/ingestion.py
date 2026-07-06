@@ -123,6 +123,11 @@ class IngestionPipeline:
         for _, row in self.previous_day_predictions.iterrows():
             prediction_value = row['prediction']
 
+            # Skip if prediction is None
+            if prediction_value is None:
+                logger.warning(f"Prédiction None pour prediction_id {row['prediction_id']} - ignoré")
+                continue
+
             # Générer une valeur aléatoire avec une variation de ±20%
             variation = random.uniform(-0.2, 0.2)
             actual_value = prediction_value * (1 + variation)
