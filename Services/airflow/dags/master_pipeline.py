@@ -25,7 +25,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'utils'))
 from github_action_helper import should_trigger_training
 
 def wait_until_3am_function(**context):
-    """Vérifie si l'heure actuelle est >= 3h du matin"""
+    """Vérifie si l'heure actuelle est >= 3h du matin, ou bypass si déclenchement manuel"""
+    # Vérifier si c'est un déclenchement manuel (pas de schedule)
+    dag_run = context.get('dag_run')
+    if dag_run and dag_run.external_trigger:
+        print(f"✅ Déclenchement manuel détecté, on bypass l'attente de 3h")
+        return True
+    
     now = datetime.now()
     target_hour = 3
     
