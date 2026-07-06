@@ -45,7 +45,7 @@ jobs:
           buildFastApi:
             - 'Services/JinsudAPI/**'
 
-  build-and-push:
+  build-and-push-FastAPI:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -211,9 +211,9 @@ jobs:
         run: |
           python .github/scripts/hf_update_secrets.py
 
-  deploy:
+  deploy-FastAPI:
     runs-on: ubuntu-latest
-    needs: [filter, build-and-push]
+    needs: [filter, build-and-push-FastAPI]
     if: |
       github.ref == 'refs/heads/main' &&
       (needs.filter.outputs.buildFastApi == 'true')
