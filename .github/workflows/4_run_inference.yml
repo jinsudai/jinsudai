@@ -5,11 +5,12 @@ on:
     inputs:
       model_name:
         description: 'Nom du modèle dans MLflow'
-        required: true
+        required: false
+        default: 'consumption_model_test'
       config_name:
         description: "Nom de la config (consumption, solar_production)"
         required: false
-        default: 'consumption_model_test'
+        default: 'consumption'
       n_days:
         description: "Nombre de jours de prédictions"
         required: false
