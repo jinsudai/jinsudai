@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Documentation MLOps - Jinsudai</title>
+  <title>Automatic Fraud Detection</title>
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
   <meta name="description" content="Documentation MLOps complète avec diagrammes Mermaid">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
@@ -21,8 +21,8 @@
       max-height: none !important;
     }
     
-    /* Horizontal scroll for page content */
-    .content {
+   /* Force body horizontal scroll */
+    body {
       overflow-x: auto;
     }
     
@@ -258,6 +258,9 @@
                     const scrollWidth = content.scrollWidth - content.clientWidth;
                     content.scrollLeft = scrollWidth / 2;
                   }
+                  // Close sidebar when zooming
+                  document.body.classList.add('close');
+                  return false;                  
                 }
               });
             });
