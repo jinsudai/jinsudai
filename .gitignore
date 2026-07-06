@@ -176,4 +176,4 @@ src/configs/_disabled/
 
 # Copilot
 .copilotignore
-.vibe_settings
+.vibe_*
