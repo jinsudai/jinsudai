@@ -9,8 +9,8 @@ Le pipeline d'entraînement prépare les données, entraîne les modèles avec A
 ```mermaid
 graph LR
     A[Prepared<br/>train.parquet<br/>S3] --> C[Training]
-    C --> E[Évaluation & Logging<br/>Promotion Production?]
-    E -->|Oui| F[Alias 'prod']
+    C --> E[Evaluation & Logging<br/>Promotion Production?]
+    E -->|Yes| F[Alias 'prod']
     F --> H[Trained<br/>train.parquet<br/>S3]
 
     style A fill:#e1f5ff
@@ -29,20 +29,20 @@ graph LR
 
 ```mermaid
 graph TD
-    subgraph "Étape 1: Chargement"
-        A[Données train.parquet<br/>local ou S3] --> B[Data Loading<br/>step_1_load_data]
-        B -->|Fichier absent| C[Download S3<br/>consumption/prepared/]
+    subgraph "Step 1: Loading"
+        A[Train Data<br/>train.parquet<br/>local or S3] --> B[Data Loading<br/>step_1_load_data]
+        B -->|File missing| C[Download S3<br/>consumption/prepared/]
         C --> B
     end
 
     B --> D[Data Validation<br/>step_2_validate_data]
-    D --> E[Rapport Evidently<br/>Qualité des données]
+    D --> E[Evidently Report<br/>Data Quality]
 
-    E --> F[Data Transformation<br/>step_3_transform_data<br/>Nettoyage colonnes]
+    E --> F[Data Transformation<br/>step_3_transform_data<br/>Column Cleaning]
 
     F --> G[Data Preparation<br/>step_3_prepare_data]
     G --> G1[Split Train/Test<br/>80/20]
-    G1 --> G2[Prétraitement<br/>Imputation/Scaling/Encoding]
+    G1 --> G2[Preprocessing<br/>Imputation/Scaling/Encoding]
 
     G2 --> H[Model Training<br/>step_4_train_model<br/>AutoGluon/RandomForest]
 
@@ -50,20 +50,20 @@ graph TD
 
     I --> J[Performance Monitoring<br/>step_6_monitor_performance<br/>Drift Detection]
 
-    J --> K[MLflow Logging<br/>step_7_log_with_mlflow<br/>Métriques + Artefacts]
+    J --> K[MLflow Logging<br/>step_7_log_with_mlflow<br/>Metrics + Artifacts]
 
     K --> L[Model Stage Management<br/>step_9_manage_model_stages]
-    L --> L1[Enregistrement Staging]
+    L --> L1[Register Staging]
     L1 --> L2{Promotion Production?}
-    L2 -->|Oui| L3[Alias 'prod'<br/>Meilleures métriques]
-    L2 -->|Non| L4[Reste en Staging]
+    L2 -->|Yes| L3[Alias 'prod'<br/>Best Metrics]
+    L2 -->|No| L4[Remains in Staging]
 
     L3 --> M[Upload Data S3<br/>step_8_upload_trained_data_to_s3<br/>consumption/trained/]
-    M --> M1[Archivage anciens fichiers<br/>consumption/archived/trained/]
+    M --> M1[Archive old files<br/>consumption/archived/trained/]
 
     L4 --> M
 
-    M1 --> N[Cleanup Model<br/>step_8_cleanup_model<br/>Suppression locale]
+    M1 --> N[Cleanup Model<br/>step_8_cleanup_model<br/>Local Deletion]
 
     style B fill:#e1f5ff
     style D fill:#fff9c4

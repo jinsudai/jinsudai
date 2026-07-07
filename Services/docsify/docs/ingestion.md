@@ -10,20 +10,20 @@ Le pipeline d'ingestion met à jour les prédictions avec les valeurs réelles o
 ## Flux d'Ingestion
 ```mermaid
 graph LR
-    subgraph "Sources Externes"
+    subgraph "External Sources"
         S1[SFTP<br/>CSV PRM]
     end
 
-    subgraph "Connecteurs"
+    subgraph "Connectors"
         C1[SFTPConnector]
     end
 
     subgraph "Pipelines"
-        P1[IngestionPipeline<br/>Valeurs Réelles]
+        P1[IngestionPipeline<br/>Actual Values]
     end
 
-    subgraph "Stockage"
-        ST1[PostgreSQL<br/>Table predictions]
+    subgraph "Storage"
+        ST1[PostgreSQL<br/>Predictions Table]
     end
 
     S1 --> C1

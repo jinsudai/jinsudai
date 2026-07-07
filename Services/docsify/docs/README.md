@@ -15,3 +15,8 @@ Ce projet implémente une architecture MLOps complète pour la prédiction de co
 ## Navigation
 
 Utilisez le menu de gauche pour naviguer entre les différents pipelines et composants de l'architecture.
+
+> **Note** : Les schémas Mermaid (diagrammes) utilisent l'anglais pour assurer la cohérence technique et la compatibilité avec les standards internationaux de l'industrie MLOps.
+>
+> **Zoom sur les diagrammes** : Utilisez `Ctrl` + molette de la souris pour zoomer/dézoomer sur les diagrammes.
+

@@ -8,13 +8,13 @@ Le pipeline CI/CD automatise le build, le test, et le déploiement des services 
 
 ```mermaid
 graph LR
-    A[Push sur main/develop] --> B[CI Workflow Trigger]
+    A[Push to main/develop] --> B[CI Workflow Trigger]
     B --> C[Test Job]
     B --> D[Validate Configs Job]
     C --> E{Tests OK?}
     D --> E
-    E -->|Non| F[Échec CI]
-    E -->|Oui| G[CD Workflow Trigger]
+    E -->|No| F[CI Failure]
+    E -->|Yes| G[CD Workflow Trigger]
     G --> H[Filter Job]
     H --> I{Path Changes?}
     I -->|createSpaces| J[HF Create Spaces]
@@ -39,7 +39,7 @@ graph LR
 
 ```mermaid
 sequenceDiagram
-    participant Dev as Développeur
+    participant Dev as Developer
     participant CI as CI Workflow
     participant CD as CD Workflow
     participant Filter as Filter Job
