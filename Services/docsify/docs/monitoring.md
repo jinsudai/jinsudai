@@ -24,7 +24,7 @@ graph LR
     
     subgraph "Monitoring"
         D[MLFlow<br/>Server]
-        EU[EvidentlyAI<br/>Server]
+        EU[EvidentlyUI<br/>Server]
         F[Email<br/>Resend]
         R[Retraining<br/>Trigger]
     end
@@ -46,7 +46,7 @@ graph LR
 ```
 
 
-## Types de Drift
+## Drifts détectés
 
 ### Data Drift
 - **Définition**: Changement dans la distribution des features d'entrée

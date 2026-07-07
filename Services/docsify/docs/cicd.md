@@ -78,30 +78,25 @@ sequenceDiagram
     CD-->>Dev: Deployment Success
 ```
 
-## Services déployés (A déplacer?)
+## Services déployés
 
 ### MLflow
-- **Port**: 7860
 - **Backend**: PostgreSQL
 - **Storage**: S3 pour artefacts
 - **Health Check**: `/health`
+- **URL**: https://jinsudai-mlflow.hf.space/
 
-### FastAPI
-- **Port**: 8000
+### FastAPI (JinsudAPI)
 - **Endpoints**: `/predict`, `/predict/batch`, `/health`
 - **Health Check**: `/health`
+- **URL**: https://jetestai-jinsudapi.hf.space/
 
-### Evidently AI
-- **Port**: 8501
+### EvidentlyUI
 - **Workspace**: Rapports drift
 - **Health Check**: `/health`
-
-### Grafana
-- **Port**: 3000
-- **Dashboards**: Monitoring ML
-- **Health Check**: `/api/health`
+- **URL**: https://evidentlai-evidentlyui.hf.space/
 
 ### Airflow
-- **Port**: 8080
 - **Components**: Webserver, Scheduler, Worker
 - **Health Check**: `/health`
+- **URL**: https://airflai-airflow.hf.space/

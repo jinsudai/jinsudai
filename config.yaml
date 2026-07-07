@@ -65,7 +65,6 @@ services:
   names:
     - "jinsudai/MLflow"
     - "jinsudai/docsify"
-    - "jinsudai/slidev"
 
   satellites:
     - "airflai/airflow"

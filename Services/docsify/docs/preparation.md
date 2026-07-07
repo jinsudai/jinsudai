@@ -45,7 +45,7 @@ graph LR
 ```
 
 
-### Weather API
+## Weather API
 **Fichier** : `src/ml/connectors/weather/weather_api.py`
 **Classe** : `WeatherAPI`
 **Source** : API Open-Meteo (données historiques et prévisions)
@@ -69,7 +69,9 @@ df = api.fetch_forecast(forecast_days=7, hourly=True)
 # Générer Parquet
 api.generate_parquet(output_path="data/processed/")
 ```
-### Holidays API
+
+
+## Holidays API
 **Fichier** : `src/ml/connectors/holidays/holidays_api.py`
 **Classes** :
 - `VacancesAPI` : Vacances scolaires par zone (A, B, C)

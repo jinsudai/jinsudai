@@ -8,7 +8,6 @@ Le pipeline d'ingestion met à jour les prédictions avec les valeurs réelles o
 2. **Connecteur SFTP** : Récupère les données de consommation brutes depuis un serveur SFTP
 
 ## Flux d'Ingestion
-
 ```mermaid
 graph LR
     subgraph "Sources Externes"
@@ -36,8 +35,6 @@ graph LR
     style P1 fill:#d1c4e9
     style ST1 fill:#ffccbc
 ```
-
-
 ## Pipeline d'Ingestion des Valeurs Réelles
 
 ### Vue d'ensemble
