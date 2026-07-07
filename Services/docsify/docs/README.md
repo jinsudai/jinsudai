@@ -1,4 +1,4 @@
-# Documentation MLOps - Jinsudai
+# Documentation MLOps - Prédictions Énergétiques - Jinsudai
 
 Bienvenue dans la documentation complète de l'architecture MLOps du projet de prédiction énergétique.
 

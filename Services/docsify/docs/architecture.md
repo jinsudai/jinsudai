@@ -2,10 +2,10 @@
 
 ```mermaid
 graph LR
-    subgraph "Sources de Données"
-        A[Consommations<br/>CSV via SFTP]
-        B[Météo<br/>API Open-Meteo]
-        C[Vacances<br/>API]
+    subgraph "Data Sources"
+        A[Consumptions<br/>CSV via SFTP]
+        B[Weather<br/>API Open-Meteo]
+        C[Holidays<br/>API]
     end
 
     subgraph "Orchestration"
@@ -25,7 +25,7 @@ graph LR
         K[Grafana<br/>Dashboards]
     end
 
-    subgraph "Stockage"
+    subgraph "Storage"
         L[PostgreSQL<br/>Predictions]
     end
 
