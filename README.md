@@ -33,7 +33,7 @@ Développer un modèle de prédiction de la consommation énergétique permettan
 
 # Notes
 
-- Documentation complète en Français
+- Documentation en Français et les schémas en Anglais
 - Code simple et lisible (priorité)
 - Pas de dépendances externes lourdes
 - Approche multi-domaines avec code partagé (`src/ml/`)
