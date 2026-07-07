@@ -66,8 +66,8 @@ with DAG(
     start_at_2h30 = EmptyOperator(task_id='start_at_2h30')
     
     # 1. Déclencher l'ingestion
-    trigger_ingestion = TriggerDagRunOperator(
-        task_id='trigger_ingestion',
+    ingestion = TriggerDagRunOperator(
+        task_id='ingestion',
         trigger_dag_id='ingestion_pipeline',
         wait_for_completion=True,
         poke_interval=30,
@@ -76,8 +76,8 @@ with DAG(
     )
     
     # 2. Déclencher la préparation
-    trigger_preparation = TriggerDagRunOperator(
-        task_id='trigger_preparation',
+    preparation = TriggerDagRunOperator(
+        task_id='preparation',
         trigger_dag_id='preparation_pipeline',
         wait_for_completion=True,
         poke_interval=30,
@@ -86,8 +86,8 @@ with DAG(
     )
     
     # 3. Déclencher le monitoring
-    trigger_monitoring = TriggerDagRunOperator(
-        task_id='trigger_monitoring',
+    monitoring = TriggerDagRunOperator(
+        task_id='monitoring',
         trigger_dag_id='monitoring_pipeline',
         wait_for_completion=True,
         poke_interval=30,
@@ -105,8 +105,8 @@ with DAG(
     )
     
     # 5. Déclencher l'inférence (en parallèle, à 3h du matin)
-    trigger_inference = TriggerDagRunOperator(
-        task_id='trigger_inference',
+    inference = TriggerDagRunOperator(
+        task_id='inference',
         trigger_dag_id='inference_pipeline',
         wait_for_completion=True,
         poke_interval=30,
@@ -115,14 +115,14 @@ with DAG(
     )
     
     # 6. Vérifier si le training est nécessaire
-    check_training_needed = BranchPythonOperator(
-        task_id='check_training_needed',
+    check_training = BranchPythonOperator(
+        task_id='check_training',
         python_callable=should_trigger_training,
     )
     
     # 7. Déclencher le training (si nécessaire)
-    trigger_training = TriggerDagRunOperator(
-        task_id='trigger_training',
+    training = TriggerDagRunOperator(
+        task_id='training',
         trigger_dag_id='training_pipeline',
         wait_for_completion=True,
         poke_interval=30,
@@ -137,20 +137,20 @@ with DAG(
     end = EmptyOperator(task_id='end', trigger_rule='none_failed_min_one_success')
     
     # Dépendances
-    start_at_2h30 >> trigger_ingestion
-    trigger_ingestion >> trigger_preparation
-    trigger_preparation >> trigger_monitoring
+    start_at_2h30 >> ingestion
+    ingestion >> preparation
+    preparation >> monitoring
     
     # Training conditionnel après monitoring
-    trigger_monitoring >> check_training_needed
+    monitoring >> check_training
     
     # Branch conditionnelle pour training
-    check_training_needed >> [trigger_training, skip_training]
+    check_training >> [training, skip_training]
     
     # Fin du pipeline training
-    [trigger_training, skip_training] >> end
+    [training, skip_training] >> end
     
     # Inférence en parallèle: start_at_2h30 → wait until 3h → inference → end
     start_at_2h30 >> wait_until_3h
-    wait_until_3h >> trigger_inference
-    trigger_inference >> end
+    wait_until_3h >> inference
+    inference >> end
