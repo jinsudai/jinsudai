@@ -14,9 +14,18 @@ graph LR
     F --> H[Trained<br/>train.parquet<br/>S3]
 
     style A fill:#e1f5ff
-    style C fill:#f8bbd9
-    style F fill:#c8e6c9
+    style B fill:#f8bbd9
+    style C fill:#fff9c4
+    style D fill:#fff9c4
+    style E fill:#c8e6c9
 ```
+
+### Cycle Préparation → Training → Archivage
+
+1. **Preparation Pipeline** génère des features et upload vers `consumption/prepared/`
+2. **Training Pipeline** télécharge depuis `consumption/prepared/` et entraîne le modèle
+3. **Training Pipeline** upload vers `consumption/trained/` après entraînement
+4. Les anciens fichiers sont archivés dans `consumption/archived/prepared/` et `consumption/archived/trained/`
 
 ## Flux de données d'entraînement détaillé
 
