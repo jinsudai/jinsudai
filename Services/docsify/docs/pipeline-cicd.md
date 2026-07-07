@@ -7,66 +7,78 @@ Le pipeline CI/CD automatise le build, le test, et le déploiement des services 
 ## Pipeline GitHub Actions
 
 ```mermaid
-%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#e1f5ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#0ea5e9', 'lineColor': '#64748b', 'secondaryColor': '#fff4e1', 'tertiaryColor': '#fce4ec', 'background': '#1e293b', 'mainBkg': '#e1f5ff', 'nodeBorder': '#0ea5e9', 'clusterBkg': '#334155', 'clusterBorder': '#475569', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b'}}}%%
 graph LR
-    A[Push sur main] --> B[GitHub Actions Trigger]
-    B --> C[Linting & Tests]
-    C --> D{Tests OK?}
-    D -->|Non| E[Échec CI]
-    D -->|Oui| F[Build Docker Images]
-    F --> G[Push Registry]
-    G --> H[Deploy MLflow]
-    H --> I[Deploy FastAPI]
-    I --> J[Deploy Evidently]
-    J --> K[Deploy Grafana]
-    K --> L[Integration Tests]
-    L --> M{Integration OK?}
-    M -->|Non| E
-    M -->|Oui| N[Deploy Production]
-    N --> O[Health Checks]
-    O --> P[Notification Success]
-    
+    A[Push sur main/develop] --> B[CI Workflow Trigger]
+    B --> C[Test Job]
+    B --> D[Validate Configs Job]
+    C --> E{Tests OK?}
+    D --> E
+    E -->|Non| F[Échec CI]
+    E -->|Oui| G[CD Workflow Trigger]
+    G --> H[Filter Job]
+    H --> I{Path Changes?}
+    I -->|createSpaces| J[HF Create Spaces]
+    I -->|pushServices| K[HF Push Services]
+    I -->|updateSecrets| L[HF Update Secrets]
+    I -->|buildFastApi| M[Build FastAPI Docker]
+    M --> N[Push to GHCR]
+    N --> O[Deploy FastAPI]
+    J --> P[Notification Success]
+    K --> P
+    L --> P
+    O --> P
+
     style C fill:#e1f5ff
-    style F fill:#fff4e1
-    style M fill:#fce4ec
-    style O fill:#e8f5e9
+    style D fill:#e1f5ff
+    style H fill:#fff4e1
+    style M fill:#fff4e1
+    style P fill:#e8f5e9
 ```
 
 ## Workflow de déploiement
 
 ```mermaid
-%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#e1f5ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#0ea5e9', 'lineColor': '#64748b', 'secondaryColor': '#fff4e1', 'tertiaryColor': '#fce4ec', 'background': '#1e293b', 'mainBkg': '#e1f5ff', 'nodeBorder': '#0ea5e9', 'clusterBkg': '#334155', 'clusterBorder': '#475569', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b'}}}%%
 sequenceDiagram
     participant Dev as Développeur
-    participant GH as GitHub
+    participant CI as CI Workflow
+    participant CD as CD Workflow
+    participant Filter as Filter Job
     participant HF as Hugging Face
-    participant MLflow as MLflow Service
-    participant API as FastAPI
-    participant Mon as Monitoring
+    participant GHCR as GitHub Container Registry
+    participant API as FastAPI Service
     
-    Dev->>GH: Push code + tag
-    GH->>GH: CI/CD Pipeline
-    GH->>HF: Deploy MLflow Space
-    HF-->>GH: URL MLflow
-    GH->>HF: Deploy FastAPI Space
-    HF-->>GH: URL API
-    GH->>HF: Deploy Evidently Space
-    HF-->>GH: URL Evidently
-    GH->>MLflow: Health Check
-    MLflow-->>GH: 200 OK
-    GH->>API: Health Check
-    API-->>GH: 200 OK
-    GH->>Mon: Configure Dashboards
-    Mon-->>GH: Ready
-    GH-->>Dev: Deployment Success
+    Dev->>CI: Push code (main/develop)
+    CI->>CI: Run Tests & Validate Configs
+    CI->>CD: Trigger on success
+    CD->>Filter: Check path changes
+    Filter->>Filter: Determine jobs to run
     
-    style MLflow fill:#fce4ec
-    style API fill:#fff4e1
-    style Mon fill:#e1f5ff
-    style Dev fill:#e8f5e9
+    alt createSpaces changed
+        Filter->>HF: Create Spaces
+        HF-->>Filter: Spaces created
+    end
+    
+    alt pushServices changed
+        Filter->>HF: Push Services
+        HF-->>Filter: Services pushed
+    end
+    
+    alt updateSecrets changed
+        Filter->>HF: Update Secrets
+        HF-->>Filter: Secrets updated
+    end
+    
+    alt buildFastApi changed
+        Filter->>GHCR: Build Docker Image
+        GHCR-->>Filter: Image pushed
+        Filter->>API: Deploy FastAPI
+        API-->>Filter: Deployment ready
+    end
+    
+    CD-->>Dev: Deployment Success
 ```
 
-## Services déployés
+## Services déployés (A déplacer?)
 
 ### MLflow
 - **Port**: 7860

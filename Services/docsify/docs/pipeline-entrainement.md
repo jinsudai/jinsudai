@@ -4,99 +4,70 @@
 
 Le pipeline d'entraînement prépare les données, entraîne les modèles avec AutoGluon, et déploie les meilleurs modèles en production via MLflow.
 
-## DAG Airflow d'entraînement
+## Flux de données
 
 ```mermaid
-%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#e1f5ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#0ea5e9', 'lineColor': '#64748b', 'secondaryColor': '#fff4e1', 'tertiaryColor': '#fce4ec', 'background': '#1e293b', 'mainBkg': '#e1f5ff', 'nodeBorder': '#0ea5e9', 'clusterBkg': '#334155', 'clusterBorder': '#475569', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b'}}}%%
 graph LR
-    subgraph "training_pipeline"
-        A1[setup_training_task] --> A2[load_data_task]
-        A2 --> A3[validate_data_task]
-        A3 --> A4[prepare_data_task]
-        A4 --> A5[train_model_task]
-        A5 --> A6[evaluate_model_task]
-        A6 --> A7[log_to_mlflow_task]
-        A7 --> A8[promote_to_prod_task]
-    end
+    A[Prepared<br/>train.parquet<br/>S3] --> C[Training]
+    C --> E{Évaluation & Logging<br/>Promotion Production?}
+    E -->|Oui| F[Alias 'prod']
+    F --> H[Trained<br/>train.parquet<br/>S3]
 
-    style A1 fill:#e1f5ff
-    style A5 fill:#fff4e1
-    style A7 fill:#d1c4e9
+    style A fill:#e1f5ff
+    style C fill:#f8bbd9
+    style F fill:#c8e6c9
 ```
 
-## Pipeline d'entraînement détaillé
+## Flux de données d'entraînement détaillé
 
 ```mermaid
-%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#e1f5ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#0ea5e9', 'lineColor': '#64748b', 'secondaryColor': '#fff4e1', 'tertiaryColor': '#fce4ec', 'background': '#1e293b', 'mainBkg': '#e1f5ff', 'nodeBorder': '#0ea5e9', 'clusterBkg': '#334155', 'clusterBorder': '#475569', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b'}}}%%
-graph LR
-    subgraph "Phase 1: Préparation"
-        P1[Chargement Config] --> P2[Connexion MLflow]
-        P2 --> P3[Chargement Données]
-        P3 --> P4[Validation]
-        P4 --> P5[Nettoyage]
-        P5 --> P6[Feature Engineering]
+graph TD
+    subgraph "Étape 1: Chargement"
+        A[Données train.parquet<br/>local ou S3] --> B[Data Loading<br/>step_1_load_data]
+        B -->|Fichier absent| C[Download S3<br/>consumption/prepared/]
+        C --> B
     end
-    
-    subgraph "Phase 2: Training"
-        P6 --> T1[Split Train/Test]
-        T1 --> T2[AutoGluon Fit]
-        T2 --> T3[Hyperparameter Tuning]
-        T3 --> T4[Best Model Selection]
-    end
-    
-    subgraph "Phase 3: Évaluation"
-        T4 --> E1[Calcul Métriques]
-        E1 --> E2[R² >= 0.90?]
-        E2 -->|Oui| E3[Validation OK]
-        E2 -->|Non| E4[Retrying]
-    end
-    
-    subgraph "Phase 4: Déploiement"
-        E3 --> D1[Log MLflow]
-        D1 --> D2[Save Model]
-        D2 --> D3[Register Model]
-        D3 --> D4[Promote to Prod]
-    end
-    
-    style P1 fill:#e1f5ff
-    style T2 fill:#fff4e1
-    style E2 fill:#fce4ec
-    style D4 fill:#e8f5e9
-```
 
-## Flux de données d'entraînement
+    B --> D[Data Validation<br/>step_2_validate_data]
+    D --> E[Rapport Evidently<br/>Qualité des données]
 
-```mermaid
-%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#e1f5ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#0ea5e9', 'lineColor': '#64748b', 'secondaryColor': '#fff4e1', 'tertiaryColor': '#fce4ec', 'background': '#1e293b', 'mainBkg': '#e1f5ff', 'nodeBorder': '#0ea5e9', 'clusterBkg': '#334155', 'clusterBorder': '#475569', 'titleColor': '#f8fafc', 'edgeLabelBackground': '#1e293b'}}}%%
-graph LR
-    A[Données brutes CSV<br/>data/raw/] --> B[Data Validation<br/>Schéma & Valeurs]
-    B --> C[Data Preparation<br/>Nettoyage & Normalisation]
-    C --> D[Feature Engineering<br/>Météo + Calendrier]
-    D --> E[Split Train/Test<br/>80/20]
-    E --> F[Training AutoGluon<br/>Regression]
-    F --> G[Évaluation Modèle<br/>R², MAE, RMSE]
-    G --> H{Performance OK?}
-    H -->|Oui| I[Log MLflow<br/>Métriques + Artefacts]
-    H -->|Non| J[Hyperparameter Tuning]
-    J --> F
-    I --> K[Promotion Production<br/>Alias 'prod']
-    K --> L[Modèle en production]
-    
+    E --> F[Data Transformation<br/>step_3_transform_data<br/>Nettoyage colonnes]
+
+    F --> G[Data Preparation<br/>step_3_prepare_data]
+    G --> G1[Split Train/Test<br/>80/20]
+    G1 --> G2[Prétraitement<br/>Imputation/Scaling/Encoding]
+
+    G2 --> H[Model Training<br/>step_4_train_model<br/>AutoGluon/RandomForest]
+
+    H --> I[Model Evaluation<br/>step_5_evaluate_model<br/>R², MAE, RMSE]
+
+    I --> J[Performance Monitoring<br/>step_6_monitor_performance<br/>Drift Detection]
+
+    J --> K[MLflow Logging<br/>step_7_log_with_mlflow<br/>Métriques + Artefacts]
+
+    K --> L[Model Stage Management<br/>step_9_manage_model_stages]
+    L --> L1[Enregistrement Staging]
+    L1 --> L2{Promotion Production?}
+    L2 -->|Oui| L3[Alias 'prod'<br/>Meilleures métriques]
+    L2 -->|Non| L4[Reste en Staging]
+
+    L3 --> M[Upload Data S3<br/>step_8_upload_trained_data_to_s3<br/>consumption/trained/]
+    M --> M1[Archivage anciens fichiers<br/>consumption/archived/trained/]
+
+    L4 --> M
+
+    M1 --> N[Cleanup Model<br/>step_8_cleanup_model<br/>Suppression locale]
+
     style B fill:#e1f5ff
-    style F fill:#fff4e1
-    style G fill:#e8f5e9
-    style H fill:#fce4ec
-    style I fill:#d1c4e9
+    style D fill:#fff9c4
+    style F fill:#ffe0b2
+    style G fill:#c8e6c9
+    style H fill:#f8bbd9
+    style I fill:#e1bee7
+    style J fill:#b2dfdb
+    style K fill:#d1c4e9
+    style L fill:#ffccbc
+    style M fill:#c5cae9
 ```
 
-## Métriques par domaine
 
-### Consommation Électrique
-- **R² cible**: >= 0.90
-- **R² alerte**: < 0.85
-- **Métriques**: R², MAE, RMSE
-
-### Production Solaire
-- **R² cible**: >= 0.92
-- **R² alerte**: < 0.88
-- **Métriques**: R², MAE, RMSE
