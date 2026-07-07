@@ -1,7 +1,5 @@
 # Pipeline d'Inférence
 
-## Vue d'ensemble
-
 Le pipeline d'inférence charge les modèles en production, génère des prédictions, et stocke les résultats dans PostgreSQL avec monitoring de drift.
 
 ## Pipeline d'Inférence

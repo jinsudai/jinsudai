@@ -1,7 +1,5 @@
 # Pipeline d'Ingestion des Données
 
-## Vue d'ensemble
-
 Le pipeline d'ingestion met à jour les prédictions avec les valeurs réelles observées depuis différentes sources externes. Il comprend :
 
 1. **Ingestion des valeurs réelles** : Met à jour les prédictions avec les valeurs observées

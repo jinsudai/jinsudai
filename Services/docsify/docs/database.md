@@ -2,6 +2,8 @@
 
 ## Table `consumption_predictions`
 
+Cette table stocke les prédictions de consommation énergétique, avec les valeurs réelles observées pour le monitoring et le retraining.
+
 ### Structure
 
 ```sql

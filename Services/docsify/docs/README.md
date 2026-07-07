@@ -2,7 +2,7 @@
 
 Bienvenue dans la documentation complète de l'architecture MLOps du projet de prédiction énergétique.
 
-## Vue d'ensemble
+### Vue d'ensemble
 
 Ce projet implémente une architecture MLOps complète pour la prédiction de consommation énergétique et de production solaire, respectant les objectifs suivants :
 
@@ -12,7 +12,7 @@ Ce projet implémente une architecture MLOps complète pour la prédiction de co
 - **Développement de scripts de réentraînement** pour automatiser le Machine Learning
 - **Pilotage de la performance** via des outils de monitoring (Evidently) pour assurer le respect des spécifications en production
 
-## Navigation
+### Navigation
 
 Utilisez le menu de gauche pour naviguer entre les différents pipelines et composants de l'architecture.
 

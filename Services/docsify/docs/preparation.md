@@ -1,14 +1,12 @@
 # Pipeline de Préparation
 
-## Vue d'ensemble
-
 Le pipeline de préparation télécharge les données existantes, génère les features météo et vacances, fusionne avec les données brutes, récupère les valeurs réelles depuis la base de données, et sauvegarde le tout sur S3.
 
 **Sources de données :**
 - **Raw CSV** : Uniquement pour le premier entraînement initial
 - **PostgreSQL** : Pour les entraînements suivants (données mises à jour par le pipeline d'ingestion)
 
-## Flux de données de préparation
+## Flux de données
 
 ```mermaid
 graph LR
@@ -45,7 +43,7 @@ graph LR
 ```
 
 
-## Weather API
+## API Météo
 **Fichier** : `src/ml/connectors/weather/weather_api.py`
 **Classe** : `WeatherAPI`
 **Source** : API Open-Meteo (données historiques et prévisions)
@@ -71,7 +69,7 @@ api.generate_parquet(output_path="data/processed/")
 ```
 
 
-## Holidays API
+## API Vacances et Jours Fériés
 **Fichier** : `src/ml/connectors/holidays/holidays_api.py`
 **Classes** :
 - `VacancesAPI` : Vacances scolaires par zone (A, B, C)

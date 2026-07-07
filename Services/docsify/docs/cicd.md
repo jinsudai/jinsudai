@@ -1,7 +1,5 @@
 # Pipeline CI/CD
 
-## Vue d'ensemble
-
 Le pipeline CI/CD automatise le build, le test, et le déploiement des services sur Hugging Face Spaces via GitHub Actions.
 
 ## Pipeline GitHub Actions

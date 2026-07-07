@@ -1,7 +1,5 @@
 # Monitoring et Drift Detection
 
-## Vue d'ensemble
-
 Le monitoring utilise Evidently AI pour détecter le drift des données et des prédictions, avec alertes automatiques et triggering de retraining.
 
 ## Architecture de monitoring

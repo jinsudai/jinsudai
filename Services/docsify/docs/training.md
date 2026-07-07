@@ -1,7 +1,5 @@
 # Pipeline d'Entraînement
 
-## Vue d'ensemble
-
 Le pipeline d'entraînement prépare les données, entraîne les modèles avec AutoGluon, et déploie les meilleurs modèles en production via MLflow.
 
 ## Flux de données
