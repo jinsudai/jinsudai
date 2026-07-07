@@ -134,7 +134,7 @@ with DAG(
     skip_training = EmptyOperator(task_id='skip_training')
     
     # Point de fin
-    end = EmptyOperator(task_id='end')
+    end = EmptyOperator(task_id='end', trigger_rule='none_failed_min_one_success')
     
     # Dépendances
     start_at_2h30 >> trigger_ingestion
