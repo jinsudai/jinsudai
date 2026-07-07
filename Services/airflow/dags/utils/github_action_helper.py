@@ -9,7 +9,7 @@ Ce module fournit des fonctions réutilisables pour:
 """
 import requests
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 
 # Configuration GitHub (variables d'environnement)
@@ -171,10 +171,10 @@ def should_trigger_training(**context) -> str:
     
     # Récupérer la date du dernier training
     try:
-        training_runs = get_workflow_runs('3_training-pipeline.yml', limit=1)
+        training_runs = get_workflow_runs('3_run_training.yml', limit=1)
         if training_runs:
-            last_training_date = datetime.strptime(training_runs[0]['created_at'], '%Y-%m-%dT%H:%M:%SZ')
-            days_since_last_training = (datetime.now() - last_training_date).days
+            last_training_date = datetime.strptime(training_runs[0]['created_at'], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
+            days_since_last_training = (datetime.now(timezone.utc) - last_training_date).days
             training_needed = days_since_last_training > 1
         else:
             # Aucun training précédent, déclencher
